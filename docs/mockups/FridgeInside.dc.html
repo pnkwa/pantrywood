@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Inside the Fridge</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--shadow:0 1px 0 rgba(74,59,46,.06),0 10px 28px -8px rgba(74,59,46,.18)}
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: var(--cream); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; font-size: 16px; box-sizing: border-box; padding: 20px 24px 32px">
+<div style="max-width: 1392px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 22px; padding: 12px 16px; box-shadow: var(--shadow)">
+<a href="Main.dc.html" aria-label="Close door and go back to the room" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--oat); display: flex; align-items: center; justify-content: center; color: var(--bark)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; line-height: 1.15">
+<span style="font-size: 13px; color: var(--bark-soft)"><a href="Main.dc.html" style="color: inherit">Storage room</a> / Fridge</span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 24px">Inside the fridge</span>
+</div>
+<ol aria-label="Steps" style="list-style: none; margin: 0 0 0 auto; padding: 4px; display: flex; flex-wrap: wrap; gap: 4px; background: var(--linen); border-radius: 999px">
+<li style="padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--bark-soft)">1 Room</li>
+<li style="padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--bark-soft)">2 Zoom in</li>
+<li style="padding: 6px 12px; border-radius: 999px; font-size: 13px; color: var(--bark-soft)">3 Open door</li>
+<li aria-current="step" style="padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12)">4 Arrange</li>
+</ol>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section aria-label="Open fridge" style="flex: 999 1 600px; min-width: 0; position: relative; border-radius: 28px; border: 1.5px solid var(--oat); overflow: hidden; background: #EFE6D3; box-shadow: var(--shadow)">
+<div style="position: absolute; top: 16px; left: 16px; right: 16px; z-index: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<div role="tablist" aria-label="Part of the fridge" style="display: flex; gap: 4px; padding: 4px; background: var(--linen); border: 1.5px solid var(--oat); border-radius: 999px">
+<button type="button" role="tab" aria-selected="true" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-weight: 600; font-size: 14px; color: var(--bark); cursor: pointer">Main</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; font-weight: 500; font-size: 14px; color: var(--bark-soft); cursor: pointer">Freezer</button>
+<button type="button" role="tab" aria-selected="false" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; font-weight: 500; font-size: 14px; color: var(--bark-soft); cursor: pointer">Door bins</button>
+</div>
+<div role="group" aria-label="Edit mode" style="display: flex; gap: 4px; padding: 4px; background: var(--linen); border: 1.5px solid var(--oat); border-radius: 999px">
+<button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; font-weight: 500; font-size: 14px; color: var(--bark-soft); cursor: pointer">Items</button>
+<button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-weight: 600; font-size: 14px; color: var(--bark); cursor: pointer">Items + shelves</button>
+</div>
+<button type="button" style="margin-left: auto; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px dashed #C8901F; background: #FFF6E2; color: #6B4A0E; font-size: 14px; font-weight: 600; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add shelf</button>
+<button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 0 #3F5236"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add item</button>
+</div>
+
+<div style="position: relative; height: calc(100vh - 230px); min-height: 480px; max-height: 900px; aspect-ratio: 720 / 640; max-width: calc(100% - 32px); margin: 72px auto 8px">
+<svg viewBox="0 0 720 640" width="100%" height="100%" role="img" aria-label="Front view inside the fridge, items shown as transparent pictures standing on the shelves. Shelf 1: egg carton, chili sauce, milk jug and the selected Greek yogurt. Shelf 2: tofu, leftovers and an empty slot where Thai basil is being dragged. Shelf 3, selected for editing: homemade chili paste from your own photo, butter and strawberry jam. Two crisper drawers with bananas and spring onions. Side rails show the notches where shelves can sit." style="display: block">
+<defs>
+<filter id="lift" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#4A3B2E" flood-opacity=".22"></feDropShadow></filter>
+<filter id="liftHi" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="12" stdDeviation="8" flood-color="#4A3B2E" flood-opacity=".3"></feDropShadow></filter>
+<linearGradient id="back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDFBF7"></stop><stop offset="1" stop-color="#F3EFE7"></stop></linearGradient>
+</defs>
+<rect x="40" y="0" width="640" height="640" rx="34" fill="#F3EADB"></rect>
+<rect x="60" y="20" width="600" height="600" rx="22" fill="#F7F4EE"></rect>
+<polygon points="60,20 660,20 600,64 120,64" fill="#F1EDE4"></polygon>
+<polygon points="60,20 120,64 120,584 60,620" fill="#ECE7DC"></polygon>
+<polygon points="660,20 600,64 600,584 660,620" fill="#ECE7DC"></polygon>
+<rect x="120" y="64" width="480" height="520" fill="url(#back)"></rect>
+<rect x="300" y="28" width="120" height="22" rx="7" fill="#E6E1D6"></rect>
+<g fill="#CFC8BA"><circle cx="314" cy="35" r="1.6"></circle><circle cx="324" cy="35" r="1.6"></circle><circle cx="334" cy="35" r="1.6"></circle><circle cx="344" cy="35" r="1.6"></circle><circle cx="354" cy="35" r="1.6"></circle><circle cx="364" cy="35" r="1.6"></circle><circle cx="374" cy="35" r="1.6"></circle><circle cx="384" cy="35" r="1.6"></circle><circle cx="394" cy="35" r="1.6"></circle><circle cx="404" cy="35" r="1.6"></circle><circle cx="314" cy="43" r="1.6"></circle><circle cx="324" cy="43" r="1.6"></circle><circle cx="334" cy="43" r="1.6"></circle><circle cx="344" cy="43" r="1.6"></circle><circle cx="354" cy="43" r="1.6"></circle><circle cx="364" cy="43" r="1.6"></circle><circle cx="374" cy="43" r="1.6"></circle><circle cx="384" cy="43" r="1.6"></circle><circle cx="394" cy="43" r="1.6"></circle><circle cx="404" cy="43" r="1.6"></circle></g>
+
+<g fill="#E2DCCF">
+<rect x="66" y="128" width="46" height="7" rx="3"></rect><rect x="66" y="198" width="46" height="7" rx="3"></rect><rect x="66" y="268" width="46" height="7" rx="3"></rect><rect x="66" y="338" width="46" height="7" rx="3"></rect><rect x="66" y="408" width="46" height="7" rx="3"></rect><rect x="66" y="458" width="46" height="7" rx="3"></rect>
+<rect x="608" y="128" width="46" height="7" rx="3"></rect><rect x="608" y="198" width="46" height="7" rx="3"></rect><rect x="608" y="268" width="46" height="7" rx="3"></rect><rect x="608" y="338" width="46" height="7" rx="3"></rect><rect x="608" y="408" width="46" height="7" rx="3"></rect><rect x="608" y="458" width="46" height="7" rx="3"></rect>
+</g>
+
+<g filter="url(#lift)">
+<g><rect x="96" y="144" width="128" height="50" rx="6" fill="#E9E1D2"></rect><path d="M104,194 q12,-16 24,0 q12,-16 24,0 q12,-16 24,0 q12,-16 24,0 q12,-16 24,0" fill="#DDD3C1"></path><rect x="104" y="150" width="112" height="14" rx="3" fill="#A9C9DA"></rect><rect x="136" y="170" width="48" height="10" rx="2" fill="#FFFBF3"></rect></g>
+<g><path d="M266,196 q-6,-46 4,-72 q6,-14 18,-16 q12,2 18,16 q10,26 4,72 z" fill="#D9604A"></path><rect x="278" y="100" width="20" height="12" rx="3" fill="#FFFBF3"></rect><rect x="272" y="142" width="32" height="30" rx="6" fill="#FFF6E2"></rect><circle cx="288" cy="160" r="6" fill="#D9604A"></circle></g>
+<g><path d="M356,196 v-64 q0,-14 12,-20 l14,-6 v-12 h22 v12 l14,6 q12,6 12,20 v64 z" fill="#FAF8F2" stroke="#E2DCCF" stroke-width="2"></path><rect x="380" y="88" width="26" height="12" rx="4" fill="#A9C9DA"></rect><path d="M418,128 q10,0 10,12 v20 q0,10 -10,10" fill="none" stroke="#E2DCCF" stroke-width="5"></path><rect x="364" y="150" width="46" height="26" rx="4" fill="#A9C9DA" opacity=".7"></rect></g>
+<g><path d="M480,148 h34 l-4,46 h-26 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="2"></path><rect x="478" y="140" width="38" height="10" rx="3" fill="#E9A9A9"></rect><path d="M522,148 h34 l-4,46 h-26 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="2"></path><rect x="520" y="140" width="38" height="10" rx="3" fill="#A9C9DA"></rect></g>
+</g>
+<rect x="462" y="120" width="112" height="90" rx="16" fill="none" stroke="#5E7550" stroke-width="3"></rect>
+<circle cx="390" cy="88" r="6" fill="#E2B25C" stroke="#FFFBF3" stroke-width="2"></circle>
+
+<polygon points="120,198 600,198 650,212 70,212" fill="#FFFFFF" opacity=".7"></polygon>
+<path d="M140,199 v12 M164,199 v12 M188,199 v12 M212,199 v12 M236,199 v12 M260,199 v12 M284,199 v12 M308,199 v12 M332,199 v12 M356,199 v12 M380,199 v12 M404,199 v12 M428,199 v12 M452,199 v12 M476,199 v12 M500,199 v12 M524,199 v12 M548,199 v12 M572,199 v12" stroke="#DCD6CA" stroke-width="2"></path>
+<rect x="66" y="210" width="588" height="10" rx="5" fill="#FFFFFF" stroke="#DCD6CA" stroke-width="1.5"></rect>
+
+<g filter="url(#lift)">
+<g><rect x="104" y="296" width="64" height="42" rx="5" fill="#FBF7EE" stroke="#E6D8BC" stroke-width="1.5"></rect><rect x="104" y="308" width="64" height="10" fill="#A9C9DA"></rect></g>
+<g><rect x="204" y="304" width="84" height="34" rx="7" fill="#E3EAD9" stroke="#A9BC95" stroke-width="1.5"></rect><rect x="200" y="296" width="92" height="10" rx="4" fill="#A9BC95"></rect></g>
+</g>
+<circle cx="136" cy="276" r="6" fill="#A8533A" stroke="#FFFBF3" stroke-width="2"></circle>
+<rect x="424" y="276" width="84" height="64" rx="12" fill="#5E7550" fill-opacity=".1" stroke="#5E7550" stroke-width="2" stroke-dasharray="6 5"></rect>
+<rect x="320" y="282" width="78" height="58" rx="10" fill="none" stroke="#B99A6E" stroke-width="1.5" stroke-dasharray="3 4"></rect>
+
+<polygon points="120,338 600,338 650,352 70,352" fill="#FFFFFF" opacity=".7"></polygon>
+<path d="M140,339 v12 M164,339 v12 M188,339 v12 M212,339 v12 M236,339 v12 M260,339 v12 M284,339 v12 M308,339 v12 M332,339 v12 M356,339 v12 M380,339 v12 M404,339 v12 M428,339 v12 M452,339 v12 M476,339 v12 M500,339 v12 M524,339 v12 M548,339 v12 M572,339 v12" stroke="#DCD6CA" stroke-width="2"></path>
+<rect x="66" y="350" width="588" height="10" rx="5" fill="#FFFFFF" stroke="#DCD6CA" stroke-width="1.5"></rect>
+
+<g filter="url(#lift)">
+<g><rect x="114" y="414" width="52" height="44" rx="9" fill="#B9472F"></rect><rect x="112" y="406" width="56" height="12" rx="4" fill="#E9C077"></rect><rect x="124" y="428" width="32" height="14" rx="2" fill="#FFF6E2"></rect></g>
+<g><rect x="418" y="426" width="104" height="32" rx="4" fill="#F7E7A9"></rect><path d="M418,426 l12,-8 h104 l-12,8 z" fill="#FBF0C4"></path><rect x="438" y="436" width="64" height="10" rx="2" fill="#E9C46E"></rect></g>
+<g><rect x="548" y="410" width="46" height="50" rx="8" fill="#C0392B" opacity=".85"></rect><rect x="546" y="398" width="50" height="14" rx="4" fill="#FFFBF3" stroke="#E9A9A9" stroke-width="2"></rect><rect x="554" y="426" width="34" height="18" rx="3" fill="#FFF6E2"></rect><circle cx="571" cy="435" r="5" fill="#C0392B"></circle></g>
+</g>
+<rect x="150" y="392" width="30" height="15" rx="5" fill="#4A3B2E"></rect><text x="165" y="403" text-anchor="middle" font-size="10" font-weight="600" fill="#FFFBF3" font-family="DM Sans, sans-serif">PNG</text>
+
+<polygon points="120,458 600,458 650,472 70,472" fill="#FFFFFF" opacity=".7"></polygon>
+<path d="M140,459 v12 M164,459 v12 M188,459 v12 M212,459 v12 M236,459 v12 M260,459 v12 M284,459 v12 M308,459 v12 M332,459 v12 M356,459 v12 M380,459 v12 M404,459 v12 M428,459 v12 M452,459 v12 M476,459 v12 M500,459 v12 M524,459 v12 M548,459 v12 M572,459 v12" stroke="#DCD6CA" stroke-width="2"></path>
+<rect x="66" y="470" width="588" height="10" rx="5" fill="#FFFFFF" stroke="#DCD6CA" stroke-width="1.5"></rect>
+<rect x="60" y="452" width="600" height="34" rx="10" fill="#E2B25C" fill-opacity=".08" stroke="#C8901F" stroke-width="2.5" stroke-dasharray="8 6"></rect>
+<g>
+<rect x="16" y="446" width="36" height="46" rx="12" fill="#FFFBF3" stroke="#C8901F" stroke-width="2"></rect>
+<path d="M34,452 l-6,6 h12 z M34,486 l-6,-6 h12 z" fill="#C8901F"></path>
+<g fill="#7A6654"><circle cx="29" cy="465" r="2"></circle><circle cx="39" cy="465" r="2"></circle><circle cx="29" cy="473" r="2"></circle><circle cx="39" cy="473" r="2"></circle></g>
+</g>
+
+<g filter="url(#lift)" opacity=".95">
+<g transform="rotate(-6 180 540)"><path d="M126,560 q20,-48 70,-46 q-4,8 -14,10 q20,-2 34,8 q-24,0 -40,10 q22,2 34,14 q-34,-6 -56,8 z" fill="#F2D27A"></path><path d="M192,512 l10,-8" stroke="#6E4E33" stroke-width="4" stroke-linecap="round"></path></g>
+<g transform="rotate(-14 470 540)"><rect x="380" y="528" width="150" height="20" rx="10" fill="#F3F1E6"></rect><path d="M380,532 l-34,-16 M380,540 l-38,-2 M380,546 l-32,14" stroke="#7FA05E" stroke-width="7" stroke-linecap="round"></path><rect x="430" y="526" width="10" height="24" rx="2" fill="#C8755A"></rect></g>
+</g>
+<rect x="76" y="492" width="270" height="110" rx="16" fill="#FFFFFF" fill-opacity=".55" stroke="#DCD6CA" stroke-width="2"></rect>
+<rect x="374" y="492" width="270" height="110" rx="16" fill="#FFFFFF" fill-opacity=".55" stroke="#DCD6CA" stroke-width="2"></rect>
+<rect x="76" y="492" width="270" height="16" rx="8" fill="#FFFFFF" opacity=".8"></rect><rect x="374" y="492" width="270" height="16" rx="8" fill="#FFFFFF" opacity=".8"></rect>
+<rect x="186" y="586" width="50" height="8" rx="4" fill="#DCD6CA"></rect><rect x="484" y="586" width="50" height="8" rx="4" fill="#DCD6CA"></rect>
+
+<ellipse cx="466" cy="336" rx="36" ry="5" fill="#4A3B2E" opacity=".14"></ellipse>
+<g filter="url(#liftHi)" transform="rotate(-7 466 262)">
+<path d="M458,300 L452,262 M466,300 L468,258 M474,300 L482,262" stroke="#5E7550" stroke-width="3" stroke-linecap="round"></path>
+<ellipse cx="450" cy="250" rx="11" ry="15" fill="#6F9A58"></ellipse><ellipse cx="468" cy="240" rx="12" ry="16" fill="#8FA67A"></ellipse><ellipse cx="486" cy="252" rx="11" ry="15" fill="#6F9A58"></ellipse><ellipse cx="458" cy="268" rx="9" ry="12" fill="#A9BC95"></ellipse><ellipse cx="478" cy="270" rx="9" ry="12" fill="#8FA67A"></ellipse>
+<rect x="456" y="286" width="22" height="7" rx="2" fill="#C8755A"></rect>
+</g>
+<circle cx="500" cy="214" r="6" fill="#E2B25C" stroke="#FFFBF3" stroke-width="2"></circle>
+<path d="M498,282 l0,24 l6,-6 l5,11 l4,-2 l-5,-11 l9,0 z" fill="#4A3B2E" stroke="#FFFBF3" stroke-width="1.5" stroke-linejoin="round"></path>
+</svg>
+
+<div style="position: absolute; left: 71.5%; top: 18.5%; transform: translate(-50%, -100%); background: var(--paper); border: 2px solid var(--sage-deep); border-radius: 10px; padding: 4px 10px; font-size: 12px; white-space: nowrap; box-shadow: var(--shadow)"><span style="font-weight: 600">Greek yogurt</span> <span style="color: #3E5F66">· Opened</span></div>
+<div style="position: absolute; left: 57%; top: 41%; transform: translate(-100%, -50%); background: var(--bark); color: #FFFBF3; border-radius: 10px; padding: 5px 10px; font-size: 12px; font-weight: 500; white-space: nowrap">Thai basil → Shelf 2 · slot 4</div>
+<div role="toolbar" aria-label="Shelf 3" style="position: absolute; left: 50%; top: 76.5%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 16px; box-shadow: 0 12px 24px -12px rgba(74,59,46,.5); white-space: nowrap">
+<span style="padding: 0 8px; font-size: 13px; font-weight: 600">Shelf 3</span>
+<button type="button" aria-label="Move shelf up one notch" style="width: 36px; height: 36px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"></path></svg></button>
+<button type="button" aria-label="Move shelf down one notch" style="width: 36px; height: 36px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+<button type="button" style="height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: var(--linen); font-size: 13px; font-weight: 600; color: var(--bark); cursor: pointer">Wire ▾</button>
+<button type="button" style="height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark); cursor: pointer">Size: Roomy ▾</button>
+<button type="button" aria-label="Remove shelf" style="width: 36px; height: 36px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E3F2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 13h8l1-13M9 7V4h6v3"></path></svg></button>
+</div>
+</div>
+<p style="margin: 0; padding: 4px 18px 16px; font-size: 13px; color: var(--bark-soft)">Drag items between shelves and drawers · drag a shelf by its handle to another rail notch · items on a moved shelf go with it</p>
+</section>
+
+<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<aside aria-label="Greek yogurt details" style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<span style="flex: none; width: 64px; height: 64px; border-radius: 18px; background: #FFFFFF; border: 1.5px solid var(--oat); display: flex; align-items: center; justify-content: center">
+<svg width="44" height="44" viewBox="0 0 40 40" aria-hidden="true"><path d="M8,12 h11 l-1.5,20 h-8 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="1.5"></path><rect x="7" y="9" width="13" height="4" rx="1.5" fill="#E9A9A9"></rect><path d="M21,12 h11 l-1.5,20 h-8 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="1.5"></path><rect x="20" y="9" width="13" height="4" rx="1.5" fill="#A9C9DA"></rect></svg>
+</span>
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sage-deep)">Fridge · Shelf 1 · slot 4</p>
+<h2 style="margin: 2px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 26px; line-height: 1.1">Greek yogurt</h2>
+<p style="margin: 4px 0 0; font-size: 14px; color: var(--bark-soft)">โยเกิร์ต · 2 cups</p>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #E1ECEE; color: #3E5F66; font-size: 12px; font-weight: 600">Opened Mon</span>
+<span style="display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; background: var(--linen); color: var(--bark-soft); font-size: 12px; font-weight: 600">Best before 14 Oct</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 600">Item picture</span>
+<label style="position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 16px 14px; border-radius: 18px; border: 2px dashed #C9B79A; background: #FFFDF8; text-align: center; cursor: pointer">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"></rect><circle cx="9" cy="10" r="2"></circle><path d="M21 16l-5-5-8 9"></path></svg>
+<span style="font-size: 14px; font-weight: 600">Drop a PNG or tap to upload</span>
+<span style="font-size: 12px; color: var(--bark-soft)">PNG keeps its transparency, so no white box · scaled to fit the shelf height · up to 2 MB</span>
+<input type="file" accept="image/png" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+</label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 40px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #5E7550">Remove white background (photos and JPGs)</label>
+<label style="display: flex; align-items: center; gap: 10px; font-size: 14px; min-height: 40px"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #5E7550">Also save as the product picture in Grocy</label>
+</div>
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" style="flex: 1 1 140px; height: 46px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 0 #3F5236">Eat one</button>
+<button type="button" style="flex: 1 1 100px; height: 46px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--linen); color: var(--bark); font-size: 15px; font-weight: 600; cursor: pointer">Move to…</button>
+</div>
+</aside>
+
+<section aria-label="Shelves in this fridge" style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h3 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 18px">Shelves</h3>
+<span style="font-size: 13px; color: var(--bark-soft)">6 rail notches · 3 used</span>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{shelves}}" as="s" hint-placeholder-count="5">
+<li style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 14px; border: 1.5px solid {{s.border}}; background: {{s.bg}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="#7A6654" aria-hidden="true"><circle cx="9" cy="7" r="1.6"></circle><circle cx="15" cy="7" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="17" r="1.6"></circle><circle cx="15" cy="17" r="1.6"></circle></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 600">{{s.name}}</span><span style="font-size: 12px; color: var(--bark-soft)">{{s.meta}}</span></span>
+<span style="font-size: 12px; font-weight: 600; color: var(--bark-soft); font-variant-numeric: tabular-nums">{{s.count}}</span>
+</li>
+</sc-for>
+</ul>
+<p style="margin: 0; font-size: 12px; color: var(--bark-soft)">Types: wire, glass, half-width, drawer, door bin. Removing a shelf moves its items to "Unsorted" first.</p>
+</section>
+</div>
+</div>
+
+<section aria-label="How the fridge opens" style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 24px; padding: 16px 18px; box-shadow: var(--shadow)">
+<h3 style="margin: 0 0 12px; font-weight: 600; letter-spacing: -0.02em; font-size: 18px">How it opens</h3>
+<ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+<li style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 120px; border-radius: 16px; overflow: hidden; position: relative; background: #EFE6D3">
+<img src="storage-room.svg" alt="" style="position: absolute; left: -190px; top: -60px; width: 560px; height: 420px; max-width: none">
+<svg viewBox="0 0 800 600" aria-hidden="true" style="position: absolute; left: -190px; top: -60px; width: 560px; height: 420px"><polygon points="505,147.5 571,180.5 571,318.5 517,345.5 451,312.5 451,174.5" fill="none" stroke="#5E7550" stroke-width="5" stroke-linejoin="round"></polygon></svg>
+</div>
+<span style="font-size: 14px; font-weight: 600">1 · Tap the fridge</span>
+<span style="font-size: 13px; color: var(--bark-soft)">It lifts slightly and gets a sage outline.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 120px; border-radius: 16px; background: #EFE6D3; display: flex; align-items: center; justify-content: center">
+<svg width="120" height="110" viewBox="0 0 120 110" aria-hidden="true"><ellipse cx="60" cy="104" rx="40" ry="4" fill="#4A3B2E" opacity=".1"></ellipse><rect x="30" y="8" width="60" height="94" rx="12" fill="#F3EADB"></rect><path d="M30,36 H90" stroke="#D9CCB0" stroke-width="2"></path><rect x="80" y="18" width="4" height="12" rx="2" fill="#C9B79A"></rect><rect x="80" y="44" width="4" height="20" rx="2" fill="#C9B79A"></rect><rect x="40" y="50" width="14" height="16" fill="#FFF1C9" transform="rotate(-6 47 58)"></rect><circle cx="47" cy="50" r="2.5" fill="#C8755A"></circle></svg>
+</div>
+<span style="font-size: 14px; font-weight: 600">2 · Camera glides in</span>
+<span style="font-size: 13px; color: var(--bark-soft)">About 600 ms; the room fades behind.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 120px; border-radius: 16px; background: #EFE6D3; display: flex; align-items: center; justify-content: center">
+<svg width="140" height="110" viewBox="0 0 140 110" aria-hidden="true"><ellipse cx="66" cy="104" rx="46" ry="4" fill="#4A3B2E" opacity=".1"></ellipse><rect x="26" y="8" width="60" height="94" rx="12" fill="#F3EADB"></rect><rect x="31" y="13" width="50" height="84" rx="8" fill="#FBF7EF"></rect><path d="M31,34 H81 M31,56 H81 M31,76 H81" stroke="#DCD6CA" stroke-width="2"></path><polygon points="86,10 112,20 112,92 86,100" fill="#EFE4CF"></polygon><path d="M114,30 q8,22 0,44" stroke="#C9B79A" stroke-width="2" fill="none" stroke-dasharray="3 3"></path></svg>
+</div>
+<span style="font-size: 14px; font-weight: 600">3 · Door swings open</span>
+<span style="font-size: 13px; color: var(--bark-soft)">Soft spring on the hinge; the inside light turns on.</span>
+</li>
+<li style="display: flex; flex-direction: column; gap: 8px">
+<div style="height: 120px; border-radius: 16px; background: #EFE6D3; display: flex; align-items: center; justify-content: center">
+<svg width="140" height="110" viewBox="0 0 140 110" aria-hidden="true"><rect x="30" y="10" width="80" height="90" rx="10" fill="#F7F4EE"></rect><path d="M34,40 H106 M34,70 H106" stroke="#DCD6CA" stroke-width="3"></path><rect x="38" y="20" width="18" height="18" rx="4" fill="#FFFFFF" stroke="#E2DCCF"></rect><rect x="60" y="24" width="14" height="14" rx="3" fill="#FFFFFF" stroke="#E2DCCF"></rect><rect x="30" y="64" width="80" height="12" rx="4" fill="none" stroke="#C8901F" stroke-width="2" stroke-dasharray="4 3"></rect><rect x="14" y="62" width="12" height="16" rx="4" fill="#FFFBF3" stroke="#C8901F" stroke-width="1.5"></rect></svg>
+</div>
+<span style="font-size: 14px; font-weight: 600">4 · Arrange items &amp; shelves</span>
+<span style="font-size: 13px; color: var(--bark-soft)">Drag items to slots, move shelves along the rails, add your own PNG.</span>
+</li>
+</ol>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var rows = [
+      ['Shelf 1', 'Wire · notch 2', '4 items', false],
+      ['Shelf 2', 'Wire · notch 4', '3 items', false],
+      ['Shelf 3', 'Wire · roomy · notch 6 · editing', '3 items', true],
+      ['Crisper left', 'Drawer', '1 item', false],
+      ['Crisper right', 'Drawer', '1 item', false]
+    ];
+    return {
+      shelves: rows.map(function (r) {
+        return { name: r[0], meta: r[1], count: r[2], border: r[3] ? '#C8901F' : '#EADFC9', bg: r[3] ? '#FFF6E2' : '#FFFDF8' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

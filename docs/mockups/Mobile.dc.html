@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pantrywood Mobile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--berry:#A8533A;--frost:#A9C4C9}
+body{margin:0}
+a{color:#5E7550}a:hover{color:#3F5236}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: radial-gradient(120% 70% at 50% 25%, #FBF4E8 0%, #EFE6D3 100%); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif">
+
+<header style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 8px">
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 13px; color: var(--bark-soft); font-weight: 500">Good afternoon, Kyuri</span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 24px; line-height: 1.1">Storage room</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="Search pantry" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--paper); display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg></button>
+<button type="button" aria-label="Profile: Kyuri" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid var(--paper); background: #E9C077; box-shadow: 0 0 0 1.5px var(--oat); font-weight: 600; font-size: 18px; color: var(--bark)">K</button>
+</div>
+</header>
+
+<div style="position: relative; z-index: 2; display: flex; gap: 10px; overflow-x: auto; padding: 6px 16px 10px">
+<div style="flex: none; display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 16px; padding: 8px 12px">
+<span style="width: 30px; height: 30px; border-radius: 999px; background: #F6E6C4; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A5512" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"></path></svg></span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 20px">4</span><span style="font-size: 13px; font-weight: 500; color: var(--bark-soft)">Use soon</span>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 16px; padding: 8px 12px">
+<span style="width: 30px; height: 30px; border-radius: 999px; background: #F4E0D7; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A4F37" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18l-2 10H5z"></path><path d="M8 10l4-6 4 6"></path></svg></span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 20px">3</span><span style="font-size: 13px; font-weight: 500; color: var(--bark-soft)">Running low</span>
+</div>
+<div style="flex: none; display: flex; align-items: center; gap: 8px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 16px; padding: 8px 12px">
+<span style="width: 30px; height: 30px; border-radius: 999px; background: #E3EAD9; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4C6140" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path></svg></span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 20px">128</span><span style="font-size: 13px; font-weight: 500; color: var(--bark-soft)">In stock</span>
+</div>
+</div>
+
+<div style="position: relative; height: 250px; overflow: hidden">
+<img src="storage-room.svg" alt="Close-up of the storage room: the open home-supplies cabinet (selected) with tissue rolls, shampoo and detergent, filament spools on the wall shelf above, and the pantry shelf behind" style="position: absolute; left: -201px; top: -114px; width: 945px; height: 709px; max-width: none">
+<svg viewBox="0 0 800 600" aria-hidden="true" style="position: absolute; left: -201px; top: -114px; width: 945px; height: 709px"><polygon points="349,180.5 388,200 388,278 310,317 271,297.5 271,219.5" fill="none" stroke="#5E7550" stroke-width="3" stroke-linejoin="round"></polygon></svg>
+<div style="position: absolute; left: 246px; top: 128px; background: var(--paper); border: 2px solid var(--sage-deep); border-radius: 12px; padding: 5px 10px; font-size: 13px; box-shadow: 0 6px 16px -8px rgba(74,59,46,.4); white-space: nowrap"><span style="font-weight: 600">Home supplies</span> <span style="color: #9A4F37; font-weight: 500">· 1 low</span></div>
+</div>
+
+<section aria-label="Home supplies" style="position: absolute; left: 0; right: 0; top: 386px; bottom: 0; background: var(--paper); border-radius: 28px 28px 0 0; border-top: 1.5px solid var(--oat); box-shadow: 0 -12px 30px -16px rgba(74,59,46,.35); padding: 10px 16px 0">
+<span style="display: block; width: 44px; height: 5px; border-radius: 3px; background: var(--oat); margin: 0 auto 10px"></span>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px">
+<div>
+<h2 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 22px">Home supplies</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: var(--bark-soft)">18 items · tracked by amount, no expiry</p>
+</div>
+<button type="button" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--linen); font-size: 13px; font-weight: 600; color: var(--bark)">Add</button>
+</div>
+
+<ul style="list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<li style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; border: 1.5px solid var(--oat); background: #FFFDF8">
+<span style="flex: none; width: 38px; height: 38px; border-radius: 12px; background: var(--linen); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" aria-hidden="true"><ellipse cx="10" cy="6" rx="6" ry="2.5"></ellipse><path d="M4 6v12c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V6"></path><path d="M16 9h4v8h-4"></path></svg></span>
+<div style="flex: 1; min-width: 0"><p style="margin: 0; font-weight: 600; font-size: 15px">Tissue rolls</p><p style="margin: 0; font-size: 12px; color: var(--bark-soft)">กระดาษทิชชู่ · 2 of min 6</p></div>
+<span style="flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; background: #F4E0D7; color: #9A4F37; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18l-2 10H5z"></path><path d="M8 10l4-6 4 6"></path></svg>Running low</span>
+</li>
+<li style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; border: 1.5px solid var(--oat); background: #FFFDF8">
+<span style="flex: none; width: 38px; height: 38px; border-radius: 12px; background: var(--linen); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 8h8v11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2z"></path><path d="M10 8V5h4v3M14 5h3"></path></svg></span>
+<div style="flex: 1; min-width: 0"><p style="margin: 0; font-weight: 600; font-size: 15px">Shampoo</p><p style="margin: 0; font-size: 12px; color: var(--bark-soft)">แชมพู · 1 bottle + 1 spare</p></div>
+<span style="flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; background: #E3EAD9; color: #4C6140; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path></svg>Stocked</span>
+</li>
+<li style="display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 16px; border: 1.5px solid var(--oat); background: #FFFDF8">
+<span style="flex: none; width: 38px; height: 38px; border-radius: 12px; background: var(--linen); display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10l-1 13H8z"></path><path d="M10 7V4h4v3"></path></svg></span>
+<div style="flex: 1; min-width: 0"><p style="margin: 0; font-weight: 600; font-size: 15px">Laundry detergent</p><p style="margin: 0; font-size: 12px; color: var(--bark-soft)">น้ำยาซักผ้า · 1 jug</p></div>
+<span style="flex: none; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; background: #E3EAD9; color: #4C6140; font-size: 12px; font-weight: 600"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path></svg>Stocked</span>
+</li>
+</ul>
+<button type="button" style="margin-top: 12px; width: 100%; height: 46px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 15px; font-weight: 600; box-shadow: 0 3px 0 #3F5236">Add low items to shopping list</button>
+</section>
+
+<nav aria-label="Main" style="position: absolute; left: 12px; right: 12px; bottom: 14px; height: 68px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 26px; box-shadow: 0 14px 30px -14px rgba(74,59,46,.45); display: flex; align-items: center; justify-content: space-around; padding: 0 6px">
+<a href="#" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--sage-deep); font-size: 11px; font-weight: 600; min-width: 52px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v9H4z"></path><path d="M10 20v-5h4v5"></path></svg>Room</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--bark-soft); font-size: 11px; font-weight: 500; min-width: 52px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"></path><circle cx="4" cy="6" r="1"></circle><circle cx="4" cy="12" r="1"></circle><circle cx="4" cy="18" r="1"></circle></svg>Stock</a>
+<a href="ScanMobile.dc.html" aria-label="Scan" style="width: 62px; height: 62px; margin-top: -30px; border-radius: 999px; background: var(--terracotta); border: 4px solid var(--paper); display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 0 #9A4F37, 0 12px 22px -10px rgba(154,79,55,.8)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFBF3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M8 8v8M11 8v8M14 8v8M16.5 8v8"></path></svg></a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--bark-soft); font-size: 11px; font-weight: 500; min-width: 52px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6"></path></svg>Receipts</a>
+<a href="#" style="display: flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; color: var(--bark-soft); font-size: 11px; font-weight: 500; min-width: 52px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"></rect><path d="M6 9h12M9 5v2M9 12v4"></path></svg>Fridge door</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

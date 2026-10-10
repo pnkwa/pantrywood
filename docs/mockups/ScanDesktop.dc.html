@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Scan Station</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--shadow:0 1px 0 rgba(74,59,46,.06),0 10px 28px -8px rgba(74,59,46,.18)}
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="height: 100vh; min-height: 640px; overflow: auto; background: var(--cream); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; font-size: 16px; box-sizing: border-box; padding: 20px 24px 24px; display: flex; flex-direction: column">
+<div style="flex: 1; min-height: 0; width: 100%; max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 22px; padding: 12px 16px; box-shadow: var(--shadow)">
+<a href="Main.dc.html" aria-label="Back to the storage room" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--oat); display: flex; align-items: center; justify-content: center; color: var(--bark)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<h1 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 24px">Scan</h1>
+<div role="tablist" aria-label="What to scan" style="display: flex; gap: 4px; padding: 4px; background: var(--linen); border-radius: 999px">
+<button type="button" role="tab" aria-selected="true" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">Barcode</button>
+<a href="ReceiptReview.dc.html" role="tab" aria-selected="false" style="display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--bark-soft); text-decoration: none">Receipt</a>
+</div>
+<div role="radiogroup" aria-label="What happens after a scan" style="margin-left: auto; display: flex; gap: 4px; padding: 4px; background: var(--linen); border-radius: 999px">
+<button type="button" role="radio" aria-checked="true" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 14px; font-weight: 600; cursor: pointer">Add to stock</button>
+<button type="button" role="radio" aria-checked="false" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: transparent; font-size: 14px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Eat / use</button>
+<button type="button" role="radio" aria-checked="false" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: transparent; font-size: 14px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Check stock</button>
+</div>
+</header>
+
+<div style="flex: 1; min-height: 0; display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<section aria-label="Scanner" style="flex: 1 1 420px; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px">
+<div style="position: relative; flex: 1; min-height: 240px; border-radius: 28px; overflow: hidden; background: #3A322A">
+<svg viewBox="0 0 480 360" width="100%" height="100%" aria-hidden="true" style="position: absolute; inset: 0">
+<defs><filter id="b2"><feGaussianBlur stdDeviation="16"></feGaussianBlur></filter></defs>
+<g filter="url(#b2)" opacity=".8"><rect x="-20" y="60" width="520" height="16" fill="#E8DFCF"></rect><circle cx="240" cy="190" r="110" fill="#C9A77C"></circle><rect x="20" y="120" width="90" height="200" rx="20" fill="#8FA67A"></rect><rect x="370" y="110" width="90" height="220" rx="20" fill="#A9C4C9"></rect></g>
+<rect width="480" height="360" fill="#2B261F" opacity=".35"></rect>
+<path d="M100,110 V90 a16,16 0 0 1 16,-16 H136 M344,74 H364 a16,16 0 0 1 16,16 V110 M380,250 V270 a16,16 0 0 1 -16,16 H344 M136,286 H116 a16,16 0 0 1 -16,-16 V250" fill="none" stroke="#FFFBF3" stroke-width="5" stroke-linecap="round"></path>
+<rect x="110" y="178" width="260" height="3" rx="1.5" fill="#A9D18E" opacity=".9"></rect>
+</svg>
+<span style="position: absolute; left: 16px; top: 16px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: rgba(43,38,31,.6); color: #F3EADB; font-size: 13px">Camera</span>
+<p style="position: absolute; left: 0; right: 0; bottom: 18px; margin: 0; text-align: center; color: #F3EADB; font-size: 14px">Hold a barcode inside the frame</p>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 20px; background: #E3EAD9; color: #3F5236">
+<span style="position: relative; flex: none; width: 14px; height: 14px"><span style="position: absolute; inset: -5px; border-radius: 999px; background: #8FA67A; opacity: .3"></span><span style="position: absolute; inset: 0; border-radius: 999px; background: #5E7550"></span></span>
+<span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">USB scanner ready</span><span style="font-size: 13px">Just scan, no need to click anything first</span></span>
+</div>
+
+<label style="display: flex; align-items: center; gap: 10px; height: 50px; padding: 0 16px; border-radius: 999px; background: var(--paper); border: 1.5px solid var(--oat)">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6v12M7 6v12M10 6v12M13 6v12M17 6v12M20 6v12"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Type a barcode</span>
+<input type="text" inputmode="numeric" placeholder="Or type the barcode numbers" style="flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 15px; color: var(--bark); outline: none">
+</label>
+</section>
+
+<section aria-label="This session" style="flex: 1 1 480px; min-width: 0; min-height: 0; max-height: 100%; box-sizing: border-box; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: baseline; justify-content: space-between">
+<h2 style="margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.02em">This session</h2>
+<span style="font-size: 13px; color: var(--bark-soft)">4 added · 1 needs you</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 20px; border: 2px solid #E2B25C; background: #FFF6E2">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="flex: none; width: 48px; height: 48px; border-radius: 14px; background: var(--paper); display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#6B4A0E" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5M11 8v3M11 14h.01"></path></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 16px; font-weight: 600">New barcode</span><span style="font-size: 13px; color: var(--bark-soft); font-variant-numeric: tabular-nums">8 851234 567890 · not in Grocy yet</span></span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px">
+<button type="button" style="height: 44px; border-radius: 14px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 14px; font-weight: 600; cursor: pointer">Create product</button>
+<button type="button" style="height: 44px; border-radius: 14px; border: 1.5px solid var(--oat); background: var(--paper); color: var(--bark); font-size: 14px; font-weight: 600; cursor: pointer">Link to existing</button>
+<button type="button" style="height: 44px; border-radius: 14px; border: 1.5px solid var(--oat); background: var(--paper); color: var(--bark); font-size: 14px; font-weight: 600; cursor: pointer">Look up online</button>
+</div>
+</div>
+
+<ul style="flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<li style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 16px; border: 1.5px solid var(--oat); background: #FFFDF8">
+<span style="flex: none; width: 40px; height: 40px; border-radius: 12px; background: {{r.tint}}; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: var(--bark)">{{r.initial}}</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">{{r.name}}</span><span style="font-size: 12px; color: var(--bark-soft)">{{r.where}}</span></span>
+<span style="flex: none; font-size: 15px; font-weight: 600; color: #3F5236; font-variant-numeric: tabular-nums">{{r.qty}}</span>
+<button type="button" style="flex: none; height: 34px; padding: 0 10px; border-radius: 999px; border: 0; background: transparent; color: var(--bark-soft); font-size: 13px; font-weight: 600; cursor: pointer">Undo</button>
+</li>
+</sc-for>
+</ul>
+
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; background: var(--linen)">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2"></path><rect x="6" y="14" width="12" height="7"></rect></svg>
+<span style="flex: 1; font-size: 13px; color: var(--bark)">Market goods without a barcode? Print a Pantrywood label once, then scan it next time.</span>
+<button type="button" style="flex: none; height: 36px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--paper); font-size: 13px; font-weight: 600; color: var(--bark); cursor: pointer">Print labels</button>
+</div>
+
+<button type="button" style="height: 50px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 0 #3F5236">Done · 4 items added</button>
+</section>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      rows: [
+        { initial: 'E', name: 'Eggs', where: 'Fridge · Shelf 1 · best before 24 Oct', qty: '+10', tint: '#F3E7CF' },
+        { initial: 'S', name: 'Soy sauce', where: 'Pantry shelf · tier 2', qty: '+1', tint: '#EADFC9' },
+        { initial: 'T', name: 'Tissue rolls', where: 'Home supplies', qty: '+6', tint: '#F3EEE4' },
+        { initial: 'Y', name: 'Greek yogurt', where: 'Fridge · Shelf 1 · best before 18 Oct', qty: '+2', tint: '#E1ECEE' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

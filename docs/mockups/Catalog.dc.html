@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Item Catalog</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F6EFE2; color: #4A3B2E; font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; box-sizing: border-box; padding: 32px 24px 48px">
+<div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div>
+<p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: #5E7550">Pantrywood · Decorate mode</p>
+<h1 style="margin: 4px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 40px; line-height: 1.05">Item catalog</h1>
+<p style="margin: 8px 0 0; font-size: 15px; color: #7A6654; max-width: 640px">58 pieces in four styles. Storage furniture holds a Grocy location, so swapping its style never moves your stock.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{legend}}" as="l" hint-placeholder-count="4">
+<span style="display: inline-flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 14px; background: {{l.bg}}; color: {{l.fg}}">
+<span style="font-size: 13px; font-weight: 600">{{l.name}}</span>
+<span style="font-size: 12px; opacity: .85">{{l.desc}}</span>
+</span>
+</sc-for>
+</div>
+</div>
+
+<sc-for list="{{sections}}" as="sec" hint-placeholder-count="5">
+<section style="display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; border-bottom: 1.5px solid #EADFC9; padding-bottom: 8px">
+<h2 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 24px">{{sec.title}}</h2>
+<span style="font-size: 14px; color: #7A6654">{{sec.count}} · {{sec.desc}}</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px">
+<sc-for list="{{sec.items}}" as="it" hint-placeholder-count="6">
+<div style="display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 18px; background: #FFFBF3; border: 1.5px solid #EADFC9">
+<dc-import name="Thumb" item="{{it}}" hint-size="96px,76px"></dc-import>
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 14px; font-weight: 600; line-height: 1.2">{{it.name}}</span>
+<span style="align-self: flex-start; display: inline-flex; padding: 2px 8px; border-radius: 999px; background: {{it.chipBg}}; color: {{it.chipFg}}; font-size: 11px; font-weight: 600">{{it.style}}</span>
+<span style="font-size: 12px; color: #7A6654">{{it.detail}}</span>
+<span style="font-size: 12px; font-weight: 600; color: {{it.priceFg}}; font-variant-numeric: tabular-nums">{{it.priceLabel}}</span>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-for>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var chip = {
+      Nordic: ['#E1ECEE', '#2F4E55', 'Nordic', 'Birch, white, light oak'],
+      Natural: ['#F1E7D4', '#5E4A38', 'Natural minimal', 'Pine, steel, linen, cork'],
+      Japandi: ['#E3EAD9', '#3F5236', 'Japandi', 'Oak, rattan, washi, tatami'],
+      Retro: ['#F4E0D7', '#8A4430', 'Retro', 'Rounded, pastel, enamel']
+    };
+    function mk(list, detail) {
+      return list.map(function (r) {
+        var c = chip[r[1]];
+        var p = r[6];
+        var o = { name: r[0], style: r[1], kind: r[2], c1: r[3], c2: r[4], c3: r[5],
+          chipBg: c[0], chipFg: c[1], detail: r[7] || detail,
+          priceLabel: p === 'placed' ? 'In your room' : p === 'owned' ? 'Owned' : p + ' leaves',
+          priceFg: (p === 'placed' || p === 'owned') ? '#4C6140' : '#7A6654' };
+        if (r[2] === 'swatch') { o.bg = r[3]; }
+        return o;
+      });
+    }
+    var storage = mk([
+      ['Retro round-top fridge', 'Retro', 'tall', '#FBF4E6', '#F3EADB', '#E0D2B7', 'placed', 'Holds Fridge · 2×2'],
+      ['Retro fridge · mint', 'Retro', 'tall', '#E4EEDC', '#C9DDBE', '#B2C9A5', 120, 'Fridge · 2×2'],
+      ['Retro fridge · butter', 'Retro', 'tall', '#FBEFC9', '#F2D98F', '#E3C46E', 120, 'Fridge · 2×2'],
+      ['Slim white fridge', 'Nordic', 'tall', '#FFFFFF', '#F1F1EE', '#DCDCD6', 90, 'Fridge · 2×2'],
+      ['Oak-panel fridge', 'Japandi', 'tall', '#E9D3B0', '#D6B88A', '#C29F70', 160, 'Fridge · 2×2'],
+      ['Chest freezer · sky', 'Retro', 'low', '#E1ECEE', '#C9DCE0', '#A9C4C9', 'placed', 'Holds Freezer · 2×1'],
+      ['Walnut pantry shelf', 'Retro', 'shelf', '#C49770', '#A47551', '#6E4E33', 'placed', 'Holds Pantry shelf · 3×1, 4 tiers'],
+      ['Birch cube shelf', 'Nordic', 'shelf', '#F1E6CF', '#DCC6A0', '#C9AE84', 60, 'Shelf · 2×1, 8 cubes'],
+      ['Pine open shelf', 'Natural', 'shelf', '#EAD8B6', '#D2B98E', '#BDA276', 55, 'Shelf · 2×1, 4 tiers'],
+      ['Steel unit shelf', 'Natural', 'shelf', '#ECECE8', '#C9CAC5', '#A9AAA4', 70, 'Shelf · 2×1, 5 tiers'],
+      ['Oak ladder shelf', 'Japandi', 'ladder', '#C49770', '#8C6440', '#8C6440', 50, 'Shelf · 1×1, leans on wall'],
+      ['Butter open cabinet', 'Retro', 'mid', '#F4DFA6', '#E9C46E', '#E3BD62', 'placed', 'Holds Home supplies · 1×2'],
+      ['Rattan cabinet', 'Japandi', 'mid', '#E8D2A6', '#CFAE76', '#B8955E', 90, 'Cabinet · 1×2'],
+      ['Bamboo drawers', 'Japandi', 'mid', '#EDDBB0', '#D6BB86', '#C2A46E', 70, 'Drawers · 1×1'],
+      ['Mint rolling cart', 'Nordic', 'mid', '#DCEAE1', '#BFD6C8', '#A6C2B1', 40, 'Cart · 1×1, 3 tiers'],
+      ['Wooden crate stack', 'Natural', 'low', '#D9B183', '#C49770', '#A47551', 'placed', 'Holds Snack crates · 1×1'],
+      ['Rice barrel', 'Retro', 'round', '#B88A5F', '#8C6A4A', '#8C6A4A', 'placed', 'Holds Rice bin · 1×1'],
+      ['Ceramic rice jar', 'Japandi', 'round', '#F3EEE4', '#DED4C3', '#DED4C3', 45, 'Bin · 1×1'],
+      ['Enamel bread bin', 'Retro', 'low', '#EEF3F6', '#CFDBE4', '#B5C6D3', 35, 'Bin · 1×1'],
+      ['Wicker basket set', 'Japandi', 'basket', '#D9B183', '#B98B57', '#B98B57', 'owned', 'Basket · 1×1']
+    ]);
+    var shelf = mk([
+      ['Pastel jar set', 'Retro', 'jars', '#E9A9A9', '#A9C9DA', '#F2D27A', 'placed'],
+      ['Ceramic canisters', 'Natural', 'jars', '#EDE6DA', '#D9CFBF', '#C9BEAA', 25],
+      ['Glass spice rack', 'Nordic', 'jars', '#F1F1EE', '#C8755A', '#8FA67A', 20],
+      ['Linen storage bin', 'Natural', 'basket', '#F3EEE4', '#DED4C3', '#DED4C3', 20],
+      ['Seagrass basket', 'Japandi', 'basket', '#E3CFA0', '#C9AE76', '#C9AE76', 25],
+      ['Enamel canister', 'Retro', 'round', '#F7F4EE', '#E9A9A9', '#E9A9A9', 30],
+      ['Trailing pothos', 'Japandi', 'plant', '#8FA67A', '#C8755A', '#A9BC95', 15],
+      ['Mini cactus pot', 'Nordic', 'plant', '#A9BC95', '#F1F1EE', '#8FA67A', 12],
+      ['Filament spool set', 'Natural', 'round', '#8FA67A', '#5E7550', '#5E7550', 'placed']
+    ], 'Shelf item · 1 slot');
+    var wall = mk([
+      ['Cream plaster', 'Natural', 'swatch', '#F3EADB', '', '', 'placed'],
+      ['White shiplap', 'Nordic', 'swatch', 'repeating-linear-gradient(0deg,#FAFAF7 0 9px,#E3E1D8 9px 10px)', '', '', 30],
+      ['Washi grid', 'Japandi', 'swatch', 'linear-gradient(#E3D8C2 1px,transparent 1px) 0 0/12px 12px, linear-gradient(90deg,#E3D8C2 1px,#FBF7EE 1px) 0 0/12px 12px', '', '', 40],
+      ['Sage limewash', 'Japandi', 'swatch', 'linear-gradient(135deg,#CBD5BA,#B3C09F)', '', '', 35],
+      ['Daisy dots', 'Retro', 'swatch', 'radial-gradient(circle,#E2B25C 1.6px,transparent 2px) 0 0/16px 16px, radial-gradient(circle,#FFFFFF 4px,transparent 4.5px) 0 0/16px 16px, #F4E0D7', '', '', 45],
+      ['Blue gingham', 'Retro', 'swatch', 'repeating-linear-gradient(0deg,rgba(143,179,204,.45) 0 6px,transparent 6px 12px), repeating-linear-gradient(90deg,rgba(143,179,204,.45) 0 6px,#FFFBF3 6px 12px)', '', '', 45],
+      ['Square tile wainscot', 'Nordic', 'swatch', 'linear-gradient(#DCE3DD 1px,transparent 1px) 0 0/10px 10px, linear-gradient(90deg,#DCE3DD 1px,#F5F6F0 1px) 0 0/10px 10px', '', '', 'placed']
+    ], 'Wallpaper · whole wall');
+    var floor = mk([
+      ['Cream & blue checker', 'Retro', 'swatch', 'conic-gradient(#D3E2E6 25%,#F3E7CF 0 50%,#D3E2E6 0 75%,#F3E7CF 0) 0 0/18px 18px', '', '', 'placed'],
+      ['Light oak planks', 'Nordic', 'swatch', 'repeating-linear-gradient(90deg,#E6CFA6 0 16px,#D8BE90 16px 17px)', '', '', 40],
+      ['Tatami', 'Japandi', 'swatch', 'repeating-linear-gradient(90deg,#DCD5A4 0 2px,#CFC58E 2px 4px)', '', '', 50],
+      ['Cork', 'Natural', 'swatch', 'radial-gradient(#B48E5E 1px,transparent 1.5px) 0 0/6px 6px, #D9B68A', '', '', 35],
+      ['Terracotta tile', 'Retro', 'swatch', 'linear-gradient(#B05E45 1px,transparent 1px) 0 0/16px 16px, linear-gradient(90deg,#B05E45 1px,#C8755A 1px) 0 0/16px 16px', '', '', 45],
+      ['Walnut herringbone', 'Japandi', 'swatch', 'repeating-linear-gradient(45deg,#8C6440 0 8px,#7A5638 8px 16px)', '', '', 60]
+    ], 'Floor · whole room');
+    var decor = mk([
+      ['Butter & blush rug', 'Retro', 'rug', '#F2D9A0', '#EDC9C2', '', 'placed', 'Rug · 3×3'],
+      ['Jute round rug', 'Japandi', 'rug', '#D9C29A', '#C9AE84', '', 35, 'Rug · 3×3'],
+      ['Striped cotton rug', 'Nordic', 'rug', '#E1ECEE', '#FFFBF3', '', 30, 'Rug · 2×3'],
+      ['Paper lantern', 'Japandi', 'lamp', '#FBF7EE', '#E3D8C2', '#4A3B2E', 30, 'Ceiling light'],
+      ['Mushroom lamp', 'Retro', 'lamp', '#E9C077', '#F3EADB', '#C8755A', 35, 'Shelf lamp'],
+      ['Red-rim wall clock', 'Retro', 'clock', '#D9604A', '#FFFBF3', '', 'placed', 'Wall decor'],
+      ['Oak wall clock', 'Natural', 'clock', '#C49770', '#FBF7EE', '', 25, 'Wall decor'],
+      ['Sleepy cat bed', 'Retro', 'rug', '#C8755A', '#F3E3C3', '', 'owned', 'Floor decor · comes with cat']
+    ]);
+    var board = mk([
+      ['Oat pegboard', 'Nordic', 'swatch', 'radial-gradient(#C2A87D 2px,transparent 2.5px) 0 0/11px 11px, #EAD7B2', '', '', 'placed', 'Board · wall 3×3'],
+      ['Sage pegboard', 'Japandi', 'swatch', 'radial-gradient(#7E9A68 2px,transparent 2.5px) 0 0/11px 11px, #C9D6B8', '', '', 40, 'Board · wall 3×3'],
+      ['White pegboard', 'Natural', 'swatch', 'radial-gradient(#D6D0C4 2px,transparent 2.5px) 0 0/11px 11px, #FAF8F3', '', '', 35, 'Board · wall 3×3'],
+      ['Walnut pegboard', 'Retro', 'swatch', 'radial-gradient(#5E4430 2px,transparent 2.5px) 0 0/11px 11px, #8C6440', '', '', 50, 'Board · wall 3×3'],
+      ['Mini wood shelf', 'Natural', 'low', '#D9B183', '#C49770', '#A47551', 'placed', 'Board accessory'],
+      ['Wire basket', 'Nordic', 'basket', '#ECECE8', '#C9CAC5', '', 30, 'Board accessory'],
+      ['Pen cup', 'Retro', 'round', '#C9DDE6', '#A9C9DA', '', 'placed', 'Board accessory'],
+      ['String lights', 'Retro', 'lamp', '#F2D27A', '#E9A9A9', '#6E4E33', 'placed', 'Board accessory']
+    ]);
+    var legend =['Nordic', 'Natural', 'Japandi', 'Retro'].map(function (s) {
+      return { name: chip[s][2], desc: chip[s][3], bg: chip[s][0], fg: chip[s][1] };
+    });
+    return {
+      legend: legend,
+      sections: [
+        { title: 'Storage furniture', count: storage.length + ' items', desc: 'holds a Grocy location', items: storage },
+        { title: 'Shelf items', count: shelf.length + ' items', desc: 'decorate inside shelves and cabinets', items: shelf },
+        { title: 'Wallpaper', count: wall.length + ' items', desc: 'both walls or one wall', items: wall },
+        { title: 'Floor', count: floor.length + ' items', desc: 'whole room', items: floor },
+        { title: 'Decor', count: decor.length + ' items', desc: 'rugs, lights, wall pieces, pets', items: decor },
+        { title: 'Pegboard', count: board.length + ' items', desc: 'boards and accessories for slips and notes', items: board }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

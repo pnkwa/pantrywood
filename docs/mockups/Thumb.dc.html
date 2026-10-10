@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Item thumbnail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 96px; height: 76px; border-radius: 14px; background: #F6EFE2; display: flex; align-items: center; justify-content: center; overflow: hidden">
+<sc-if value="{{isSwatch}}" hint-placeholder-val="{{false}}">
+<div style="width: 66px; height: 54px; border-radius: 10px; border: 1.5px solid #EADFC9; background: {{it.bg}}"></div>
+</sc-if>
+<sc-if value="{{notSwatch}}" hint-placeholder-val="{{true}}">
+<svg width="80" height="64" viewBox="0 0 80 64" aria-hidden="true">
+<ellipse cx="40" cy="58" rx="24" ry="4" fill="#4A3B2E" opacity=".1"></ellipse>
+<sc-if value="{{isTall}}" hint-placeholder-val="{{false}}">
+<g><polygon points="40,6 58,15 40,24 22,15" fill="{{it.c1}}"></polygon><polygon points="22,15 40,24 40,58 22,49" fill="{{it.c2}}"></polygon><polygon points="40,24 58,15 58,49 40,58" fill="{{it.c3}}"></polygon><path d="M22,26 L40,35 M36,38 V48" stroke="#4A3B2E" stroke-opacity=".25" stroke-width="1.5" stroke-linecap="round"></path></g>
+</sc-if>
+<sc-if value="{{isMid}}" hint-placeholder-val="{{false}}">
+<g><polygon points="40,14 62,25 40,36 18,25" fill="{{it.c1}}"></polygon><polygon points="18,25 40,36 40,56 18,45" fill="{{it.c2}}"></polygon><polygon points="40,36 62,25 62,45 40,56" fill="{{it.c3}}"></polygon><path d="M18,35 L40,46" stroke="#4A3B2E" stroke-opacity=".2" stroke-width="1.5"></path><circle cx="31" cy="38" r="1.5" fill="#4A3B2E" opacity=".35"></circle><circle cx="31" cy="48" r="1.5" fill="#4A3B2E" opacity=".35"></circle></g>
+</sc-if>
+<sc-if value="{{isLow}}" hint-placeholder-val="{{false}}">
+<g><polygon points="36,20 66,35 44,46 14,31" fill="{{it.c1}}"></polygon><polygon points="14,31 44,46 44,58 14,43" fill="{{it.c2}}"></polygon><polygon points="44,46 66,35 66,47 44,58" fill="{{it.c3}}"></polygon><path d="M22,38 L36,45" stroke="#4A3B2E" stroke-opacity=".3" stroke-width="2" stroke-linecap="round"></path></g>
+</sc-if>
+<sc-if value="{{isShelf}}" hint-placeholder-val="{{false}}">
+<g><polygon points="40,8 62,19 40,30 18,19" fill="{{it.c1}}"></polygon><polygon points="18,19 40,30 40,58 18,47" fill="{{it.c3}}"></polygon><polygon points="40,30 62,19 62,47 40,58" fill="{{it.c2}}"></polygon><path d="M18,28 L40,39 M18,37 L40,48" stroke="{{it.c1}}" stroke-width="2.5"></path><path d="M18,19 V47 M40,30 V58" stroke="{{it.c2}}" stroke-width="2.5"></path><rect x="22" y="25" width="4" height="6" rx="1" fill="#E9A9A9"></rect><rect x="28" y="28" width="4" height="6" rx="1" fill="#A9C9DA"></rect><rect x="24" y="35" width="5" height="5" rx="1" fill="#F2D27A"></rect></g>
+</sc-if>
+<sc-if value="{{isLadder}}" hint-placeholder-val="{{false}}">
+<g><path d="M28,8 L20,58 M48,8 L56,58" stroke="{{it.c2}}" stroke-width="3" stroke-linecap="round"></path><path d="M27,18 H49 M25,31 H51 M22,45 H54" stroke="{{it.c1}}" stroke-width="4" stroke-linecap="round"></path><rect x="30" y="11" width="5" height="6" rx="1" fill="#8FA67A"></rect><rect x="38" y="24" width="6" height="6" rx="1" fill="#C8755A"></rect><rect x="28" y="38" width="8" height="6" rx="1" fill="#EDE6DA"></rect></g>
+</sc-if>
+<sc-if value="{{isRound}}" hint-placeholder-val="{{false}}">
+<g><ellipse cx="40" cy="50" rx="16" ry="6" fill="{{it.c2}}"></ellipse><rect x="24" y="20" width="32" height="30" fill="{{it.c2}}"></rect><ellipse cx="40" cy="20" rx="16" ry="6" fill="{{it.c1}}"></ellipse><rect x="30" y="30" width="20" height="10" rx="2" fill="#FFFBF3" opacity=".85"></rect></g>
+</sc-if>
+<sc-if value="{{isBasket}}" hint-placeholder-val="{{false}}">
+<g><path d="M18,30 H62 L57,54 H23 Z" fill="{{it.c2}}"></path><ellipse cx="40" cy="30" rx="22" ry="5" fill="{{it.c1}}"></ellipse><path d="M21,38 H59 M22,46 H58" stroke="#4A3B2E" stroke-opacity=".2" stroke-width="1.5"></path><path d="M24,30 Q40,10 56,30" stroke="{{it.c2}}" stroke-width="2.5" fill="none"></path></g>
+</sc-if>
+<sc-if value="{{isPlant}}" hint-placeholder-val="{{false}}">
+<g><circle cx="33" cy="24" r="9" fill="{{it.c1}}"></circle><circle cx="46" cy="20" r="10" fill="{{it.c3}}"></circle><circle cx="41" cy="31" r="8" fill="{{it.c1}}"></circle><path d="M28,36 C24,44 26,50 22,54" stroke="{{it.c1}}" stroke-width="2.5" fill="none" stroke-linecap="round"></path><path d="M30,36 H52 L49,56 H33 Z" fill="{{it.c2}}"></path></g>
+</sc-if>
+<sc-if value="{{isLamp}}" hint-placeholder-val="{{false}}">
+<g><path d="M40,2 V14" stroke="{{it.c3}}" stroke-width="1.5"></path><ellipse cx="40" cy="30" rx="17" ry="16" fill="{{it.c1}}"></ellipse><path d="M24,26 Q40,30 56,26 M25,34 Q40,38 55,34" stroke="{{it.c2}}" stroke-width="1.5" fill="none"></path><ellipse cx="40" cy="47" rx="5" ry="2" fill="{{it.c3}}"></ellipse></g>
+</sc-if>
+<sc-if value="{{isRug}}" hint-placeholder-val="{{false}}">
+<g><ellipse cx="40" cy="40" rx="32" ry="16" fill="{{it.c1}}"></ellipse><ellipse cx="40" cy="40" rx="25" ry="12" fill="none" stroke="#FFFBF3" stroke-width="1.5" stroke-dasharray="3 3"></ellipse><ellipse cx="40" cy="40" rx="16" ry="8" fill="{{it.c2}}"></ellipse></g>
+</sc-if>
+<sc-if value="{{isJars}}" hint-placeholder-val="{{false}}">
+<g><path d="M10,52 H70" stroke="#C49770" stroke-width="4" stroke-linecap="round"></path><rect x="15" y="28" width="14" height="22" rx="4" fill="#FBF4E6" stroke="#E6D8BC"></rect><rect x="14" y="24" width="16" height="6" rx="2" fill="{{it.c1}}"></rect><rect x="33" y="22" width="14" height="28" rx="4" fill="#FBF4E6" stroke="#E6D8BC"></rect><rect x="32" y="18" width="16" height="6" rx="2" fill="{{it.c2}}"></rect><rect x="51" y="32" width="14" height="18" rx="4" fill="#FBF4E6" stroke="#E6D8BC"></rect><rect x="50" y="28" width="16" height="6" rx="2" fill="{{it.c3}}"></rect></g>
+</sc-if>
+<sc-if value="{{isClock}}" hint-placeholder-val="{{false}}">
+<g><circle cx="40" cy="32" r="20" fill="{{it.c2}}" stroke="{{it.c1}}" stroke-width="5"></circle><path d="M40,32 V20 M40,32 H50" stroke="#4A3B2E" stroke-width="2.5" stroke-linecap="round"></path><circle cx="40" cy="32" r="2" fill="#4A3B2E"></circle></g>
+</sc-if>
+</svg>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"item":{"editor":null},"$preview":{"width":96,"height":76}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var it = this.props.item || { kind: 'tall', c1: '#FBF4E6', c2: '#F3EADB', c3: '#E0D2B7', bg: '#F3EADB' };
+    var k = it.kind;
+    return {
+      it: it,
+      isSwatch: k === 'swatch', notSwatch: k !== 'swatch',
+      isTall: k === 'tall', isMid: k === 'mid', isLow: k === 'low', isShelf: k === 'shelf',
+      isLadder: k === 'ladder', isRound: k === 'round', isBasket: k === 'basket', isPlant: k === 'plant',
+      isLamp: k === 'lamp', isRug: k === 'rug', isJars: k === 'jars', isClock: k === 'clock'
+    };
+  }
+}
+</script>
+</body>
+</html>

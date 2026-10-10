@@ -1,0 +1,4 @@
+{
+  "extends": "@pantrywood/config/tsconfig/base.json",
+  "include": ["src"]
+}

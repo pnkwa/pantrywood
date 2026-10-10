@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pegboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--shadow:0 1px 0 rgba(74,59,46,.06),0 10px 28px -8px rgba(74,59,46,.18)}
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+button,textarea,select{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: var(--cream); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; font-size: 16px; box-sizing: border-box; padding: 20px 24px 32px">
+<div style="max-width: 1392px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 22px; padding: 12px 16px; box-shadow: var(--shadow)">
+<a href="Main.dc.html" aria-label="Back to the storage room" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid var(--oat); display: flex; align-items: center; justify-content: center; color: var(--bark)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<div style="display: flex; flex-direction: column; line-height: 1.15">
+<span style="font-size: 13px; color: var(--bark-soft)"><a href="Main.dc.html" style="color: inherit">Storage room</a> / Pegboard</span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 24px">Pegboard</span>
+</div>
+<div role="group" aria-label="Mode" style="margin-left: auto; display: flex; gap: 4px; padding: 4px; background: var(--linen); border-radius: 999px">
+<button type="button" aria-pressed="false" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: transparent; font-weight: 500; font-size: 14px; color: var(--bark-soft); cursor: pointer">View</button>
+<button type="button" aria-pressed="true" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-weight: 600; font-size: 14px; color: var(--bark); cursor: pointer">Edit board</button>
+</div>
+</header>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section aria-label="Pegboard" style="flex: 999 1 600px; min-width: 0; position: relative; border-radius: 28px; border: 1.5px solid var(--oat); overflow: hidden; background: #F7EFE1; box-shadow: var(--shadow)">
+<div style="position: relative; height: calc(100vh - 190px); min-height: 440px; max-height: 820px; aspect-ratio: 760 / 560; max-width: calc(100% - 32px); margin: 24px auto 8px">
+<svg viewBox="0 0 760 560" width="100%" height="100%" role="img" aria-label="Oat-colored pegboard with string lights. Pinned: a Big C receipt marked as added to stock, a Maker Shop receipt with washi tape, a selected yellow note that says buy tissue and rice before Sunday, a pink note about a basil dinner linked to Thai basil, a small wooden shelf with a plant, pen cup and clip jar, a polaroid of the new fridge, a restock checklist, a tote bag on a hook and two stickers." style="display: block">
+<defs>
+<pattern id="holes" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="#EAD7B2"></rect><circle cx="12" cy="12" r="3" fill="#C2A87D"></circle></pattern>
+<filter id="paper" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#4A3B2E" flood-opacity=".22"></feDropShadow></filter>
+</defs>
+<rect x="40" y="30" width="680" height="500" rx="16" fill="url(#holes)" stroke="#A47551" stroke-width="10"></rect>
+
+<path d="M60,58 Q140,86 220,58 T380,58 T540,58 T700,58" fill="none" stroke="#6E4E33" stroke-width="2"></path>
+<g><circle cx="100" cy="70" r="6" fill="#F2D27A"></circle><circle cx="180" cy="72" r="6" fill="#E9A9A9"></circle><circle cx="260" cy="70" r="6" fill="#F2D27A"></circle><circle cx="340" cy="72" r="6" fill="#A9C9DA"></circle><circle cx="420" cy="70" r="6" fill="#F2D27A"></circle><circle cx="500" cy="72" r="6" fill="#E9A9A9"></circle><circle cx="580" cy="70" r="6" fill="#F2D27A"></circle><circle cx="660" cy="72" r="6" fill="#A9C9DA"></circle></g>
+
+<g filter="url(#paper)" transform="rotate(-2 150 230)">
+<path d="M80,96 H220 V356 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 Z" fill="#FFFFFF"></path>
+<g font-family="DM Sans, IBM Plex Sans Thai, sans-serif" fill="#4A3B2E" font-size="11">
+<text x="150" y="124" text-anchor="middle" font-size="14" font-weight="600">BIG C</text>
+<text x="150" y="140" text-anchor="middle" fill="#7A6654" font-size="10">08/10/2569 · 17:42</text>
+<text x="92" y="164">นมสด 1L</text><text x="208" y="164" text-anchor="end">52.00</text>
+<text x="92" y="182">ทิชชู่ 6 ม้วน</text><text x="208" y="182" text-anchor="end">89.00</text>
+<text x="92" y="200">โหระพา</text><text x="208" y="200" text-anchor="end">15.00</text>
+<text x="92" y="218">แชมพู</text><text x="208" y="218" text-anchor="end">129.00</text>
+<text x="92" y="236">ข้าวหอมมะลิ 5kg</text><text x="208" y="236" text-anchor="end">189.00</text>
+<path d="M92,248 H208" stroke="#C9B79A" stroke-dasharray="3 3"></path>
+<text x="92" y="266" font-weight="600">รวม</text><text x="208" y="266" text-anchor="end" font-weight="600">474.00</text>
+</g>
+<path d="M104,290 v24 M108,290 v24 M113,290 v24 M116,290 v24 M121,290 v24 M127,290 v24 M130,290 v24 M136,290 v24 M140,290 v24 M146,290 v24 M149,290 v24 M155,290 v24 M160,290 v24 M163,290 v24 M169,290 v24 M174,290 v24 M178,290 v24 M184,290 v24 M188,290 v24 M194,290 v24" stroke="#4A3B2E" stroke-width="2"></path>
+<g transform="rotate(-10 150 336)"><rect x="112" y="324" width="78" height="24" rx="6" fill="none" stroke="#5E7550" stroke-width="2"></rect><text x="151" y="341" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" font-weight="600" fill="#5E7550" letter-spacing="1">ADDED · 6</text></g>
+</g>
+<rect x="130" y="84" width="40" height="18" rx="4" fill="#4A3B2E"></rect><path d="M136,84 q14,-18 28,0" fill="none" stroke="#A9AAA4" stroke-width="2.5"></path>
+
+<g filter="url(#paper)" transform="rotate(3 305 205)">
+<path d="M248,112 H362 V292 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 l-5,8 l-5,-8 Z" fill="#FFFDF6"></path>
+<g font-family="DM Sans, sans-serif" fill="#4A3B2E" font-size="11">
+<text x="305" y="140" text-anchor="middle" font-size="13" font-weight="600">Maker Shop</text>
+<text x="305" y="155" text-anchor="middle" fill="#7A6654" font-size="10">05/10/2569</text>
+<text x="258" y="180">PLA sage 1kg</text><text x="352" y="180" text-anchor="end">390</text>
+<text x="258" y="198">PLA cream 1kg</text><text x="352" y="198" text-anchor="end">390</text>
+<path d="M258,210 H352" stroke="#C9B79A" stroke-dasharray="3 3"></path>
+<text x="258" y="228" font-weight="600">Total</text><text x="352" y="228" text-anchor="end" font-weight="600">780</text>
+</g>
+<rect x="276" y="104" width="58" height="18" fill="#8FA67A" opacity=".8" transform="rotate(-4 305 113)"></rect>
+</g>
+
+<g filter="url(#paper)" transform="rotate(-2 470 165)">
+<rect x="396" y="92" width="150" height="146" rx="3" fill="#FFF1C9"></rect>
+<path d="M546,214 v24 h-24 z" fill="#F2DFA6"></path>
+<g font-family="DM Sans, sans-serif" fill="#4A3B2E" font-size="17" font-weight="500"><text x="412" y="140">Buy tissue</text><text x="412" y="164">+ rice before</text><text x="412" y="188">Sunday</text></g>
+<g><rect x="412" y="204" width="64" height="20" rx="10" fill="#E3EAD9"></rect><text x="444" y="218" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" font-weight="600" fill="#3F5236">2 items</text></g>
+</g>
+<circle cx="470" cy="94" r="9" fill="#D9604A"></circle><circle cx="467" cy="91" r="3" fill="#F09A80"></circle>
+<rect x="386" y="80" width="172" height="170" rx="10" fill="none" stroke="#5E7550" stroke-width="3" transform="rotate(-2 470 165)"></rect>
+<rect x="548" y="236" width="14" height="14" rx="3" fill="#FFFBF3" stroke="#5E7550" stroke-width="2.5" transform="rotate(-2 470 165)"></rect>
+
+<g filter="url(#paper)" transform="rotate(3 630 160)">
+<rect x="568" y="102" width="124" height="116" rx="3" fill="#FBE3DC"></rect>
+<g font-family="DM Sans, sans-serif" fill="#4A3B2E" font-size="15" font-weight="500"><text x="582" y="140">Basil dinner</text><text x="582" y="162">Thursday</text></g>
+<g><rect x="582" y="180" width="82" height="20" rx="10" fill="#E3EAD9"></rect><path d="M592,195 c0,-6 3,-9 8,-9 0,5 -3,9 -8,9z" fill="#5E7550"></path><text x="630" y="194" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="10" font-weight="600" fill="#3F5236">Thai basil</text></g>
+</g>
+<rect x="619" y="94" width="26" height="14" rx="2" fill="#A9C9DA" opacity=".85" transform="rotate(8 632 101)"></rect>
+
+<rect x="410" y="300" width="290" height="12" rx="3" fill="#A47551"></rect>
+<path d="M430,312 l0,22 l22,-22 z M680,312 l0,22 l-22,-22 z" fill="#8C6440"></path>
+<path d="M432,300 h38 l-5,-32 h-28 z" fill="#C8755A"></path><circle cx="440" cy="256" r="16" fill="#8FA67A"></circle><circle cx="460" cy="250" r="14" fill="#A9BC95"></circle><circle cx="452" cy="240" r="11" fill="#8FA67A"></circle>
+<rect x="520" y="262" width="34" height="38" rx="6" fill="#A9C9DA"></rect><path d="M528,262 l-6,-26 M538,262 l2,-30 M546,262 l8,-24" stroke="#4A3B2E" stroke-width="3" stroke-linecap="round"></path><circle cx="522" cy="236" r="3" fill="#E9A9A9"></circle>
+<rect x="596" y="270" width="36" height="30" rx="8" fill="#F7F4EE" stroke="#E2DCCF" stroke-width="2"></rect><rect x="592" y="264" width="44" height="9" rx="3" fill="#E2B25C"></rect><rect x="604" y="282" width="8" height="10" rx="2" fill="#C8755A"></rect><rect x="616" y="284" width="8" height="10" rx="2" fill="#8FA67A"></rect>
+
+<g filter="url(#paper)" transform="rotate(4 305 405)">
+<rect x="248" y="330" width="116" height="140" rx="3" fill="#FFFFFF"></rect>
+<rect x="258" y="340" width="96" height="96" fill="#EFE6D3"></rect>
+<rect x="286" y="352" width="40" height="74" rx="10" fill="#F3EADB" stroke="#E0D2B7" stroke-width="2"></rect><path d="M286,376 h40" stroke="#D9CCB0" stroke-width="2"></path><rect x="318" y="384" width="3" height="14" rx="1.5" fill="#C9B79A"></rect>
+<text x="306" y="458" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" fill="#7A6654">new fridge!</text>
+</g>
+<circle cx="306" cy="332" r="7" fill="#5E7550"></circle>
+
+<g filter="url(#paper)" transform="rotate(-1.5 485 420)">
+<rect x="410" y="346" width="150" height="150" rx="3" fill="#FFFDF8"></rect>
+<path d="M410,392 H560 M410,418 H560 M410,444 H560 M410,470 H560" stroke="#D3E2E6" stroke-width="1.5"></path>
+<text x="424" y="374" font-family="DM Sans, sans-serif" font-size="15" font-weight="600" fill="#4A3B2E">Restock</text>
+<g font-family="DM Sans, sans-serif" font-size="13" fill="#4A3B2E">
+<rect x="424" y="400" width="12" height="12" rx="3" fill="none" stroke="#7A6654" stroke-width="1.5"></rect><text x="444" y="411">dish soap</text>
+<rect x="424" y="426" width="12" height="12" rx="3" fill="#5E7550"></rect><path d="M426,432 l3,3 5,-6" stroke="#FFFBF3" stroke-width="2" fill="none"></path><text x="444" y="437" fill="#7A6654" text-decoration="line-through">eggs</text>
+<rect x="424" y="452" width="12" height="12" rx="3" fill="none" stroke="#7A6654" stroke-width="1.5"></rect><text x="444" y="463">sage PLA</text>
+</g>
+</g>
+<rect x="468" y="338" width="32" height="12" rx="2" fill="#E9A9A9" opacity=".8"></rect>
+
+<path d="M640,330 v-10 q0,-8 8,-8 h4" stroke="#7A6654" stroke-width="4" fill="none" stroke-linecap="round"></path>
+<g filter="url(#paper)">
+<path d="M614,372 h70 l-6,108 h-58 z" fill="#A9BC95"></path>
+<path d="M630,372 q0,-40 20,-40 q20,0 20,40" fill="none" stroke="#7E9A68" stroke-width="5"></path>
+<path d="M620,384 h58" stroke="#FFFBF3" stroke-width="1.5" stroke-dasharray="3 3"></path>
+<circle cx="649" cy="430" r="12" fill="#FFFBF3" opacity=".9"></circle><path d="M643,430 c0,-6 3,-9 8,-9 0,5 -3,9 -8,9z" fill="#5E7550"></path>
+</g>
+
+<g transform="translate(212 492)"><g fill="#FFFFFF" stroke="#EADFC9" stroke-width="1"><ellipse cx="0" cy="-11" rx="6" ry="9"></ellipse><ellipse cx="0" cy="11" rx="6" ry="9"></ellipse><ellipse cx="-11" cy="0" rx="9" ry="6"></ellipse><ellipse cx="11" cy="0" rx="9" ry="6"></ellipse></g><circle r="7" fill="#E2B25C"></circle></g>
+<g transform="translate(386 498) rotate(-8)"><path d="M0,-14 c10,0 16,6 14,14 c-2,10 -10,16 -14,16 s-12,-6 -14,-16 c-2,-8 4,-14 14,-14z" fill="#D9604A" stroke="#FFFFFF" stroke-width="3"></path><path d="M-8,-15 l8,5 8,-5 -3,5 h-10 z" fill="#8FA67A"></path></g>
+</svg>
+
+<div role="toolbar" aria-label="Selected note" style="position: absolute; left: 61.5%; top: 11.5%; transform: translate(-50%, -100%); display: flex; align-items: center; gap: 4px; padding: 6px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 16px; box-shadow: 0 12px 24px -12px rgba(74,59,46,.5); white-space: nowrap">
+<button type="button" style="height: 34px; padding: 0 10px; border-radius: 10px; border: 0; background: var(--linen); font-size: 13px; font-weight: 600; color: var(--bark); cursor: pointer">Edit text</button>
+<button type="button" aria-label="Note color: butter" style="width: 34px; height: 34px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><span style="width: 18px; height: 18px; border-radius: 6px; background: #FFF1C9; border: 1.5px solid #E2B25C"></span></button>
+<button type="button" style="height: 34px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark); cursor: pointer">Magnet ▾</button>
+<button type="button" aria-label="Bring to front" style="width: 34px; height: 34px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="#F1E7D4"></rect><path d="M4 16V6a2 2 0 0 1 2-2h10"></path></svg></button>
+<button type="button" aria-label="Delete note" style="width: 34px; height: 34px; border-radius: 10px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8E3F2A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h14M10 11v6M14 11v6M7 7l1 13h8l1-13M9 7V4h6v3"></path></svg></button>
+</div>
+</div>
+<p style="margin: 0; padding: 4px 18px 16px; font-size: 13px; color: var(--bark-soft)">Drag anything onto the pegs · notes, slips and photos snap to the hole grid · tap a slip to see what it added to stock</p>
+</section>
+
+<div style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<section aria-label="Edit note" style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 22px">Note</h2>
+<label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600">Text
+<textarea rows="3" style="resize: vertical; padding: 10px 12px; border-radius: 14px; border: 1.5px solid var(--oat); background: #FFF1C9; font-size: 15px; font-weight: 400; color: var(--bark)">Buy tissue + rice before Sunday</textarea>
+</label>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 14px; font-weight: 600">Paper</span>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="Butter, selected" aria-pressed="true" style="width: 44px; height: 44px; border-radius: 12px; background: #FFF1C9; border: 2.5px solid #5E7550; cursor: pointer"></button>
+<button type="button" aria-label="Blush" aria-pressed="false" style="width: 44px; height: 44px; border-radius: 12px; background: #FBE3DC; border: 1.5px solid var(--oat); cursor: pointer"></button>
+<button type="button" aria-label="Mint" aria-pressed="false" style="width: 44px; height: 44px; border-radius: 12px; background: #E6EFDB; border: 1.5px solid var(--oat); cursor: pointer"></button>
+<button type="button" aria-label="Sky" aria-pressed="false" style="width: 44px; height: 44px; border-radius: 12px; background: #E3EEF0; border: 1.5px solid var(--oat); cursor: pointer"></button>
+<button type="button" aria-label="Lined white" aria-pressed="false" style="width: 44px; height: 44px; border-radius: 12px; background: repeating-linear-gradient(180deg, #FFFDF8 0 9px, #D3E2E6 9px 10px); border: 1.5px solid var(--oat); cursor: pointer"></button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 14px; font-weight: 600">Hold it with</span>
+<div role="group" aria-label="Pin style" style="display: flex; gap: 4px; padding: 4px; background: var(--linen); border-radius: 14px">
+<button type="button" aria-pressed="true" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-size: 13px; font-weight: 600; color: var(--bark); cursor: pointer">Magnet</button>
+<button type="button" aria-pressed="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Push pin</button>
+<button type="button" aria-pressed="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Washi tape</button>
+<button type="button" aria-pressed="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Clip</button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-size: 14px; font-weight: 600">Linked items</span>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px 0 12px; border-radius: 999px; background: #E3EAD9; color: #3F5236; font-size: 13px; font-weight: 600">Tissue rolls<button type="button" aria-label="Unlink tissue rolls" style="width: 24px; height: 24px; border-radius: 999px; border: 0; background: transparent; color: inherit; cursor: pointer">×</button></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px 0 12px; border-radius: 999px; background: #E3EAD9; color: #3F5236; font-size: 13px; font-weight: 600">Jasmine rice<button type="button" aria-label="Unlink jasmine rice" style="width: 24px; height: 24px; border-radius: 999px; border: 0; background: transparent; color: inherit; cursor: pointer">×</button></span>
+<button type="button" style="height: 32px; padding: 0 12px; border-radius: 999px; border: 1.5px dashed #A9BC95; background: transparent; color: var(--sage-deep); font-size: 13px; font-weight: 600; cursor: pointer">+ Link item</button>
+</div>
+<span style="font-size: 12px; color: var(--bark-soft)">Linked items show this note in their details, and the note ticks itself off when they are restocked.</span>
+</div>
+</section>
+
+<section aria-label="Add to board" style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px">
+<h3 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 18px">Add to board</h3>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 48px; border-radius: 14px; border: 1.5px solid var(--oat); background: #FFF1C9; font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">Note</button>
+<button type="button" style="height: 48px; border-radius: 14px; border: 1.5px solid var(--oat); background: #FFFDF8; font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">Checklist</button>
+<button type="button" style="height: 48px; border-radius: 14px; border: 0; background: var(--terracotta); font-size: 14px; font-weight: 600; color: #FFFBF3; cursor: pointer; box-shadow: 0 3px 0 #9A4F37">Scan slip</button>
+<button type="button" style="height: 48px; border-radius: 14px; border: 1.5px solid var(--oat); background: #FFFDF8; font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">Photo / PNG</button>
+</div>
+<h3 style="margin: 6px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 18px">Decorate the board</h3>
+<div style="display: flex; gap: 8px; align-items: center">
+<span style="font-size: 13px; color: var(--bark-soft); margin-right: 4px">Board</span>
+<button type="button" aria-label="Oat board, selected" style="width: 36px; height: 36px; border-radius: 10px; border: 2.5px solid #5E7550; background: radial-gradient(#C2A87D 1.5px, transparent 2px) 0 0/8px 8px, #EAD7B2; cursor: pointer"></button>
+<button type="button" aria-label="Sage board" style="width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--oat); background: radial-gradient(#7E9A68 1.5px, transparent 2px) 0 0/8px 8px, #C9D6B8; cursor: pointer"></button>
+<button type="button" aria-label="White board" style="width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--oat); background: radial-gradient(#D6D0C4 1.5px, transparent 2px) 0 0/8px 8px, #FAF8F3; cursor: pointer"></button>
+<button type="button" aria-label="Walnut board" style="width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--oat); background: radial-gradient(#5E4430 1.5px, transparent 2px) 0 0/8px 8px, #8C6440; cursor: pointer"></button>
+</div>
+<ul style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{acc}}" as="a" hint-placeholder-count="8">
+<li style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 10px; border-radius: 12px; background: #FFFDF8; border: 1.5px solid var(--oat)">
+<span style="font-size: 13px; font-weight: 500">{{a.name}}</span>
+<span style="font-size: 12px; font-weight: 600; color: {{a.fg}}; white-space: nowrap">{{a.price}}</span>
+</li>
+</sc-for>
+</ul>
+</section>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var rows = [
+      ['String lights', 'placed'], ['Mini wood shelf', 'placed'], ['Pen cup', 'placed'], ['Tote hook', 'placed'],
+      ['Binder clips', 'owned'], ['Wire basket', 30], ['Little clock', 25], ['Sticker sheet', 15]
+    ];
+    return {
+      acc: rows.map(function (r) {
+        var p = r[1];
+        return { name: r[0], price: p === 'placed' ? 'On board' : p === 'owned' ? 'Owned' : p + ' leaves', fg: (p === 'placed' || p === 'owned') ? '#4C6140' : '#7A6654' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

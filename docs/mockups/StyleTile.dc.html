@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pantrywood Style Tile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#5E7550}a:hover{color:#3F5236}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1100px; height: 844px; box-sizing: border-box; padding: 40px 44px; background: #F6EFE2; color: #4A3B2E; font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 22px">
+<div>
+<p style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #5E7550">Style tile</p>
+<h1 style="margin: 4px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 52px; line-height: 1">Pantrywood</h1>
+<p style="margin: 8px 0 0; font-size: 16px; color: #7A6654">Wooden shelves, linen, morning light, jam jars, kraft paper.</p>
+</div>
+
+<section aria-label="Palette" style="background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px">
+<h2 style="margin: 0 0 12px; font-weight: 600; letter-spacing: -0.02em; font-size: 20px">Palette</h2>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{swatches}}" as="s" hint-placeholder-count="12">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="height: 48px; border-radius: 12px; border: 1.5px solid #EADFC9; background: {{s.hex}}"></span>
+<span style="font-size: 12px; font-weight: 600">{{s.name}}</span>
+<span style="font-size: 11px; color: #7A6654">{{s.hex}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Type" style="background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+<h2 style="margin: 0 0 4px; font-weight: 600; letter-spacing: -0.02em; font-size: 20px">Type</h2>
+<p style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 34px; line-height: 1.1">DM Sans — the milk wants to be used soon</p>
+<p style="margin: 0; font-size: 16px">One clean sans for headings and everything you read and tap. Quantities line up: <span style="font-variant-numeric: tabular-nums; font-weight: 600">12 · 128 · 1,412</span></p>
+<p style="margin: 0; font-size: 16px">IBM Plex Sans Thai: นมสด · ข้าวหอมมะลิ · กระดาษทิชชู่</p>
+</section>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 22px">
+<section aria-label="Status" style="background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px">
+<h2 style="margin: 0 0 4px; font-weight: 600; letter-spacing: -0.02em; font-size: 20px">Status chips</h2>
+<p style="margin: 0 0 12px; font-size: 13px; color: #7A6654">Food uses expiry. Supplies (tissue, shampoo, filament) use amount only.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #E3EAD9; color: #4C6140; font-size: 13px; font-weight: 600">Fresh</span>
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #F6E6C4; color: #7A5512; font-size: 13px; font-weight: 600">Use soon</span>
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #F3DCD3; color: #8E3F2A; font-size: 13px; font-weight: 600">Past its date</span>
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #E1ECEE; color: #3E5F66; font-size: 13px; font-weight: 600">Opened</span>
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #F4E0D7; color: #9A4F37; font-size: 13px; font-weight: 600">Running low</span>
+<span style="display: inline-flex; padding: 5px 12px; border-radius: 999px; background: #E3EAD9; color: #4C6140; font-size: 13px; font-weight: 600">Stocked</span>
+</div>
+</section>
+
+<section aria-label="Buttons" style="background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px">
+<h2 style="margin: 0 0 12px; font-weight: 600; letter-spacing: -0.02em; font-size: 20px">Buttons</h2>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<button type="button" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #5E7550; color: #FFFBF3; font-size: 15px; font-weight: 600; box-shadow: 0 3px 0 #3F5236">Add to pantry</button>
+<button type="button" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #EADFC9; background: #F1E7D4; color: #4A3B2E; font-size: 15px; font-weight: 600">Eat one</button>
+<button type="button" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #C8755A; color: #FFFBF3; font-size: 15px; font-weight: 600; box-shadow: 0 3px 0 #9A4F37">Scan receipt</button>
+<button type="button" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #A8533A; background: transparent; color: #8E3F2A; font-size: 15px; font-weight: 600">Remove</button>
+</div>
+</section>
+
+<section aria-label="3D materials" style="background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px">
+<h2 style="margin: 0 0 4px; font-weight: 600; letter-spacing: -0.02em; font-size: 20px">3D storage</h2>
+<p style="margin: 0 0 12px; font-size: 13px; color: #7A6654">Matte, rounded, low-poly. One Grocy location = one object.</p>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+<sc-for list="{{storage}}" as="m" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex: none; width: 28px; height: 28px; border-radius: 8px; background: {{m.hex}}; border: 1.5px solid #EADFC9"></span>
+<span style="font-size: 13px; font-weight: 500; line-height: 1.15">{{m.name}}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-label="Card" style="position: relative; background: #FFFBF3; border: 1.5px solid #EADFC9; border-radius: 20px; padding: 18px 18px 16px; box-shadow: 0 1px 0 rgba(74,59,46,.06), 0 10px 28px -8px rgba(74,59,46,.18)">
+<span style="position: absolute; top: -9px; left: 24px; width: 56px; height: 16px; background: rgba(143,166,122,.55); transform: rotate(-3deg); border-radius: 2px"></span>
+<p style="margin: 0; font-weight: 600">Empty state</p>
+<p style="margin: 4px 0 0; font-size: 14px; color: #7A6654">The snack box is empty. A good excuse for a market trip.</p>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      swatches: [
+        { name: 'Cream', hex: '#F6EFE2' }, { name: 'Paper', hex: '#FFFBF3' }, { name: 'Oat', hex: '#EADFC9' },
+        { name: 'Linen', hex: '#F1E7D4' }, { name: 'Bark', hex: '#4A3B2E' }, { name: 'Bark soft', hex: '#7A6654' },
+        { name: 'Sage', hex: '#8FA67A' }, { name: 'Sage deep', hex: '#5E7550' }, { name: 'Terracotta', hex: '#C8755A' },
+        { name: 'Honey', hex: '#E2B25C' }, { name: 'Berry', hex: '#A8533A' }, { name: 'Frost', hex: '#A9C4C9' }
+      ],
+      storage: [
+        { name: 'Fridge', hex: '#F3E9D6' }, { name: 'Freezer', hex: '#C9DCE0' }, { name: 'Shelf', hex: '#A47551' },
+        { name: 'Kraft box', hex: '#C9A77C' }, { name: 'Basket', hex: '#B98B57' }, { name: 'Rice bin', hex: '#8C6A4A' },
+        { name: 'Supplies cabinet', hex: '#8C6A4A' }, { name: 'Floor', hex: '#D9BC93' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

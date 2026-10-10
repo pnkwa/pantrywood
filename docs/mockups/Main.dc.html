@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pantrywood Storage Room</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--berry:#A8533A;--frost:#A9C4C9;--shadow:0 1px 0 rgba(74,59,46,.06),0 10px 28px -8px rgba(74,59,46,.18)}
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: var(--cream); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; font-size: 16px; box-sizing: border-box; padding: 20px 24px 32px">
+<div style="max-width: 1392px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px">
+
+<header style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 22px; padding: 12px 16px; box-shadow: var(--shadow)">
+<a href="#" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--bark)">
+<span style="width: 40px; height: 40px; border-radius: 14px; background: #E3EAD9; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5E7550" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z" fill="#8FA67A" fill-opacity=".35"></path><path d="M12 14c0-3.2-2.2-5.5-6.5-5.5 0 3.3 2.2 5.5 6.5 5.5z" fill="#8FA67A" fill-opacity=".35"></path></svg>
+</span>
+<span style="font-weight: 600; letter-spacing: -0.02em; font-size: 26px; letter-spacing: -0.01em">Pantrywood</span>
+</a>
+<label style="flex: 1 1 260px; display: flex; align-items: center; gap: 10px; background: var(--linen); border: 1.5px solid var(--oat); border-radius: 999px; padding: 0 16px; height: 46px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search pantry</span>
+<input type="search" placeholder="Search your storage… milk, ข้าว, tissue" style="flex: 1; border: 0; background: transparent; font: inherit; font-size: 15px; color: var(--bark); outline: none; min-width: 0">
+<span style="font-size: 12px; color: var(--bark-soft); border: 1.5px solid var(--oat); border-radius: 8px; padding: 1px 7px; background: var(--paper)">/</span>
+</label>
+<button type="button" style="display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px 0 8px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--paper); color: var(--bark); font-size: 15px; font-weight: 500; cursor: pointer">
+<span style="width: 32px; height: 32px; border-radius: 999px; background: #F4E0D7; display: flex; align-items: center; justify-content: center">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9A4F37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v9H4z"></path><path d="M10 20v-5h4v5"></path></svg>
+</span>
+Storage room
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
+</button>
+<button type="button" aria-label="Notifications, 2 new" style="position: relative; width: 46px; height: 46px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--paper); display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"></path><path d="M10 21h4"></path></svg>
+<span style="position: absolute; top: 9px; right: 10px; width: 9px; height: 9px; border-radius: 999px; background: var(--terracotta); border: 2px solid var(--paper)"></span>
+</button>
+<button type="button" aria-label="Profile: Kyuri" style="display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 8px 0 4px; border-radius: 999px; border: 0; background: transparent; cursor: pointer; color: var(--bark)">
+<span style="width: 40px; height: 40px; border-radius: 999px; background: #E9C077; border: 2px solid var(--paper); box-shadow: 0 0 0 1.5px var(--oat); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; color: #4A3B2E">K</span>
+<span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15"><span style="font-weight: 600; font-size: 15px">Kyuri</span><span style="font-size: 12px; color: var(--bark-soft)">Pantry keeper</span></span>
+</button>
+</header>
+
+<section aria-label="Storage at a glance" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px">
+<div style="position: relative; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 20px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: var(--shadow)">
+<span style="position: absolute; top: -9px; left: 22px; width: 54px; height: 16px; background: rgba(226,178,92,.55); transform: rotate(-3deg); border-radius: 2px"></span>
+<span style="flex: none; width: 48px; height: 48px; border-radius: 999px; background: #F6E6C4; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7A5512" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10M7 21h10"></path><path d="M8 3c0 5 8 6 8 9s-8 4-8 9"></path><path d="M16 3c0 5-8 6-8 9s8 4 8 9"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: var(--bark-soft)">Use soon</span><span style="font-weight: 600; letter-spacing: -0.02em; font-size: 34px; line-height: 1">4</span><span style="font-size: 13px; color: var(--bark-soft)">milk, basil, bananas +1</span></div>
+</div>
+<div style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 20px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: var(--shadow)">
+<span style="flex: none; width: 48px; height: 48px; border-radius: 999px; background: #F4E0D7; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9A4F37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10h18l-2 10H5z"></path><path d="M8 10l4-6 4 6"></path><path d="M9 14v3M15 14v3"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: var(--bark-soft)">Running low</span><span style="font-weight: 600; letter-spacing: -0.02em; font-size: 34px; line-height: 1">3</span><span style="font-size: 13px; color: var(--bark-soft)">rice, tissue, PLA filament</span></div>
+</div>
+<div style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 20px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: var(--shadow)">
+<span style="flex: none; width: 48px; height: 48px; border-radius: 999px; background: #E3EAD9; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4C6140" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path><path d="M12 14c0-3.2-2.2-5.5-6.5-5.5 0 3.3 2.2 5.5 6.5 5.5z"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: var(--bark-soft)">In stock</span><span style="font-weight: 600; letter-spacing: -0.02em; font-size: 34px; line-height: 1">128</span><span style="font-size: 13px; color: var(--bark-soft)">food &amp; supplies · 7 spots</span></div>
+</div>
+<div style="background: var(--paper); border: 1.5px solid var(--oat); border-radius: 20px; padding: 18px 20px; display: flex; gap: 14px; align-items: center; box-shadow: var(--shadow)">
+<span style="flex: none; width: 48px; height: 48px; border-radius: 999px; background: #E1ECEE; display: flex; align-items: center; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3E5F66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6M9 12h6M9 16h3"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 14px; font-weight: 500; color: var(--bark-soft)">Added this week</span><span style="font-weight: 600; letter-spacing: -0.02em; font-size: 34px; line-height: 1">12</span><span style="font-size: 13px; color: var(--bark-soft)">from 2 receipts &amp; 5 scans</span></div>
+</div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch">
+
+<section aria-label="3D storage room" style="flex: 999 1 560px; min-width: 0; position: relative; border-radius: 28px; border: 1.5px solid var(--oat); overflow: hidden; background: radial-gradient(120% 90% at 50% 35%, #FBF4E8 0%, #EFE6D3 100%); box-shadow: var(--shadow); min-height: 560px">
+<div style="position: absolute; top: 16px; left: 16px; z-index: 2; display: flex; gap: 4px; padding: 4px; background: var(--linen); border: 1.5px solid var(--oat); border-radius: 999px">
+<button type="button" aria-pressed="true" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-weight: 600; font-size: 14px; color: var(--bark); cursor: pointer">3D room</button>
+<button type="button" aria-pressed="false" style="height: 36px; padding: 0 16px; border-radius: 999px; border: 0; background: transparent; font-weight: 500; font-size: 14px; color: var(--bark-soft); cursor: pointer">List view</button>
+<a href="Decorate.dc.html" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; background: #F6E6C4; color: #6B4A0E; font-weight: 600; font-size: 14px; text-decoration: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"></path><path d="M14 6l3 3"></path></svg>Decorate</a>
+</div>
+<div style="position: absolute; top: 16px; right: 16px; z-index: 2; display: flex; flex-direction: column; gap: 6px; padding: 6px; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 20px; box-shadow: var(--shadow)">
+<button type="button" aria-label="Zoom in" style="width: 38px; height: 38px; border-radius: 12px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button>
+<button type="button" aria-label="Zoom out" style="width: 38px; height: 38px; border-radius: 12px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button>
+<button type="button" aria-label="Rotate view" style="width: 38px; height: 38px; border-radius: 12px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"></path><path d="M20 4v5h-5"></path></svg></button>
+<button type="button" aria-label="Back to whole room" style="width: 38px; height: 38px; border-radius: 12px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-6 8 6v9H4z"></path></svg></button>
+</div>
+
+<div style="position: relative; width: 100%; max-width: 860px; margin: 28px auto 0">
+<img src="storage-room.svg" alt="Isometric diorama of a cozy storage room with wood-capped cream walls, tiled wainscot and a checkered floor: a wooden pantry shelf of pastel-lidded jars, a cream retro fridge (selected), a chest freezer under a blue gingham curtained window, a butter-yellow open supplies cabinet with tissue, shampoo and detergent, a wall shelf of filament spools, stacked crates, a rice barrel, a veggie basket and a cat sleeping on a round rug" style="display: block; width: 100%; height: auto">
+<svg viewBox="0 0 800 600" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none"><polygon points="505,147.5 571,180.5 571,318.5 517,345.5 451,312.5 451,174.5" fill="none" stroke="#5E7550" stroke-width="3.5" stroke-linejoin="round"></polygon></svg>
+
+<div style="position: absolute; left: 63.9%; top: 24.5%; transform: translate(-50%, -100%); background: var(--paper); border: 2px solid var(--sage-deep); border-radius: 12px; padding: 6px 12px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px; display: flex; gap: 6px; align-items: center">
+<span style="font-weight: 600">Fridge</span><span style="color: var(--bark-soft)">· 14 items ·</span><span style="color: #7A5512; font-weight: 500">2 use soon</span>
+</div>
+<div style="position: absolute; left: 51.9%; top: 13%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Pantry shelf</span> <span style="color: var(--bark-soft)">· 31</span></div>
+<div style="position: absolute; left: 74.75%; top: 46%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Freezer</span> <span style="color: var(--bark-soft)">· 22</span></div>
+<div style="position: absolute; left: 39.3%; top: 21.5%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Maker shelf</span> <span style="color: #9A4F37; font-weight: 500">· 1 low</span></div>
+<div style="position: absolute; left: 41.2%; top: 34%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Home supplies</span> <span style="color: #9A4F37; font-weight: 500">· 1 low</span></div>
+<div style="position: absolute; left: 30%; top: 39%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Snack crates</span> <span style="color: var(--bark-soft)">· 9</span></div>
+<a href="Pegboard.dc.html" style="position: absolute; left: 20.2%; top: 32.5%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px; color: var(--bark); text-decoration: none"><span style="font-weight: 600">Pegboard</span> <span style="color: var(--bark-soft)">· 2 slips · 2 notes</span></a>
+<div style="position: absolute; left: 62%; top: 60%; transform: translate(-50%, -100%); background: var(--paper); border: 1.5px solid var(--oat); border-radius: 12px; padding: 5px 11px; box-shadow: var(--shadow); white-space: nowrap; font-size: 13px"><span style="font-weight: 600">Rice bin</span> <span style="color: #9A4F37; font-weight: 500">· low</span></div>
+</div>
+
+<a href="ScanDesktop.dc.html" aria-label="Scan a barcode or receipt" style="position: absolute; right: 22px; bottom: 22px; z-index: 2; height: 60px; padding: 0 22px 0 18px; border-radius: 999px; background: var(--terracotta); color: #FFFBF3; display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 600; text-decoration: none; box-shadow: 0 3px 0 #9A4F37, 0 14px 28px -10px rgba(154,79,55,.7)">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFBF3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M8 8v8M11 8v8M14 8v8M16.5 8v8"></path></svg>
+Scan
+</a>
+<p style="position: absolute; left: 20px; bottom: 18px; margin: 0; font-size: 13px; color: var(--bark-soft); background: rgba(255,251,243,.8); padding: 6px 12px; border-radius: 999px">Drag to look around · scroll to zoom · tap storage to peek inside</p>
+</section>
+
+<aside aria-label="Fridge details" style="flex: 1 1 340px; min-width: 0; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; gap: 14px; align-items: flex-start">
+<span style="flex: none; width: 56px; height: 56px; border-radius: 18px; background: #E3EAD9; display: flex; align-items: center; justify-content: center">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#4C6140" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="3"></rect><path d="M6 9h12M9 5v2M9 12v4"></path></svg>
+</span>
+<div style="flex: 1; min-width: 0">
+<p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sage-deep)">Storage · Storage room</p>
+<h2 style="margin: 2px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 28px; line-height: 1.1">Fridge</h2>
+<p style="margin: 4px 0 0; font-size: 14px; color: var(--bark-soft)">14 items · 2 use soon · 1 past its date</p>
+</div>
+<button type="button" aria-label="Close panel" style="flex: none; width: 40px; height: 40px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--paper); display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4A3B2E" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</div>
+
+<div role="tablist" aria-label="Filter fridge items" style="display: flex; gap: 4px; padding: 4px; background: var(--linen); border-radius: 999px">
+<button type="button" role="tab" aria-selected="true" style="flex: 1; height: 36px; border-radius: 999px; border: 0; background: var(--paper); box-shadow: 0 2px 6px rgba(74,59,46,.12); font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">All 14</button>
+<button type="button" role="tab" aria-selected="false" style="flex: 1; height: 36px; border-radius: 999px; border: 0; background: transparent; font-size: 14px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Use soon 3</button>
+<button type="button" role="tab" aria-selected="false" style="flex: 1; height: 36px; border-radius: 999px; border: 0; background: transparent; font-size: 14px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Opened 1</button>
+</div>
+
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{items}}" as="item" hint-placeholder-count="6">
+<li style="display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 8px; border-radius: 16px; border: 1.5px solid var(--oat); background: #FFFDF8">
+<span style="flex: none; width: 40px; height: 46px; border-radius: 10px 10px 14px 14px; background: var(--linen); border: 1.5px solid var(--oat); display: flex; align-items: center; justify-content: center; position: relative">
+<span style="position: absolute; top: -4px; left: 7px; right: 7px; height: 6px; border-radius: 3px; background: #B98B57"></span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7A6654" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"></path><path d="M5 19l8-8"></path></svg>
+</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px">
+<span style="font-weight: 600; font-size: 15px">{{item.name}}</span>
+<span style="font-size: 13px; color: var(--bark-soft)">{{item.thai}} · {{item.qty}}</span>
+</div>
+<sc-if value="{{item.isFresh}}" hint-placeholder-val="{{false}}"><span style="flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #E3EAD9; color: #4C6140; font-size: 12px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path></svg>{{item.when}}</span></sc-if>
+<sc-if value="{{item.isSoon}}" hint-placeholder-val="{{false}}"><span style="flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #F6E6C4; color: #7A5512; font-size: 12px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"></path></svg>{{item.when}}</span></sc-if>
+<sc-if value="{{item.isExpired}}" hint-placeholder-val="{{false}}"><span style="flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #F3DCD3; color: #8E3F2A; font-size: 12px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"></path></svg>{{item.when}}</span></sc-if>
+<sc-if value="{{item.isOpened}}" hint-placeholder-val="{{false}}"><span style="flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; background: #E1ECEE; color: #3E5F66; font-size: 12px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M7 9h10v10a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"></path><path d="M8 4l9 2"></path></svg>{{item.when}}</span></sc-if>
+</li>
+</sc-for>
+</ul>
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto">
+<a href="FridgeInside.dc.html" style="flex: 1 1 160px; height: 48px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; background: var(--sage-deep); color: #FFFBF3; font-size: 15px; font-weight: 600; text-decoration: none; box-shadow: 0 3px 0 #3F5236">Open fridge door</a>
+<button type="button" style="flex: 1 1 120px; height: 48px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--linen); color: var(--bark); font-size: 15px; font-weight: 600; cursor: pointer">Add to fridge</button>
+</div>
+</aside>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<section aria-label="Use these soon" style="flex: 999 1 560px; min-width: 0; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px 20px; box-shadow: var(--shadow)">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px">
+<h3 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 22px">Use these soon</h3>
+<a href="#" style="font-size: 14px; font-weight: 600">See all</a>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px">
+<div style="position: relative; background: #FFF6E2; border-radius: 6px 6px 16px 6px; padding: 18px 14px 14px; box-shadow: 0 6px 14px -8px rgba(74,59,46,.35); transform: rotate(-1.5deg)">
+<span style="position: absolute; top: -8px; left: 50%; width: 46px; height: 16px; margin-left: -23px; background: rgba(143,166,122,.55); border-radius: 2px"></span>
+<p style="margin: 0; font-weight: 600">Fresh milk</p><p style="margin: 2px 0 8px; font-size: 13px; color: var(--bark-soft)">Fridge · 1 carton</p>
+<span style="display: inline-flex; padding: 3px 9px; border-radius: 999px; background: #F6E6C4; color: #7A5512; font-size: 12px; font-weight: 600">Use soon · 2 days</span>
+</div>
+<div style="position: relative; background: #FBEDE6; border-radius: 6px 6px 16px 6px; padding: 18px 14px 14px; box-shadow: 0 6px 14px -8px rgba(74,59,46,.35); transform: rotate(1.2deg)">
+<span style="position: absolute; top: -8px; left: 50%; width: 46px; height: 16px; margin-left: -23px; background: rgba(200,117,90,.45); border-radius: 2px"></span>
+<p style="margin: 0; font-weight: 600">Egg tofu</p><p style="margin: 2px 0 8px; font-size: 13px; color: var(--bark-soft)">Fridge · 1 tube</p>
+<span style="display: inline-flex; padding: 3px 9px; border-radius: 999px; background: #F3DCD3; color: #8E3F2A; font-size: 12px; font-weight: 600">Past its date</span>
+</div>
+<div style="position: relative; background: #F1F4EA; border-radius: 6px 6px 16px 6px; padding: 18px 14px 14px; box-shadow: 0 6px 14px -8px rgba(74,59,46,.35); transform: rotate(-.8deg)">
+<span style="position: absolute; top: -8px; left: 50%; width: 46px; height: 16px; margin-left: -23px; background: rgba(226,178,92,.5); border-radius: 2px"></span>
+<p style="margin: 0; font-weight: 600">Thai basil</p><p style="margin: 2px 0 8px; font-size: 13px; color: var(--bark-soft)">Fridge · 1 bunch</p>
+<span style="display: inline-flex; padding: 3px 9px; border-radius: 999px; background: #F6E6C4; color: #7A5512; font-size: 12px; font-weight: 600">Use soon · 3 days</span>
+</div>
+<div style="position: relative; background: #FFF6E2; border-radius: 6px 6px 16px 6px; padding: 18px 14px 14px; box-shadow: 0 6px 14px -8px rgba(74,59,46,.35); transform: rotate(1.6deg)">
+<span style="position: absolute; top: -8px; left: 50%; width: 46px; height: 16px; margin-left: -23px; background: rgba(169,196,201,.6); border-radius: 2px"></span>
+<p style="margin: 0; font-weight: 600">Bananas</p><p style="margin: 2px 0 8px; font-size: 13px; color: var(--bark-soft)">Basket · 4 pcs</p>
+<span style="display: inline-flex; padding: 3px 9px; border-radius: 999px; background: #F6E6C4; color: #7A5512; font-size: 12px; font-weight: 600">Use soon · 3 days</span>
+</div>
+</div>
+</section>
+
+<section aria-label="Recent receipts" style="flex: 1 1 340px; min-width: 0; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px 20px; box-shadow: var(--shadow)">
+<div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px">
+<h3 style="margin: 0; font-weight: 600; letter-spacing: -0.02em; font-size: 22px">On the pegboard</h3>
+<a href="Pegboard.dc.html" style="font-size: 14px; font-weight: 600">Open board</a>
+</div>
+<div style="display: flex; gap: 18px; justify-content: center">
+<figure style="margin: 0; background: #FFFFFF; padding: 8px 8px 12px; border-radius: 4px; box-shadow: 0 8px 18px -10px rgba(74,59,46,.45); transform: rotate(-3deg); width: 128px">
+<div style="height: 96px; background: #F1E7D4; border-radius: 2px; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; box-sizing: border-box">
+<span style="height: 5px; width: 60%; background: #C9B79A; border-radius: 3px"></span><span style="height: 4px; background: #D9C9AE; border-radius: 3px"></span><span style="height: 4px; width: 80%; background: #D9C9AE; border-radius: 3px"></span><span style="height: 4px; background: #D9C9AE; border-radius: 3px"></span><span style="height: 4px; width: 40%; background: #C8755A; border-radius: 3px; margin-top: auto"></span>
+</div>
+<figcaption style="margin-top: 8px; font-size: 13px; color: var(--bark-soft); text-align: center">Big C · Oct 8</figcaption>
+</figure>
+<figure style="margin: 0; background: #FFFFFF; padding: 8px 8px 12px; border-radius: 4px; box-shadow: 0 8px 18px -10px rgba(74,59,46,.45); transform: rotate(2.5deg); width: 128px">
+<div style="height: 96px; background: #EEF2E8; border-radius: 2px; display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; box-sizing: border-box">
+<span style="height: 5px; width: 50%; background: #A9BC95; border-radius: 3px"></span><span style="height: 4px; background: #CBD6BE; border-radius: 3px"></span><span style="height: 4px; width: 70%; background: #CBD6BE; border-radius: 3px"></span><span style="height: 4px; width: 35%; background: #8FA67A; border-radius: 3px; margin-top: auto"></span>
+</div>
+<figcaption style="margin-top: 8px; font-size: 13px; color: var(--bark-soft); text-align: center">Maker Shop · Oct 5</figcaption>
+</figure>
+</div>
+</section>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var raw = [
+      { name: 'Fresh milk', thai: 'นมสด', qty: '1 carton', s: 'soon', when: '2 days' },
+      { name: 'Egg tofu', thai: 'เต้าหู้ไข่', qty: '1 tube', s: 'expired', when: 'Past its date' },
+      { name: 'Thai basil', thai: 'โหระพา', qty: '1 bunch', s: 'soon', when: '3 days' },
+      { name: 'Greek yogurt', thai: 'โยเกิร์ต', qty: '2 cups', s: 'opened', when: 'Opened' },
+      { name: 'Eggs', thai: 'ไข่ไก่', qty: '6 pcs', s: 'fresh', when: 'Fresh' },
+      { name: 'Kimchi', thai: 'กิมจิ', qty: '1 jar', s: 'fresh', when: 'Fresh' }
+    ];
+    return {
+      items: raw.map(function (r) {
+        return {
+          name: r.name, thai: r.thai, qty: r.qty, when: r.when,
+          isFresh: r.s === 'fresh', isSoon: r.s === 'soon',
+          isExpired: r.s === 'expired', isOpened: r.s === 'opened'
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

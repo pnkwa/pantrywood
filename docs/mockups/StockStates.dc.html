@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Full and Check Stock</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&amp;family=IBM+Plex+Sans+Thai:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+:root{--cream:#F6EFE2;--paper:#FFFBF3;--oat:#EADFC9;--linen:#F1E7D4;--bark:#4A3B2E;--bark-soft:#7A6654;--sage:#8FA67A;--sage-deep:#5E7550;--terracotta:#C8755A;--honey:#E2B25C;--shadow:0 1px 0 rgba(74,59,46,.06),0 10px 28px -8px rgba(74,59,46,.18)}
+body{margin:0;background:#F6EFE2}
+a{color:#5E7550}a:hover{color:#3F5236}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: var(--cream); color: var(--bark); font-family: 'DM Sans', 'IBM Plex Sans Thai', sans-serif; box-sizing: border-box; padding: 32px 24px 48px">
+<div style="max-width: 1360px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px">
+
+<div>
+<p style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sage-deep)">Pantrywood · Inside views</p>
+<h1 style="margin: 4px 0 0; font-weight: 600; letter-spacing: -0.02em; font-size: 40px; line-height: 1.05">When it's full, and when it's wrong</h1>
+<p style="margin: 8px 0 0; font-size: 15px; color: var(--bark-soft); max-width: 720px">The room never scrolls. Full shelves stack, use a back row and an overflow tray. Numbers that drift from real life get fixed in a quick count, not a long form.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+
+<section aria-label="Full shelf" style="flex: 999 1 560px; min-width: 0; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; overflow: hidden; box-shadow: var(--shadow)">
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 18px 0">
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em">A full shelf</h2>
+<span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #F4E0D7; color: #8A4430; font-size: 13px; font-weight: 600">Fridge · 92% full</span>
+<button type="button" aria-pressed="false" style="margin-left: auto; height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--linen); font-size: 14px; font-weight: 600; color: var(--bark); cursor: pointer">Peek behind</button>
+</div>
+<div style="position: relative; max-width: 680px; margin: 8px auto 0">
+<svg viewBox="0 0 640 440" width="100%" role="img" aria-label="Two fridge shelves. The top shelf is 92 percent full: a back row of faded jars sits behind the front row, six yogurts are stacked with a times six badge, then milk, eggs, kimchi and a plus three more chip that opens a tray showing cheese, butter and pickles. The lower shelf is 60 percent full." style="display: block">
+<defs><filter id="sh" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#4A3B2E" flood-opacity=".2"></feDropShadow></filter></defs>
+<rect x="40" y="10" width="560" height="430" rx="20" fill="#F7F4EE"></rect>
+<rect x="70" y="10" width="500" height="430" fill="#FBF9F4"></rect>
+
+<g opacity=".45" transform="translate(0 -14)">
+<rect x="96" y="150" width="30" height="48" rx="6" fill="#F3E9D6"></rect><rect x="94" y="144" width="34" height="9" rx="3" fill="#E9A9A9"></rect>
+<rect x="134" y="150" width="30" height="48" rx="6" fill="#F3E9D6"></rect><rect x="132" y="144" width="34" height="9" rx="3" fill="#A9C9DA"></rect>
+<rect x="250" y="140" width="40" height="58" rx="4" fill="#E9C077"></rect>
+<rect x="390" y="150" width="34" height="48" rx="6" fill="#D98B6F"></rect>
+<rect x="470" y="156" width="56" height="42" rx="6" fill="#E3EAD9"></rect>
+</g>
+
+<g filter="url(#sh)">
+<path d="M98,160 h34 l-4,40 h-26 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="1.5"></path><rect x="96" y="154" width="38" height="9" rx="3" fill="#E9A9A9"></rect>
+<path d="M110,156 h34 l-4,44 h-26 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="1.5"></path><rect x="108" y="150" width="38" height="9" rx="3" fill="#A9C9DA"></rect>
+<path d="M122,152 h34 l-4,48 h-26 z" fill="#FFFFFF" stroke="#D6DDE0" stroke-width="1.5"></path><rect x="120" y="146" width="38" height="9" rx="3" fill="#E9A9A9"></rect>
+</g>
+<rect x="146" y="132" width="34" height="22" rx="11" fill="#4A3B2E"></rect><text x="163" y="147" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#FFFBF3">×6</text>
+
+<g filter="url(#sh)">
+<path d="M200,200 v-60 l18,-14 l18,14 v60 z" fill="#FFFFFF" stroke="#E2DCCF" stroke-width="1.5"></path><path d="M200,140 l18,-14 l18,14 z" fill="#A9C9DA"></path><rect x="206" y="158" width="24" height="18" rx="2" fill="#A9C9DA"></rect>
+<rect x="250" y="178" width="84" height="22" rx="5" fill="#E7D3B0"></rect><g fill="#FBF4E6"><ellipse cx="262" cy="176" rx="8" ry="10"></ellipse><ellipse cx="280" cy="176" rx="8" ry="10"></ellipse><ellipse cx="298" cy="176" rx="8" ry="10"></ellipse><ellipse cx="316" cy="176" rx="8" ry="10"></ellipse></g>
+<rect x="348" y="150" width="40" height="50" rx="8" fill="#F7EFE6" stroke="#E6D8BC" stroke-width="1.5"></rect><rect x="352" y="160" width="32" height="36" rx="5" fill="#D9604A" opacity=".75"></rect><rect x="346" y="142" width="44" height="10" rx="3" fill="#8FA67A"></rect>
+<rect x="400" y="164" width="52" height="36" rx="7" fill="#E3EAD9" stroke="#A9BC95" stroke-width="1.5"></rect><rect x="396" y="158" width="60" height="9" rx="4" fill="#A9BC95"></rect>
+</g>
+<circle cx="218" cy="122" r="5" fill="#E2B25C" stroke="#FFFBF3" stroke-width="2"></circle>
+<rect x="468" y="156" width="84" height="44" rx="14" fill="#FFF6E2" stroke="#C8901F" stroke-width="2"></rect>
+<text x="510" y="184" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="15" font-weight="600" fill="#6B4A0E">+3 more</text>
+
+<rect x="70" y="200" width="500" height="8" fill="#FFFFFF" opacity=".8"></rect>
+<rect x="44" y="208" width="552" height="12" rx="6" fill="#FFFFFF" stroke="#DCD6CA" stroke-width="1.5"></rect>
+<rect x="52" y="96" width="8" height="104" rx="4" fill="#EADFC9"></rect><rect x="52" y="104" width="8" height="96" rx="4" fill="#C8755A"></rect>
+<text x="56" y="88" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" font-weight="600" fill="#8A4430">92%</text>
+
+<g filter="url(#sh)">
+<rect x="300" y="226" width="270" height="96" rx="16" fill="#FFFBF3" stroke="#EADFC9" stroke-width="1.5"></rect>
+</g>
+<path d="M500,226 l10,-10 l10,10 z" fill="#FFFBF3"></path>
+<text x="316" y="250" font-family="DM Sans, sans-serif" font-size="12" font-weight="600" fill="#7A6654">Hidden on this shelf</text>
+<g font-family="DM Sans, sans-serif" font-size="13" font-weight="600" fill="#4A3B2E">
+<rect x="316" y="262" width="76" height="44" rx="10" fill="#F6EFE2"></rect><path d="M326,290 l12,-14 h12 v14 z" fill="#F2D27A"></path><text x="358" y="289">Cheese</text>
+<rect x="400" y="262" width="76" height="44" rx="10" fill="#F6EFE2"></rect><rect x="408" y="278" width="18" height="12" rx="2" fill="#F7E7A9"></rect><text x="432" y="289">Butter</text>
+<rect x="484" y="262" width="76" height="44" rx="10" fill="#F6EFE2"></rect><rect x="492" y="272" width="14" height="22" rx="4" fill="#A9BC95"></rect><text x="510" y="289">Pickles</text>
+</g>
+
+<g filter="url(#sh)">
+<rect x="96" y="356" width="46" height="42" rx="6" fill="#FBF7EE" stroke="#E6D8BC" stroke-width="1.5"></rect><rect x="96" y="368" width="46" height="9" fill="#A9C9DA"></rect>
+<rect x="156" y="352" width="70" height="46" rx="8" fill="#E3EAD9" stroke="#A9BC95" stroke-width="1.5"></rect>
+<rect x="240" y="340" width="20" height="58" rx="6" fill="#5E4430"></rect><rect x="266" y="344" width="20" height="54" rx="6" fill="#C08A45"></rect>
+</g>
+<rect x="44" y="398" width="552" height="12" rx="6" fill="#FFFFFF" stroke="#DCD6CA" stroke-width="1.5"></rect>
+<rect x="52" y="296" width="8" height="100" rx="4" fill="#EADFC9"></rect><rect x="52" y="336" width="8" height="60" rx="4" fill="#8FA67A"></rect>
+<text x="56" y="288" text-anchor="middle" font-family="DM Sans, sans-serif" font-size="11" font-weight="600" fill="#4C6140">60%</text>
+</svg>
+</div>
+<div role="status" style="margin: 0 18px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 18px; background: #E3EAD9; color: #3F5236">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21v-9"></path><path d="M12 12c0-4 3-6.5 7.5-6.5 0 4.5-3 6.5-7.5 6.5z"></path></svg>
+<span style="flex: 1 1 220px; font-size: 14px; font-weight: 500">This shelf is nearly full. The freezer has room for 2 bags, and shelf 2 has 3 free slots.</span>
+<button type="button" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 14px; font-weight: 600; cursor: pointer">Move 3 items</button>
+</div>
+<ol style="margin: 0; padding: 0 18px 18px 38px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 20px; font-size: 13px; color: var(--bark)">
+<li><b>Stack duplicates</b> into one picture with a count badge</li>
+<li><b>Shrink</b> pictures sideways, never below 70%</li>
+<li><b>Back row</b>, faded and raised; use-soon items come to the front</li>
+<li><b>"+N more"</b> chip opens a tray under the shelf</li>
+<li><b>Fill bar</b> per shelf and a % on the room tag</li>
+<li><b>Suggest</b> where things fit instead</li>
+</ol>
+</section>
+
+<section aria-label="Check stock" style="flex: 1 1 420px; min-width: 0; background: var(--paper); border: 1.5px solid var(--oat); border-radius: 28px; padding: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+<div>
+<h2 style="margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.02em">Check stock · Fridge</h2>
+<p style="margin: 2px 0 0; font-size: 13px; color: var(--bark-soft)">Last checked 3 days ago · fix only what's wrong</p>
+</div>
+<span style="flex: none; display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #F6E6C4; color: #6B4A0E; font-size: 12px; font-weight: 600">3 changes</span>
+</div>
+
+<ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<li style="display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 10px; border-radius: 16px; border: 1.5px solid {{r.border}}; background: {{r.bg}}">
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">{{r.name}}</span><span style="font-size: 12px; color: var(--bark-soft)">{{r.note}}</span></span>
+<div role="group" aria-label="{{r.label}}" style="display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: var(--linen)">
+<button type="button" aria-label="One less" style="width: 36px; height: 36px; border-radius: 999px; border: 0; background: var(--paper); font-size: 18px; font-weight: 600; color: var(--bark); cursor: pointer">−</button>
+<span style="min-width: 34px; text-align: center; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums">{{r.qty}}</span>
+<button type="button" aria-label="One more" style="width: 36px; height: 36px; border-radius: 999px; border: 0; background: var(--paper); font-size: 18px; font-weight: 600; color: var(--bark); cursor: pointer">+</button>
+</div>
+</li>
+</sc-for>
+</ul>
+
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 16px; border: 1.5px solid #C8901F; background: #FFF6E2">
+<span style="font-size: 15px; font-weight: 600">Jasmine rice <span style="font-size: 12px; font-weight: 500; color: var(--bark-soft)">· rough amount</span></span>
+<div role="radiogroup" aria-label="Rice level" style="display: flex; gap: 4px; padding: 3px; border-radius: 12px; background: var(--paper)">
+<button type="button" role="radio" aria-checked="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Full</button>
+<button type="button" role="radio" aria-checked="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Half</button>
+<button type="button" role="radio" aria-checked="true" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: #C8755A; font-size: 13px; font-weight: 600; color: #FFFBF3; cursor: pointer">Low</button>
+<button type="button" role="radio" aria-checked="false" style="flex: 1; height: 36px; border-radius: 10px; border: 0; background: transparent; font-size: 13px; font-weight: 500; color: var(--bark-soft); cursor: pointer">Empty</button>
+</div>
+<span style="font-size: 12px; color: var(--bark-soft)">Was "Half" · saved as about 1.5 kg</span>
+</div>
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap">
+<button type="button" style="flex: 1 1 160px; height: 48px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 3px 0 #3F5236">Save 3 changes</button>
+<button type="button" style="flex: 1 1 120px; height: 48px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--linen); color: var(--bark); font-size: 15px; font-weight: 600; cursor: pointer">All correct</button>
+</div>
+<p style="margin: 0; font-size: 12px; color: var(--bark-soft)">Saved with Grocy's inventory action, which sets the real amount instead of logging fake "eaten" entries.</p>
+
+<div style="border-top: 1.5px dashed var(--oat); padding-top: 14px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 13px; font-weight: 600; color: var(--bark-soft)">Gentle reminder (one at a time)</span>
+<div style="display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 18px; background: #FFF6E2; border: 1.5px solid #F2DFA6">
+<svg width="40" height="40" viewBox="0 0 64 64" aria-hidden="true"><rect x="8" y="36" width="48" height="20" rx="4" fill="#E7D3B0"></rect><g fill="#FBF4E6"><ellipse cx="16" cy="34" rx="6" ry="7"></ellipse><ellipse cx="28" cy="34" rx="6" ry="7"></ellipse><ellipse cx="40" cy="34" rx="6" ry="7"></ellipse><ellipse cx="52" cy="34" rx="5" ry="7"></ellipse></g></svg>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span style="font-size: 15px; font-weight: 600">Still have 6 eggs?</span><span style="font-size: 12px; color: var(--bark-soft)">Not touched in 9 days</span></span>
+<button type="button" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 0; background: var(--sage-deep); color: #FFFBF3; font-size: 14px; font-weight: 600; cursor: pointer">Yes</button>
+<button type="button" style="height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--oat); background: var(--paper); color: var(--bark); font-size: 14px; font-weight: 600; cursor: pointer">Fix it</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px">
+<span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #E3EAD9; color: #3F5236; font-size: 12px; font-weight: 600">Fridge · checked today</span>
+<span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; background: var(--linen); color: var(--bark-soft); font-size: 12px; font-weight: 600">Pantry · 3 days ago</span>
+<span style="display: inline-flex; padding: 4px 10px; border-radius: 999px; background: #F6E6C4; color: #6B4A0E; font-size: 12px; font-weight: 600">Freezer · 3 weeks ago</span>
+</div>
+</div>
+</section>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1360,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var raw = [
+      ['Eggs', 'Was 6 · changed', '3', true],
+      ['Fresh milk', '1 carton', '1', false],
+      ['Greek yogurt', 'Was 6 · changed', '4', true],
+      ['Kimchi', '1 jar', '1', false]
+    ];
+    return {
+      rows: raw.map(function (r) {
+        return { name: r[0], note: r[1], qty: r[2], label: r[0] + ' amount', border: r[3] ? '#C8901F' : '#EADFC9', bg: r[3] ? '#FFF6E2' : '#FFFDF8' };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>
