@@ -1,9 +1,8 @@
 "use client";
 
-import {
-  DoorIcon,
-  HouseSimpleIcon,
-} from "@phosphor-icons/react";
+import Link from "next/link";
+import { OPEN_SCAN } from "@/lib/page-transitions";
+import { BarcodeIcon, DoorIcon, HouseSimpleIcon } from "@phosphor-icons/react";
 
 type MobileNavProps = {
   onFridgeDoor: (() => void) | null;
@@ -30,6 +29,14 @@ export const MobileNav = ({ onFridgeDoor, onRoom, current }: MobileNavProps) => 
       <HouseSimpleIcon size={22} weight="duotone" aria-hidden />
       Room
     </button>
+    <Link
+      href="/scan"
+      transitionTypes={OPEN_SCAN}
+      aria-label="Scan a barcode"
+      className="-mt-8 flex size-16 items-center justify-center rounded-full border-4 border-card bg-terracotta text-accent-foreground shadow-[0_3px_0_#9A4F37,0_12px_22px_-10px_rgba(154,79,55,.8)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    >
+      <BarcodeIcon size={26} weight="duotone" aria-hidden />
+    </Link>
     {onFridgeDoor && (
       <button
         type="button"

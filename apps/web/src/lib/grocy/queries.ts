@@ -4,13 +4,15 @@ import {
   CurrentStockSchema,
   LocationSchema,
   ProductBarcodeSchema,
+  ProductDetailsSchema,
   ProductGroupSchema,
   ProductSchema,
   QuantityUnitSchema,
   ShoppingListItemSchema,
+  ShoppingLocationSchema,
   StockEntrySchema,
 } from "@pantrywood/shared";
-import { grocyFetch } from "./client";
+import { GrocyError, grocyFetch } from "./client";
 
 const queryKey = <const Parts extends readonly (string | number)[]>(
   ...parts: Parts
@@ -29,6 +31,8 @@ export const grocyKeys = {
   productStockEntries: (productId: number) =>
     queryKey("grocy", "stock", "entries", productId),
   shoppingList: () => queryKey("grocy", "shopping_list"),
+  shoppingLocations: () => queryKey("grocy", "shopping_locations"),
+  barcode: (barcode: string) => queryKey("grocy", "stock", "barcode", barcode),
 };
 
 const SETUP_STALE_TIME = 5 * 60_000;
@@ -98,4 +102,39 @@ export const useShoppingList = () =>
     queryKey: grocyKeys.shoppingList(),
     queryFn: () =>
       grocyFetch("objects/shopping_list", z.array(ShoppingListItemSchema)),
+  });
+
+export const useShoppingLocations = () =>
+  useQuery({
+    queryKey: grocyKeys.shoppingLocations(),
+    queryFn: () =>
+      grocyFetch("objects/shopping_locations", z.array(ShoppingLocationSchema)),
+    staleTime: SETUP_STALE_TIME,
+  });
+
+const BARCODE_NOT_FOUND_STATUS = 400;
+
+export type BarcodeLookup =
+  | { status: "found"; details: z.infer<typeof ProductDetailsSchema> }
+  | { status: "new" };
+
+/** Grocy answers an unknown barcode with a 400, which here means "new barcode", not an error. */
+export const useBarcodeLookup = (barcode: string | null) =>
+  useQuery({
+    queryKey: grocyKeys.barcode(barcode ?? ""),
+    enabled: Boolean(barcode),
+    queryFn: async (): Promise<BarcodeLookup> => {
+      try {
+        const details = await grocyFetch(
+          `stock/products/by-barcode/${encodeURIComponent(barcode ?? "")}`,
+          ProductDetailsSchema,
+        );
+        return { status: "found", details };
+      } catch (error) {
+        if (error instanceof GrocyError && error.status === BARCODE_NOT_FOUND_STATUS) {
+          return { status: "new" };
+        }
+        throw error;
+      }
+    },
   });

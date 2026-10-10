@@ -2,6 +2,8 @@ import "server-only";
 import { z } from "zod";
 import {
   NEVER_EXPIRES_DATE,
+  ProductBarcodeSchema,
+  ProductSchema,
   toIsoDate,
   type Product,
   type StockEntry,
@@ -24,6 +26,7 @@ const ENTITY_NAMES: readonly EntityName[] = [
   "stock",
   "product_barcodes",
   "shopping_list",
+  "shopping_locations",
 ];
 
 const isEntityName = (name: string): name is EntityName =>
@@ -34,6 +37,26 @@ type JsonBody = z.infer<typeof JsonBodySchema> | undefined;
 
 let database: MockDatabase | undefined;
 const getDatabase = () => (database ??= buildMockDatabase());
+
+// Stock as it was before each action, so the action can be undone.
+const stockBeforeTransaction = new Map<string, StockEntry[]>();
+let nextTransactionNumber = 1;
+
+const ActionAmountSchema = z.object({
+  amount: z.coerce.number().optional(),
+  new_amount: z.coerce.number().optional(),
+});
+
+const ObjectBodySchema = z.record(z.string(), z.json());
+
+const InventoryBodySchema = z.object({
+  new_amount: z.coerce.number().min(0),
+  best_before_date: z.string().optional(),
+  location_id: z.coerce.number().int().optional(),
+  price: z.coerce.number().optional(),
+});
+
+const UserfieldsBodySchema = z.record(z.string(), z.string().nullable());
 
 const ConsumeBodySchema = z.object({
   amount: z.coerce.number().positive(),
@@ -51,6 +74,7 @@ const AddBodySchema = z.object({
   best_before_date: z.string().optional(),
   location_id: z.coerce.number().int().optional(),
   price: z.coerce.number().optional(),
+  shopping_location_id: z.coerce.number().int().optional(),
 });
 
 const TransferBodySchema = z.object({
@@ -189,7 +213,7 @@ const handleAdd = (product: Product, body: JsonBody) => {
     open: 0,
     opened_date: null,
     location_id: parsed.data.location_id ?? product.location_id,
-    shopping_location_id: null,
+    shopping_location_id: parsed.data.shopping_location_id ?? null,
     note: null,
     row_created_timestamp: new Date().toISOString(),
   });
@@ -227,6 +251,27 @@ const handleTransfer = (product: Product, body: JsonBody) => {
     });
   });
   current.stock.push(...movedEntries);
+  return json([]);
+};
+
+const handleInventory = (product: Product, body: JsonBody) => {
+  const parsed = InventoryBodySchema.safeParse(body);
+  if (!parsed.success) return error(400, z.prettifyError(parsed.error));
+  const current = getDatabase();
+  const entries = current.stock.filter(
+    (entry) => entry.product_id === product.id,
+  );
+  const difference = parsed.data.new_amount - totalAmount(entries);
+  if (difference > 0) {
+    const { best_before_date, location_id, price } = parsed.data;
+    return handleAdd(product, {
+      amount: difference,
+      ...(best_before_date !== undefined && { best_before_date }),
+      ...(location_id !== undefined && { location_id }),
+      ...(price !== undefined && { price }),
+    });
+  }
+  if (difference < 0) takeFromEntries(current, entries, -difference, () => {});
   return json([]);
 };
 
@@ -304,6 +349,127 @@ const PRODUCT_ACTIONS = {
   open: handleOpen,
   add: handleAdd,
   transfer: handleTransfer,
+  inventory: handleInventory,
+};
+
+/** Runs a stock action and answers like Grocy: stock-log rows carrying a transaction id. */
+const runAsTransaction = (
+  product: Product,
+  body: JsonBody,
+  action: (product: Product, body: JsonBody) => Response,
+) => {
+  const current = getDatabase();
+  const before = current.stock.map((entry) => ({ ...entry }));
+  const response = action(product, body);
+  if (!response.ok) return response;
+  const transactionId = `mock-transaction-${nextTransactionNumber++}`;
+  stockBeforeTransaction.set(transactionId, before);
+  const amounts = ActionAmountSchema.safeParse(body);
+  const amount = amounts.success
+    ? (amounts.data.amount ?? amounts.data.new_amount ?? 0)
+    : 0;
+  return json([
+    { id: nextTransactionNumber, product_id: product.id, amount, transaction_id: transactionId },
+  ]);
+};
+
+const handleUndo = (transactionId: string) => {
+  const before = stockBeforeTransaction.get(transactionId);
+  if (!before) return error(400, "This transaction can't be undone");
+  getDatabase().stock = before;
+  stockBeforeTransaction.delete(transactionId);
+  return new Response(null, { status: 204 });
+};
+
+const productDetails = (current: MockDatabase, product: Product) => {
+  const entries = current.stock.filter(
+    (entry) => entry.product_id === product.id,
+  );
+  const latest = [...entries].sort((first, second) => second.id - first.id)[0];
+  return {
+    product,
+    product_barcodes: current.product_barcodes.filter(
+      (barcode) => barcode.product_id === product.id,
+    ),
+    stock_amount: totalAmount(entries),
+    stock_amount_opened: totalAmount(entries.filter((entry) => entry.open === 1)),
+    next_due_date: entries.map((entry) => entry.best_before_date).sort()[0] ?? null,
+    last_price: latest?.price ?? null,
+    last_shopping_location_id: latest?.shopping_location_id ?? null,
+    default_shopping_location_id: product.shopping_location_id ?? null,
+  };
+};
+
+const nextId = (rows: readonly { id: number }[]) =>
+  Math.max(0, ...rows.map((row) => row.id)) + 1;
+
+const PRODUCT_DEFAULTS = {
+  active: 1,
+  description: null,
+  product_group_id: null,
+  shopping_location_id: null,
+  min_stock_amount: 0,
+  default_best_before_days: 0,
+  default_best_before_days_after_open: 0,
+  picture_file_name: null,
+  parent_product_id: null,
+  due_type: 1,
+  quick_consume_amount: 1,
+  quick_open_amount: 1,
+  hide_on_stock_overview: 0,
+  should_not_be_frozen: 0,
+  userfields: null,
+};
+
+const handleCreateObject = (entity: string, body: JsonBody) => {
+  const fields = ObjectBodySchema.safeParse(body);
+  if (!fields.success) return error(400, "Body must be an object");
+  const current = getDatabase();
+  if (entity === "products") {
+    const parsed = ProductSchema.safeParse({
+      ...PRODUCT_DEFAULTS,
+      ...fields.data,
+      id: nextId(current.products),
+      row_created_timestamp: new Date().toISOString(),
+    });
+    if (!parsed.success) return error(400, z.prettifyError(parsed.error));
+    current.products.push(parsed.data);
+    return json({ created_object_id: parsed.data.id });
+  }
+  if (entity === "product_barcodes") {
+    const parsed = ProductBarcodeSchema.safeParse({
+      amount: 1,
+      ...fields.data,
+      id: nextId(current.product_barcodes),
+    });
+    if (!parsed.success) return error(400, z.prettifyError(parsed.error));
+    if (current.product_barcodes.some((row) => row.barcode === parsed.data.barcode)) {
+      return error(400, "This barcode is already linked to a product");
+    }
+    current.product_barcodes.push(parsed.data);
+    return json({ created_object_id: parsed.data.id });
+  }
+  return error(404, `Creating ${entity} is not available in mock mode yet.`);
+};
+
+const handleDeleteObject = (entity: string, id: number) => {
+  const current = getDatabase();
+  if (entity !== "product_barcodes") {
+    return error(404, `Deleting ${entity} is not available in mock mode yet.`);
+  }
+  current.product_barcodes = current.product_barcodes.filter(
+    (row) => row.id !== id,
+  );
+  return new Response(null, { status: 204 });
+};
+
+const handleSetUserfields = (entity: string, id: number, body: JsonBody) => {
+  const parsed = UserfieldsBodySchema.safeParse(body);
+  if (!parsed.success) return error(400, z.prettifyError(parsed.error));
+  const product = getDatabase().products.find((candidate) => candidate.id === id);
+  if (entity !== "products" || !product) return error(400, "Object does not exist");
+  product.userfields = { ...product.userfields, ...parsed.data };
+  return new Response(null, { status: 204 });
 };
 
 const isProductAction = (name: string): name is keyof typeof PRODUCT_ACTIONS =>
@@ -327,6 +493,21 @@ const handleGet = (path: string[]) => {
 
   if (first === "stock" && path.length === 1)
     return json(currentStock(current));
+
+  if (
+    first === "stock" &&
+    second === "products" &&
+    third === "by-barcode" &&
+    fourth &&
+    path.length === 4
+  ) {
+    const barcode = current.product_barcodes.find((row) => row.barcode === fourth);
+    const product = current.products.find(
+      (candidate) => candidate.id === barcode?.product_id,
+    );
+    if (!product) return error(400, `No product with barcode ${fourth} found`);
+    return json(productDetails(current, product));
+  }
 
   if (
     first === "stock" &&
@@ -357,7 +538,23 @@ const handlePost = (path: string[], body: JsonBody) => {
       (candidate) => candidate.id === Number(third),
     );
     if (!product) return error(400, "Product does not exist or is inactive");
-    if (isProductAction(fourth)) return PRODUCT_ACTIONS[fourth](product, body);
+    if (isProductAction(fourth)) {
+      return runAsTransaction(product, body, PRODUCT_ACTIONS[fourth]);
+    }
+  }
+
+  if (
+    first === "stock" &&
+    second === "transactions" &&
+    third &&
+    fourth === "undo" &&
+    path.length === 4
+  ) {
+    return handleUndo(third);
+  }
+
+  if (first === "objects" && second && path.length === 2) {
+    return handleCreateObject(second, body);
   }
 
   if (first === "stock" && second === "shoppinglist" && path.length === 3) {
@@ -389,5 +586,12 @@ export const handleMockRequest = async (
   if (request.method === "GET") return handleGet(path);
   if (request.method === "POST")
     return handlePost(path, await readBody(request));
+  const [first, second, third] = path;
+  if (request.method === "PUT" && first === "userfields" && second && third) {
+    return handleSetUserfields(second, Number(third), await readBody(request));
+  }
+  if (request.method === "DELETE" && first === "objects" && second && third) {
+    return handleDeleteObject(second, Number(third));
+  }
   return error(501, `${request.method} is not available in mock mode yet.`);
 };

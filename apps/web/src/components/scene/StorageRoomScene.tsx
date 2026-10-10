@@ -5,7 +5,8 @@ import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { CameraRig, type CameraApi, type CameraFocus } from "./CameraRig";
 import { Decor } from "./Decor";
-import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
+import { CLICK_DRAG_TOLERANCE, highlightFor } from "./interaction";
+import type { SceneOverlay } from "./overlay";
 import { Room } from "./Room";
 import { Storage } from "./Storage";
 import type { SceneStorage } from "./types";
@@ -35,7 +36,7 @@ const Lights = () => (
 type StorageRoomSceneProps = {
   storages: readonly SceneStorage[];
   cameraRef?: Ref<CameraApi>;
-  tagLayer: HTMLElement | null;
+  overlay: SceneOverlay;
   label: string;
   hoveredLocationId: number | null;
   selectedLocationId: number | null;
@@ -48,21 +49,11 @@ type StorageRoomSceneProps = {
   onBackgroundClick: () => void;
 };
 
-const highlightFor = (
-  locationId: number,
-  hoveredLocationId: number | null,
-  selectedLocationId: number | null,
-): Highlight => {
-  if (locationId === selectedLocationId) return "selected";
-  if (locationId === hoveredLocationId) return "hover";
-  return "none";
-};
-
 /** Renders on demand rather than every frame, to stay light on phones. */
 export const StorageRoomScene = ({
   storages,
   cameraRef,
-  tagLayer,
+  overlay,
   label,
   hoveredLocationId,
   selectedLocationId,
@@ -113,7 +104,7 @@ export const StorageRoomScene = ({
         <Storage
           key={storage.locationId}
           storage={storage}
-          tagLayer={tagLayer}
+          overlay={overlay}
           highlight={highlightFor(
             storage.locationId,
             hoveredLocationId,

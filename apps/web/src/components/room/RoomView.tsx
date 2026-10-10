@@ -9,9 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
+import { OPEN_SCAN } from "@/lib/page-transitions";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowDownIcon,
+  BarcodeIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   ArrowUpIcon,
@@ -21,7 +24,9 @@ import {
   MagnifyingGlassPlusIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
+import { createSceneOverlay } from "@/components/scene/overlay";
 import type { SceneStorage } from "@/components/scene/types";
+import { SceneOverlayLayer } from "./SceneOverlayLayer";
 import { FridgeDoor } from "@/components/pantry/FridgeDoor";
 import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -98,7 +103,7 @@ type RoomViewProps = {
 
 export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: RoomViewProps) => {
   const cameraRef = useRef<CameraApi>(null);
-  const [tagLayer, setTagLayer] = useState<HTMLDivElement | null>(null);
+  const [overlay] = useState(createSceneOverlay);
   const selection = useUiStore((state) => state.selection);
   const hoveredLocationId = useUiStore((state) => state.hoveredLocationId);
   const view = useUiStore((state) => state.view);
@@ -155,25 +160,29 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
       className="relative min-h-[420px] flex-1 overflow-hidden rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[560px]"
     >
       <div className="absolute inset-0">
-        {tagLayer && (
-          <StorageRoomScene
-            storages={storages}
-            cameraRef={cameraRef}
-            tagLayer={tagLayer}
-            label={description}
-            hoveredLocationId={hoveredLocationId}
-            selectedLocationId={selection?.locationId ?? null}
-            openDoorLocationId={view === "room" ? null : fridgeLocationId}
-            focus={focus}
-            onFocusSettled={handleFocusSettled}
-            onHoverChange={setHoveredLocation}
-            onSelectStorage={onSelectStorage}
-            onSelectItem={selectItem}
-            onBackgroundClick={clearSelection}
-          />
-        )}
+        <StorageRoomScene
+          storages={storages}
+          cameraRef={cameraRef}
+          overlay={overlay}
+          label={description}
+          hoveredLocationId={hoveredLocationId}
+          selectedLocationId={selection?.locationId ?? null}
+          openDoorLocationId={view === "room" ? null : fridgeLocationId}
+          focus={focus}
+          onFocusSettled={handleFocusSettled}
+          onHoverChange={setHoveredLocation}
+          onSelectStorage={onSelectStorage}
+          onSelectItem={selectItem}
+          onBackgroundClick={clearSelection}
+        />
       </div>
-      <div ref={setTagLayer} className="pointer-events-none absolute inset-0 z-10 overflow-hidden" />
+      <SceneOverlayLayer
+        overlay={overlay}
+        storages={storages}
+        hoveredLocationId={hoveredLocationId}
+        selectedLocationId={selection?.locationId ?? null}
+        openDoorLocationId={view === "room" ? null : fridgeLocationId}
+      />
 
       <div className="absolute top-4 right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper">
         <ControlButton label="Zoom in" onClick={() => cameraRef.current?.zoomIn()}>
@@ -203,7 +212,17 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         })}
       </div>
 
-      <p className="pointer-events-none absolute right-4 bottom-4 z-30 hidden rounded-full bg-card/80 px-3 py-1.5 text-[13px] text-muted-foreground lg:block">
+      <Link
+        href="/scan"
+        transitionTypes={OPEN_SCAN}
+        aria-label="Scan a barcode"
+        className="absolute right-5 bottom-5 z-30 hidden h-15 items-center gap-2.5 rounded-full bg-terracotta pr-5.5 pl-4.5 text-base font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37,0_14px_28px_-10px_rgba(154,79,55,.7)] transition-transform duration-150 ease-out active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:flex"
+      >
+        <BarcodeIcon size={24} weight="duotone" aria-hidden />
+        Scan
+      </Link>
+
+      <p className="pointer-events-none absolute right-36 bottom-6 z-30 hidden rounded-full bg-card/80 px-3 py-1.5 text-[13px] text-muted-foreground xl:block">
         Drag to look around · scroll to zoom · tap storage to peek inside
       </p>
 

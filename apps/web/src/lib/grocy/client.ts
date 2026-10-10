@@ -39,20 +39,52 @@ export const grocyFetch = async <T>(
   return schema.parse(await response.json());
 };
 
-type GrocyBody = Record<string, string | number | boolean | undefined>;
+export type GrocyBody = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
-/** For Grocy actions; their response bodies are not used. */
-export const grocyPost = async (
+const sendToGrocy = async (
+  method: "POST" | "PUT" | "DELETE",
   path: string,
-  body: GrocyBody,
-): Promise<void> => {
+  body?: GrocyBody,
+) => {
   const response = await fetch(proxyUrl(path), {
-    method: "POST",
+    method,
     headers: {
       accept: "application/json",
       "content-type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: body ? JSON.stringify(body) : undefined,
   });
   if (!response.ok) await throwGrocyError(response);
+  return response;
+};
+
+/** For Grocy actions whose response body isn't needed. */
+export const grocyPost = async (
+  path: string,
+  body: GrocyBody,
+): Promise<void> => {
+  await sendToGrocy("POST", path, body);
+};
+
+export const grocyPut = async (
+  path: string,
+  body: GrocyBody,
+): Promise<void> => {
+  await sendToGrocy("PUT", path, body);
+};
+
+export const grocyDelete = async (path: string): Promise<void> => {
+  await sendToGrocy("DELETE", path);
+};
+
+export const grocyPostFor = async <T>(
+  path: string,
+  body: GrocyBody,
+  schema: z.ZodType<T>,
+): Promise<T> => {
+  const response = await sendToGrocy("POST", path, body);
+  return schema.parse(await response.json());
 };

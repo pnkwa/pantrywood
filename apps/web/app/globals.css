@@ -176,3 +176,156 @@
 @utility tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Scan screen: the sage scan line drifts, a successful scan flashes once (DESIGN.md section 19). */
+@keyframes scan-line {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(10rem);
+  }
+}
+
+@keyframes scan-flash {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Page transitions: the room settles back while the scan station rises over it (DESIGN.md section 10). */
+::view-transition {
+  pointer-events: none;
+}
+
+::view-transition-old(.scan-open),
+::view-transition-new(.scan-close) {
+  --page-scale: 0.97;
+}
+
+::view-transition-old(.scan-open) {
+  animation:
+    180ms ease-in both page-fade-out,
+    320ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-shrink;
+}
+
+::view-transition-new(.scan-open) {
+  --page-rise: 40px;
+  animation:
+    240ms ease-out 80ms both page-fade-in,
+    380ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-rise;
+}
+
+::view-transition-old(.scan-close) {
+  --page-rise: 40px;
+  animation:
+    180ms ease-in both page-fade-out,
+    260ms ease-in both page-sink;
+}
+
+::view-transition-new(.scan-close) {
+  animation:
+    240ms ease-out 60ms both page-fade-in,
+    380ms cubic-bezier(0.2, 0.8, 0.2, 1) both page-grow;
+}
+
+::view-transition-old(.nav-forward) {
+  --page-slide: -48px;
+  animation:
+    150ms ease-in both page-fade-out,
+    320ms ease-in-out both page-slide-out;
+}
+
+::view-transition-new(.nav-forward) {
+  --page-slide: 48px;
+  animation:
+    210ms ease-out 120ms both page-fade-in,
+    320ms ease-in-out both page-slide-in;
+}
+
+::view-transition-old(.nav-back) {
+  --page-slide: 48px;
+  animation:
+    150ms ease-in both page-fade-out,
+    320ms ease-in-out both page-slide-out;
+}
+
+::view-transition-new(.nav-back) {
+  --page-slide: -48px;
+  animation:
+    210ms ease-out 120ms both page-fade-in,
+    320ms ease-in-out both page-slide-in;
+}
+
+::view-transition-old(.page-fade) {
+  animation: 150ms ease-in both page-fade-out;
+}
+
+::view-transition-new(.page-fade) {
+  animation: 210ms ease-out 60ms both page-fade-in;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*) {
+    animation: 120ms ease-in both page-fade-out !important;
+  }
+
+  ::view-transition-new(*) {
+    animation: 160ms ease-out both page-fade-in !important;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+  }
+}
+
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes page-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes page-shrink {
+  to {
+    scale: var(--page-scale);
+  }
+}
+
+@keyframes page-grow {
+  from {
+    scale: var(--page-scale);
+  }
+}
+
+@keyframes page-rise {
+  from {
+    translate: 0 var(--page-rise);
+  }
+}
+
+@keyframes page-sink {
+  to {
+    translate: 0 var(--page-rise);
+  }
+}
+
+@keyframes page-slide-in {
+  from {
+    translate: var(--page-slide) 0;
+  }
+}
+
+@keyframes page-slide-out {
+  to {
+    translate: var(--page-slide) 0;
+  }
+}

@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { OPEN_SCAN } from "@/lib/page-transitions";
 import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
 import { useRoomStorages } from "@/lib/room/use-room";
+import { useHardwareScanner } from "@/lib/scan/hardware-scanner";
+import { useScanStore } from "@/lib/store/scan-store";
 import { useUiStore } from "@/lib/store/ui-store";
 import { BottomSheet } from "./BottomSheet";
 import { InspectPanelContent } from "./InspectPanel";
@@ -13,6 +17,16 @@ import { Toasts } from "./Toasts";
 import { TopBar } from "./TopBar";
 
 export const PantryHome = () => {
+  const router = useRouter();
+  // A hardware scan anywhere in the room opens the scan screen with that code.
+  const openScanWith = useCallback(
+    (code: string) => {
+      useScanStore.getState().showBarcode(code);
+      router.push("/scan", { transitionTypes: OPEN_SCAN });
+    },
+    [router],
+  );
+  useHardwareScanner(openScanWith);
   const pantryState = usePantry();
   const pantry = pantryState.status === "ready" ? pantryState.pantry : null;
   const storages = useRoomStorages(pantry);

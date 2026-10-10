@@ -7,8 +7,9 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { SceneStorage, StorageKind } from "./types";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { itemProductIdAt } from "./items/ItemInstances";
+import type { SceneOverlay } from "./overlay";
 import { StorageOutline } from "./StorageOutline";
-import { StorageTagLabel } from "./StorageTagLabel";
+import { StorageTagAnchor } from "./StorageTagAnchor";
 import { Counter } from "./storage/Counter";
 import { Crates } from "./storage/Crates";
 import { Fridge } from "./storage/Fridge";
@@ -98,7 +99,7 @@ const useLift = (lifted: boolean) => {
 
 type StorageProps = {
   storage: SceneStorage;
-  tagLayer: HTMLElement | null;
+  overlay: SceneOverlay;
   highlight: Highlight;
   doorOpen: boolean;
   onHoverChange: (locationId: number | null) => void;
@@ -108,7 +109,7 @@ type StorageProps = {
 
 export const Storage = ({
   storage,
-  tagLayer,
+  overlay,
   highlight,
   doorOpen,
   onHoverChange,
@@ -162,15 +163,15 @@ export const Storage = ({
         <group ref={liftRef}>
           <Piece storage={storage} doorOpen={doorOpen} />
           <StorageOutline
+            locationId={storage.locationId}
             box={HIT_BOXES[storage.kind]}
             highlight={doorOpen ? "none" : highlight}
-            tagLayer={tagLayer}
+            overlay={overlay}
           />
-          <StorageTagLabel
-            tag={storage.tag}
+          <StorageTagAnchor
+            locationId={storage.locationId}
             height={TAG_HEIGHT[storage.kind]}
-            tagLayer={tagLayer}
-            selected={highlight === "selected"}
+            overlay={overlay}
           />
         </group>
     </group>

@@ -108,6 +108,34 @@ export const ShoppingListItemSchema = z.looseObject({
   row_created_timestamp: timestamp.optional(),
 });
 
+export const ShoppingLocationSchema = z.looseObject({
+  id,
+  name: z.string(),
+  description: z.string().nullish(),
+  active: flag.optional(),
+  row_created_timestamp: timestamp.optional(),
+});
+
+/** A stock action's log rows; `transaction_id` undoes the whole action. */
+export const StockLogEntrySchema = z.looseObject({
+  id,
+  product_id: id,
+  amount,
+  transaction_id: z.string(),
+});
+
+/** GET /stock/products/by-barcode/{barcode}: the product behind a barcode and its stock. */
+export const ProductDetailsSchema = z.looseObject({
+  product: ProductSchema,
+  product_barcodes: z.array(ProductBarcodeSchema).default([]),
+  stock_amount: amount.default(0),
+  stock_amount_opened: amount.nullish(),
+  next_due_date: isoDate.nullish(),
+  last_price: amount.nullish(),
+  last_shopping_location_id: optionalId,
+  default_shopping_location_id: optionalId,
+});
+
 /** One row of GET /stock. */
 export const CurrentStockSchema = z.looseObject({
   product_id: id,
@@ -128,3 +156,6 @@ export type StockEntry = z.infer<typeof StockEntrySchema>;
 export type ProductBarcode = z.infer<typeof ProductBarcodeSchema>;
 export type CurrentStock = z.infer<typeof CurrentStockSchema>;
 export type ShoppingListItem = z.infer<typeof ShoppingListItemSchema>;
+export type ShoppingLocation = z.infer<typeof ShoppingLocationSchema>;
+export type StockLogEntry = z.infer<typeof StockLogEntrySchema>;
+export type ProductDetails = z.infer<typeof ProductDetailsSchema>;

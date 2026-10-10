@@ -9,6 +9,7 @@ import {
   type ProductGroup,
   type QuantityUnit,
   type ShoppingListItem,
+  type ShoppingLocation,
   type StockEntry,
 } from "@pantrywood/shared";
 
@@ -40,6 +41,13 @@ export const locations: Location[] = [
     description: "Top compartment of the fridge",
     is_freezer: 1,
   },
+];
+
+export const shoppingLocations: ShoppingLocation[] = [
+  { id: 1, name: "Fresh market" },
+  { id: 2, name: "Night market" },
+  { id: 3, name: "Supermarket" },
+  { id: 4, name: "Corner shop" },
 ];
 
 export const productGroups: ProductGroup[] = [
@@ -626,6 +634,7 @@ export type MockDatabase = {
   stock: StockEntry[];
   product_barcodes: ProductBarcode[];
   shopping_list: ShoppingListItem[];
+  shopping_locations: ShoppingLocation[];
 };
 
 // Dates are relative to today, so "use soon" and "past its date" stay true whenever the app runs.
@@ -709,6 +718,7 @@ export const buildMockDatabase = (today = new Date()): MockDatabase => {
     stock,
     product_barcodes,
     shopping_list: [],
+    shopping_locations: shoppingLocations,
   };
 };
 

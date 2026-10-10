@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import { Vector3, type Group } from "three";
 import type { Highlight } from "./interaction";
+import type { SceneOverlay } from "./overlay";
 
 type ScreenPoint = { x: number; y: number };
 
@@ -34,35 +34,20 @@ const convexHull = (points: ScreenPoint[]): ScreenPoint[] => {
   return [...build(sorted), ...build([...sorted].reverse())];
 };
 
-const STROKES: Record<Exclude<Highlight, "none">, string> = {
-  hover: "#FFFBF3",
-  selected: "#5E7550",
-};
-
 type StorageOutlineProps = {
+  locationId: number;
   /** width, height, depth, center height */
   box: [number, number, number, number];
   highlight: Highlight;
-  tagLayer: HTMLElement | null;
+  overlay: SceneOverlay;
 };
 
-/** A 2D silhouette around the piece, like the mockup: cream on hover, sage when selected. */
-export const StorageOutline = ({ box, highlight, tagLayer }: StorageOutlineProps) => {
+/** Traces the piece's screen silhouette into its DOM outline, like the mockup. */
+export const StorageOutline = ({ locationId, box, highlight, overlay }: StorageOutlineProps) => {
   const groupRef = useRef<Group>(null);
-  const strokeRef = useRef<SVGPolygonElement>(null);
-  const shadowRef = useRef<SVGPolygonElement>(null);
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
   const invalidate = useThree((state) => state.invalidate);
-  const portal = useMemo(
-    () => (tagLayer ? { current: tagLayer } : undefined),
-    [tagLayer],
-  );
-  // Keeps the last color while fading out, so a selected outline doesn't flash cream.
-  const [stroke, setStroke] = useState(STROKES.hover);
-  if (highlight !== "none" && stroke !== STROKES[highlight]) {
-    setStroke(STROKES[highlight]);
-  }
   useEffect(() => invalidate(), [highlight, invalidate]);
 
   const corners = useMemo(() => {
@@ -83,7 +68,8 @@ export const StorageOutline = ({ box, highlight, tagLayer }: StorageOutlineProps
 
   useFrame(() => {
     const group = groupRef.current;
-    if (!group || highlight === "none") return;
+    const outline = overlay.outlines.get(locationId);
+    if (!group || !outline || highlight === "none") return;
     group.updateWorldMatrix(true, false);
     const projected = corners.map((corner) => {
       const point = corner.clone().applyMatrix4(group.matrixWorld).project(camera);
@@ -95,42 +81,8 @@ export const StorageOutline = ({ box, highlight, tagLayer }: StorageOutlineProps
     const points = convexHull(projected)
       .map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
       .join(" ");
-    strokeRef.current?.setAttribute("points", points);
-    shadowRef.current?.setAttribute("points", points);
+    for (const polygon of outline.children) polygon.setAttribute("points", points);
   });
 
-  return (
-    <group ref={groupRef}>
-      <Html
-        portal={portal}
-        calculatePosition={() => [0, 0]}
-        zIndexRange={[1, 0]}
-        style={{ pointerEvents: "none" }}
-      >
-        <svg
-          width={size.width}
-          height={size.height}
-          aria-hidden
-          className={`overflow-visible transition-opacity duration-150 ease-out ${
-            highlight === "none" ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          <polygon
-            ref={shadowRef}
-            fill="none"
-            stroke="rgba(74, 59, 46, 0.18)"
-            strokeWidth={6}
-            strokeLinejoin="round"
-          />
-          <polygon
-            ref={strokeRef}
-            fill="none"
-            stroke={stroke}
-            strokeWidth={3.5}
-            strokeLinejoin="round"
-          />
-        </svg>
-      </Html>
-    </group>
-  );
+  return <group ref={groupRef} />;
 };
