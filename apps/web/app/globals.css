@@ -58,6 +58,11 @@
   --radius: 1.25rem;
 
   --shadow-paper: 0 1px 0 rgba(74, 59, 46, 0.06), 0 10px 28px -8px rgba(74, 59, 46, 0.18);
+
+  /* Soft cream-to-peach sky behind the 3D room */
+  --scene-sky-top: #fbf4e8;
+  --scene-sky-mid: #f3e6d2;
+  --scene-sky-edge: #efd8c4;
 }
 
 /* Dark — "Evening Cottage" */
@@ -77,6 +82,10 @@
   --ring: var(--sage);
 
   --shadow-paper: 0 1px 0 rgba(0, 0, 0, 0.2), 0 10px 28px -8px rgba(0, 0, 0, 0.45);
+
+  --scene-sky-top: #3a332a;
+  --scene-sky-mid: #322c25;
+  --scene-sky-edge: #2b261f;
 }
 
 @theme inline {
