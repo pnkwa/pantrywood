@@ -12,20 +12,26 @@ export type GrocyConfig =
   | { mode: "live"; baseUrl: string; apiKey: string }
   | { mode: "unconfigured"; problem: string };
 
-/** Server-only: reads the Grocy connection from apps/web/.env.local. Never import this in client code. */
-export function getGrocyConfig(): GrocyConfig {
-  const env = EnvSchema.safeParse(process.env);
-  if (!env.success) {
-    return { mode: "unconfigured", problem: z.prettifyError(env.error) };
+export const getGrocyConfig = (): GrocyConfig => {
+  const environment = EnvSchema.safeParse(process.env);
+  if (!environment.success) {
+    return {
+      mode: "unconfigured",
+      problem: z.prettifyError(environment.error),
+    };
   }
-  const { MOCK_GROCY, GROCY_URL, GROCY_API_KEY } = env.data;
+  const { MOCK_GROCY, GROCY_URL, GROCY_API_KEY } = environment.data;
   if (MOCK_GROCY === "true") return { mode: "mock" };
   if (!GROCY_URL || !GROCY_API_KEY) {
     return {
       mode: "unconfigured",
-      problem: "Set GROCY_URL and GROCY_API_KEY in apps/web/.env.local, or MOCK_GROCY=true.",
+      problem:
+        "Set GROCY_URL and GROCY_API_KEY in apps/web/.env.local, or MOCK_GROCY=true.",
     };
   }
-  // Keep a trailing slash so Grocy can live under a sub-path (https://host/grocy/).
-  return { mode: "live", baseUrl: GROCY_URL.replace(/\/*$/, "/"), apiKey: GROCY_API_KEY };
-}
+  return {
+    mode: "live",
+    baseUrl: GROCY_URL.replace(/\/*$/, "/"),
+    apiKey: GROCY_API_KEY,
+  };
+};

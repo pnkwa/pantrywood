@@ -5,8 +5,15 @@ import type { SceneItem } from "../types";
 import { arrange, type Surface } from "../items/arrange";
 import { ItemInstances } from "../items/ItemInstances";
 
-/** Items lined up on a storage piece's surfaces (local coordinates). */
-export function StoredItems({ items, surfaces }: { items: readonly SceneItem[]; surfaces: readonly Surface[] }) {
-  const { placements, markers } = useMemo(() => arrange(items, surfaces), [items, surfaces]);
+type StoredItemsProps = {
+  items: readonly SceneItem[];
+  surfaces: readonly Surface[];
+};
+
+export const StoredItems = ({ items, surfaces }: StoredItemsProps) => {
+  const { placements, markers } = useMemo(
+    () => arrange(items, surfaces),
+    [items, surfaces],
+  );
   return <ItemInstances placements={placements} markers={markers} />;
-}
+};

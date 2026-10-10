@@ -1,22 +1,19 @@
 import { z } from "zod";
 
-/*
- * Grocy API shapes (Grocy 4.x). Grocy stores flags as 0/1 and some setups return numbers as
- * strings, so numeric fields are coerced. Unknown fields are kept (Grocy adds columns over time).
- */
-
+// Grocy stores flags as 0/1 and some setups return numbers as strings, so numbers are coerced.
 const id = z.coerce.number().int();
 const optionalId = z.coerce.number().int().nullish();
 const amount = z.coerce.number();
-const flag = z.coerce.number().int().pipe(z.union([z.literal(0), z.literal(1)]));
-/** "YYYY-MM-DD". Grocy uses 2999-12-31 for "never expires". */
-const date = z.string();
+const flag = z.coerce
+  .number()
+  .int()
+  .pipe(z.union([z.literal(0), z.literal(1)]));
+const isoDate = z.string();
 const timestamp = z.string();
 const userfields = z.record(z.string(), z.string().nullable()).nullish();
 
 export const NEVER_EXPIRES_DATE = "2999-12-31";
 
-/** Product userfield that holds the Thai name. Create it in Grocy (Manage → Userfields). */
 export const THAI_NAME_USERFIELD = "name_th";
 
 export const ProductGroupSchema = z.looseObject({
@@ -56,7 +53,7 @@ export const ProductSchema = z.looseObject({
   qu_id_purchase: id,
   qu_id_stock: id,
   min_stock_amount: amount,
-  /** -1 = never expires (Grocy default for supplies). */
+  /** -1 = never expires. */
   default_best_before_days: z.coerce.number().int(),
   default_best_before_days_after_open: z.coerce.number().int(),
   default_best_before_days_after_freezing: z.coerce.number().int().optional(),
@@ -73,17 +70,16 @@ export const ProductSchema = z.looseObject({
   userfields,
 });
 
-/** One batch of stock (Grocy table `stock`, from /objects/stock or /stock/products/{id}/entries). */
 export const StockEntrySchema = z.looseObject({
   id,
   product_id: id,
   amount,
-  best_before_date: date,
-  purchased_date: date.nullish(),
+  best_before_date: isoDate,
+  purchased_date: isoDate.nullish(),
   stock_id: z.string(),
   price: amount.nullish(),
   open: flag,
-  opened_date: date.nullish(),
+  opened_date: isoDate.nullish(),
   location_id: optionalId,
   shopping_location_id: optionalId,
   note: z.string().nullish(),
@@ -102,14 +98,14 @@ export const ProductBarcodeSchema = z.looseObject({
   row_created_timestamp: timestamp.optional(),
 });
 
-/** One row of GET /stock: the current stock of a product, summed over its batches. */
+/** One row of GET /stock. */
 export const CurrentStockSchema = z.looseObject({
   product_id: id,
   amount,
   amount_aggregated: amount,
   amount_opened: amount,
   amount_opened_aggregated: amount,
-  best_before_date: date,
+  best_before_date: isoDate,
   is_aggregated_amount: flag,
   product: ProductSchema,
 });

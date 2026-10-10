@@ -1,6 +1,5 @@
 "use client";
 
-import type { RefObject } from "react";
 import type { SceneStorage, StorageKind } from "./types";
 import { StorageTagLabel } from "./StorageTagLabel";
 import { Crates } from "./storage/Crates";
@@ -12,7 +11,6 @@ import { RiceBarrel } from "./storage/RiceBarrel";
 import { SuppliesCabinet } from "./storage/SuppliesCabinet";
 import { WickerBasket } from "./storage/WickerBasket";
 
-/** Height of the paper tag above each piece's origin. */
 const TAG_HEIGHT: Record<StorageKind, number> = {
   fridge: 4.95,
   freezer: 2.25,
@@ -24,7 +22,7 @@ const TAG_HEIGHT: Record<StorageKind, number> = {
   basket: 1.0,
 };
 
-function Piece({ storage }: { storage: SceneStorage }) {
+const Piece = ({ storage }: { storage: SceneStorage }) => {
   switch (storage.kind) {
     case "fridge":
       return <Fridge />;
@@ -43,20 +41,17 @@ function Piece({ storage }: { storage: SceneStorage }) {
     case "basket":
       return <WickerBasket items={storage.items} />;
   }
-}
+};
 
-/** One Grocy location as a piece of furniture, with its items and paper tag. */
-export function Storage({
-  storage,
-  tagLayer,
-}: {
-  storage: SceneStorage;
-  tagLayer?: RefObject<HTMLElement | null>;
-}) {
-  return (
-    <group position={storage.position} rotation={[0, storage.rotationY, 0]}>
-      <Piece storage={storage} />
-      <StorageTagLabel tag={storage.tag} height={TAG_HEIGHT[storage.kind]} portal={tagLayer} />
-    </group>
-  );
-}
+type StorageProps = { storage: SceneStorage; tagLayer: HTMLElement | null };
+
+export const Storage = ({ storage, tagLayer }: StorageProps) => (
+  <group position={storage.position} rotation={[0, storage.rotationY, 0]}>
+    <Piece storage={storage} />
+    <StorageTagLabel
+      tag={storage.tag}
+      height={TAG_HEIGHT[storage.kind]}
+      tagLayer={tagLayer}
+    />
+  </group>
+);

@@ -1,76 +1,89 @@
-import { CanvasTexture, NearestFilter, RepeatWrapping, SRGBColorSpace, type Texture } from "three";
+import {
+  CanvasTexture,
+  NearestFilter,
+  RepeatWrapping,
+  SRGBColorSpace,
+  type Texture,
+} from "three";
 
-/* Small procedural textures, drawn once on a canvas (no image downloads). */
-
-function canvasTexture(size: number, draw: (ctx: CanvasRenderingContext2D, size: number) => void, repeat: [number, number]): Texture {
+const canvasTexture = (
+  size: number,
+  draw: (context: CanvasRenderingContext2D, size: number) => void,
+  repeat: [number, number],
+): Texture => {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
-  draw(canvas.getContext("2d")!, size);
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas 2D is not available.");
+  draw(context, size);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
   texture.wrapS = texture.wrapT = RepeatWrapping;
   texture.repeat.set(...repeat);
   texture.anisotropy = 4;
   return texture;
-}
+};
 
-/** Cream and pale-blue checkered floor, 10 × 10 tiles with soft grout. */
-export function checkerFloorTexture(): Texture {
-  return canvasTexture(
+export const checkerFloorTexture = (): Texture =>
+  canvasTexture(
     256,
-    (ctx, s) => {
-      const half = s / 2;
-      ctx.fillStyle = "#F3E7CF";
-      ctx.fillRect(0, 0, s, s);
-      ctx.fillStyle = "#D3E2E6";
-      ctx.fillRect(0, 0, half, half);
-      ctx.fillRect(half, half, half, half);
-      ctx.strokeStyle = "#E6D8BC";
-      ctx.lineWidth = 4;
-      for (const p of [0, half, s]) {
-        ctx.beginPath();
-        ctx.moveTo(p, 0);
-        ctx.lineTo(p, s);
-        ctx.moveTo(0, p);
-        ctx.lineTo(s, p);
-        ctx.stroke();
+    (context, size) => {
+      const half = size / 2;
+      context.fillStyle = "#F3E7CF";
+      context.fillRect(0, 0, size, size);
+      context.fillStyle = "#D3E2E6";
+      context.fillRect(0, 0, half, half);
+      context.fillRect(half, half, half, half);
+      context.strokeStyle = "#E6D8BC";
+      context.lineWidth = 4;
+      for (const offset of [0, half, size]) {
+        context.beginPath();
+        context.moveTo(offset, 0);
+        context.lineTo(offset, size);
+        context.moveTo(0, offset);
+        context.lineTo(size, offset);
+        context.stroke();
       }
     },
     [5, 5],
   );
-}
 
-/** Small square wall tiles for the wainscot (0.5-unit tiles). */
-export function wallTileTexture(width: number, height: number): Texture {
-  return canvasTexture(
+const WALL_TILE_SIZE = 0.5;
+
+export const wallTileTexture = (width: number, height: number): Texture =>
+  canvasTexture(
     64,
-    (ctx, s) => {
-      ctx.fillStyle = "#DCE3DD";
-      ctx.fillRect(0, 0, s, s);
-      ctx.fillStyle = "#F5F6F0";
-      const inset = s * 0.05;
-      ctx.beginPath();
-      ctx.roundRect(inset, inset, s - inset * 2, s - inset * 2, s * 0.1);
-      ctx.fill();
+    (context, size) => {
+      context.fillStyle = "#DCE3DD";
+      context.fillRect(0, 0, size, size);
+      context.fillStyle = "#F5F6F0";
+      const inset = size * 0.05;
+      context.beginPath();
+      context.roundRect(
+        inset,
+        inset,
+        size - inset * 2,
+        size - inset * 2,
+        size * 0.1,
+      );
+      context.fill();
     },
-    [width / 0.5, height / 0.5],
+    [width / WALL_TILE_SIZE, height / WALL_TILE_SIZE],
   );
-}
 
-/** Blue gingham for the curtains. */
-export function ginghamTexture(repeatX: number, repeatY: number): Texture {
+export const ginghamTexture = (repeatX: number, repeatY: number): Texture => {
   const texture = canvasTexture(
     16,
-    (ctx, s) => {
-      const half = s / 2;
-      ctx.fillStyle = "#FFFBF3";
-      ctx.fillRect(0, 0, s, s);
-      ctx.fillStyle = "rgba(143, 179, 204, 0.55)";
-      ctx.fillRect(0, 0, half, s);
-      ctx.fillRect(0, 0, s, half);
+    (context, size) => {
+      const half = size / 2;
+      context.fillStyle = "#FFFBF3";
+      context.fillRect(0, 0, size, size);
+      context.fillStyle = "rgba(143, 179, 204, 0.55)";
+      context.fillRect(0, 0, half, size);
+      context.fillRect(0, 0, size, half);
     },
     [repeatX, repeatY],
   );
   texture.magFilter = NearestFilter;
   return texture;
-}
+};

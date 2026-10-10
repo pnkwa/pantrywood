@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   description: "A cozy storage room for your Grocy pantry.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
-  return (
-    <html lang="en" className={`${dmSans.variable} ${plexThai.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col">
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  );
-}
+const RootLayout = ({ children }: LayoutProps<"/">) => (
+  <html lang="en" className={`${dmSans.variable} ${plexThai.variable} h-full antialiased`}>
+    <body className="flex min-h-full flex-col">
+      <Providers>{children}</Providers>
+    </body>
+  </html>
+);
+
+export default RootLayout;
