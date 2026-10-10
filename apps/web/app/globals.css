@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Pantrywood tokens — DESIGN.md sections 2, 4 and 13. */
+
+/* Light — "Morning Cottage" */
+:root {
+  /* Palette */
+  --cream: #f6efe2;
+  --paper: #fffbf3;
+  --oat: #eadfc9;
+  --linen: #f1e7d4;
+  --bark: #4a3b2e;
+  --bark-soft: #7a6654;
+  --sage: #8fa67a;
+  --sage-deep: #5e7550;
+  --terracotta: #c8755a;
+  --honey: #e2b25c;
+  --berry: #a8533a;
+  --frost: #a9c4c9;
+
+  /* Status chips: tinted background + deep text (always with an icon and a word) */
+  --status-fresh: #e3ead9;
+  --status-fresh-foreground: #4c6140;
+  --status-soon: #f6e6c4;
+  --status-soon-foreground: #7a5512;
+  --status-expired: #f3dcd3;
+  --status-expired-foreground: #8e3f2a;
+  --status-low: #f4e0d7;
+  --status-low-foreground: #9a4f37;
+  --status-opened: #e1ecee;
+  --status-opened-foreground: #3e5f66;
+
+  /* shadcn semantic tokens */
+  --background: var(--cream);
+  --foreground: var(--bark);
+  --card: var(--paper);
+  --card-foreground: var(--bark);
+  --popover: var(--paper);
+  --popover-foreground: var(--bark);
+  --primary: var(--sage);
+  --primary-foreground: var(--paper);
+  --secondary: var(--linen);
+  --secondary-foreground: var(--bark);
+  --muted: var(--linen);
+  --muted-foreground: var(--bark-soft);
+  --accent: var(--terracotta);
+  --accent-foreground: var(--paper);
+  --destructive: var(--berry);
+  --border: var(--oat);
+  --input: var(--oat);
+  --ring: var(--sage-deep);
+
+  /* 20px cards; sm = 12px (inputs, chips), panels/sheets 28px */
+  --radius: 1.25rem;
+
+  --shadow-paper: 0 1px 0 rgba(74, 59, 46, 0.06), 0 10px 28px -8px rgba(74, 59, 46, 0.18);
+}
+
+/* Dark — "Evening Cottage" */
+.dark {
+  --cream: #2b261f;
+  --paper: #36302a;
+  --oat: #4a4238;
+  --linen: #3f382f;
+  --bark: #f3eadb;
+  --bark-soft: #c2b39e;
+  --sage: #9db487;
+  --terracotta: #d98b6f;
+  --honey: #e9c077;
+
+  --primary-foreground: #2b261f;
+  --accent-foreground: #2b261f;
+  --ring: var(--sage);
+
+  --shadow-paper: 0 1px 0 rgba(0, 0, 0, 0.2), 0 10px 28px -8px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-cream: var(--cream);
+  --color-paper: var(--paper);
+  --color-oat: var(--oat);
+  --color-linen: var(--linen);
+  --color-bark: var(--bark);
+  --color-bark-soft: var(--bark-soft);
+  --color-sage: var(--sage);
+  --color-sage-deep: var(--sage-deep);
+  --color-terracotta: var(--terracotta);
+  --color-honey: var(--honey);
+  --color-berry: var(--berry);
+  --color-frost: var(--frost);
+
+  --color-status-fresh: var(--status-fresh);
+  --color-status-fresh-foreground: var(--status-fresh-foreground);
+  --color-status-soon: var(--status-soon);
+  --color-status-soon-foreground: var(--status-soon-foreground);
+  --color-status-expired: var(--status-expired);
+  --color-status-expired-foreground: var(--status-expired-foreground);
+  --color-status-low: var(--status-low);
+  --color-status-low-foreground: var(--status-low-foreground);
+  --color-status-opened: var(--status-opened);
+  --color-status-opened-foreground: var(--status-opened-foreground);
+
+  /* DM Sans for everything, IBM Plex Sans Thai as the Thai fallback */
+  --font-sans: var(--font-dm-sans), var(--font-plex-thai), sans-serif;
+  --font-heading: var(--font-sans);
+
+  --radius-sm: 0.75rem;
+  --radius-md: 1rem;
+  --radius-lg: var(--radius);
+  --radius-xl: 1.75rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+
+  --shadow-paper: var(--shadow-paper);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-semibold tracking-[-0.02em];
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -14,5 +14,8 @@
     "@pantrywood/config": "workspace:*",
     "eslint": "^9.28.0",
     "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "zod": "^4.6.5"
   }
 }
