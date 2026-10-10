@@ -1,16 +1,17 @@
-import type { Location } from "@pantrywood/shared";
 import type { SceneStorage, StorageKind } from "@/components/scene/types";
 
 // Measured from docs/mockups/storage-room.svg. The floor spans -5…5; walls sit at z = -5 and x = -5.
 
 type Slot = Pick<SceneStorage, "position" | "rotationY">;
 
+export type PlaceableLocation = { id: number; name: string; isFreezer: boolean };
+
 const FACING_ROOM_FROM_LEFT_WALL = Math.PI / 2;
 
 const SLOTS: Record<Exclude<StorageKind, "basket">, Slot> = {
   pantryShelf: { position: [-3.2, 0, -4.3], rotationY: 0 },
   fridge: { position: [-0.3, 0, -4.0], rotationY: 0 },
-  freezer: { position: [2.4, 0, -4.2], rotationY: 0 },
+  counter: { position: [2.4, 0, -4.2], rotationY: 0 },
   suppliesCabinet: {
     position: [-4.25, 0, -1.9],
     rotationY: FACING_ROOM_FROM_LEFT_WALL,
@@ -31,13 +32,14 @@ const BASKET_SLOTS: Slot[] = [
 ];
 
 export const storageKindFor = (
-  location: Pick<Location, "name" | "is_freezer">,
+  location: Pick<PlaceableLocation, "name" | "isFreezer">,
 ): StorageKind => {
   const name = location.name.toLowerCase();
   if (/maker|filament|craft|3d/.test(name)) return "makerShelf";
-  if (location.is_freezer === 1 || /freezer|ช่องแข็ง/.test(name))
-    return "freezer";
+  // The freezer lives in the fridge's top compartment.
   if (/fridge|refrigerator|ตู้เย็น/.test(name)) return "fridge";
+  if (location.isFreezer || /freezer|ช่องแข็ง/.test(name)) return "fridge";
+  if (/counter|kitchen|ครัว|เคาน์เตอร์/.test(name)) return "counter";
   if (/rice|ข้าว|barrel/.test(name)) return "riceBin";
   if (/pantry|shelf|ชั้น/.test(name)) return "pantryShelf";
   if (/snack|crate|ขนม/.test(name)) return "crates";
@@ -53,14 +55,13 @@ export type PlacedLocation = Pick<
 
 /** Each fixed slot is used once; extra pieces become baskets until the free spots run out. */
 export const placeLocations = (
-  locations: readonly Location[],
+  locations: readonly PlaceableLocation[],
 ): PlacedLocation[] => {
   const usedKinds = new Set<StorageKind>();
   const freeBasketSlots = [...BASKET_SLOTS];
   const placed: PlacedLocation[] = [];
 
   for (const location of locations) {
-    if (location.active === 0) continue;
     let kind = storageKindFor(location);
     let slot: Slot | undefined =
       kind === "basket" || usedKinds.has(kind) ? undefined : SLOTS[kind];

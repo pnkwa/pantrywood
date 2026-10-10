@@ -98,6 +98,16 @@ export const ProductBarcodeSchema = z.looseObject({
   row_created_timestamp: timestamp.optional(),
 });
 
+export const ShoppingListItemSchema = z.looseObject({
+  id,
+  product_id: optionalId,
+  amount,
+  shopping_list_id: id,
+  note: z.string().nullish(),
+  done: flag.optional(),
+  row_created_timestamp: timestamp.optional(),
+});
+
 /** One row of GET /stock. */
 export const CurrentStockSchema = z.looseObject({
   product_id: id,
@@ -117,3 +127,4 @@ export type Product = z.infer<typeof ProductSchema>;
 export type StockEntry = z.infer<typeof StockEntrySchema>;
 export type ProductBarcode = z.infer<typeof ProductBarcodeSchema>;
 export type CurrentStock = z.infer<typeof CurrentStockSchema>;
+export type ShoppingListItem = z.infer<typeof ShoppingListItemSchema>;

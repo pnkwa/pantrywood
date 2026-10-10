@@ -1,6 +1,6 @@
 export type StorageKind =
   | "fridge"
-  | "freezer"
+  | "counter"
   | "pantryShelf"
   | "crates"
   | "riceBin"
@@ -22,6 +22,7 @@ export type ItemMarker = "soon" | "expired" | "low";
 
 export type SceneItem = {
   key: string;
+  productId: number;
   shape: ItemShape;
   color: string;
   /** Lid or cap color. */

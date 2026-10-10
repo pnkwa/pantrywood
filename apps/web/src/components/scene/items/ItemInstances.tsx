@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
+import { z } from "zod";
 import {
   Color,
   Euler,
@@ -18,6 +19,7 @@ import {
   MeshStandardMaterial,
   Quaternion,
   Vector3,
+  type Intersection,
 } from "three";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { ItemMarker } from "../types";
@@ -34,10 +36,23 @@ const MARKER_COLORS: Record<ItemMarker, string> = {
 };
 
 const MARKER_SIZE = 0.1;
+const PRODUCT_IDS_KEY = "productIds";
+
+const ProductIdsSchema = z.array(z.number().nullable());
+
+/** The product of the item instance a ray hit, or null when it hit something else. */
+export const itemProductIdAt = (intersection: Intersection): number | null => {
+  if (intersection.instanceId === undefined) return null;
+  const parsed = ProductIdsSchema.safeParse(intersection.object.userData[PRODUCT_IDS_KEY]);
+  return parsed.success ? (parsed.data[intersection.instanceId] ?? null) : null;
+};
 const POP_SECONDS = 0.35;
+// On-demand rendering means the first frame after a pause can report a huge delta.
+const MAX_FRAME_SECONDS = 1 / 30;
 const POP_OVERSHOOT = 1.6;
 
 type Instance = {
+  productId: number | null;
   /** The part grows from here, so each item pops from its own base. */
   base: Vector3;
   offset: Vector3;
@@ -68,6 +83,7 @@ const batchPlacements = (placements: readonly Placement[]): Batch[] => {
             ? placement.accent
             : part.color;
       batch.instances.push({
+        productId: placement.productId,
         base: new Vector3(...placement.position),
         offset: new Vector3(...part.offset).applyQuaternion(rotation),
         rotation,
@@ -85,6 +101,7 @@ const markerInstances = (markers: readonly MarkerPlacement[]): Instance[] => {
     new Euler(Math.PI / 4, Math.PI / 4, 0),
   );
   return markers.map((marker) => ({
+    productId: null,
     base: new Vector3(...marker.position),
     offset: new Vector3(),
     rotation,
@@ -166,6 +183,7 @@ const InstanceBatch = ({
       args={[geometry(), material, instances.length]}
       castShadow={shadows}
       receiveShadow={shadows}
+      userData={{ [PRODUCT_IDS_KEY]: instances.map((instance) => instance.productId) }}
     />
   );
 };
@@ -177,7 +195,7 @@ const usePopIn = () => {
 
   useFrame((_, delta) => {
     if (progress.current >= 1) return;
-    progress.current = Math.min(1, progress.current + delta / POP_SECONDS);
+    progress.current = Math.min(1, progress.current + Math.min(delta, MAX_FRAME_SECONDS) / POP_SECONDS);
     invalidate();
   });
 

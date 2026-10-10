@@ -28,7 +28,7 @@ const proxy = async (
   }
 
   const config = getGrocyConfig();
-  if (config.mode === "mock") return handleMockRequest(request.method, path);
+  if (config.mode === "mock") return handleMockRequest(request, path);
   if (config.mode === "unconfigured")
     return grocyError(500, `Grocy is not configured. ${config.problem}`);
 

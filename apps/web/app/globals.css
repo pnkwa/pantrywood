@@ -33,6 +33,8 @@
   --status-low-foreground: #9a4f37;
   --status-opened: #e1ecee;
   --status-opened-foreground: #3e5f66;
+  --status-frozen: #dde9f3;
+  --status-frozen-foreground: #355c78;
 
   /* shadcn semantic tokens */
   --background: var(--cream);
@@ -131,6 +133,8 @@
   --color-status-low-foreground: var(--status-low-foreground);
   --color-status-opened: var(--status-opened);
   --color-status-opened-foreground: var(--status-opened-foreground);
+  --color-status-frozen: var(--status-frozen);
+  --color-status-frozen-foreground: var(--status-frozen-foreground);
 
   /* DM Sans for everything, IBM Plex Sans Thai as the Thai fallback */
   --font-sans: var(--font-dm-sans), var(--font-plex-thai), sans-serif;

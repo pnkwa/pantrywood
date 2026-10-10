@@ -3,16 +3,15 @@ import { SHAPES } from "./shapes";
 
 export type Surface = {
   y: number;
-  /** Left edge in local x. */
   x: number;
   width: number;
-  /** Front row z; back rows step towards -z. */
   z: number;
   rows: number;
 };
 
 export type Placement = {
   key: string;
+  productId: number;
   shape: ItemShape;
   color: string;
   accent: string;
@@ -67,6 +66,7 @@ export const arrange = (
     for (let copy = 0; copy < item.copies; copy++) {
       placements.push({
         key: `${item.key}-${copy}`,
+        productId: item.productId,
         shape: item.shape,
         color: item.color,
         accent: item.accent,

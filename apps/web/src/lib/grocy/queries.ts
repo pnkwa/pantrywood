@@ -7,6 +7,7 @@ import {
   ProductGroupSchema,
   ProductSchema,
   QuantityUnitSchema,
+  ShoppingListItemSchema,
   StockEntrySchema,
 } from "@pantrywood/shared";
 import { grocyFetch } from "./client";
@@ -27,6 +28,7 @@ export const grocyKeys = {
   stockEntries: () => queryKey("grocy", "stock", "entries"),
   productStockEntries: (productId: number) =>
     queryKey("grocy", "stock", "entries", productId),
+  shoppingList: () => queryKey("grocy", "shopping_list"),
 };
 
 const SETUP_STALE_TIME = 5 * 60_000;
@@ -89,4 +91,11 @@ export const useProductStockEntries = (productId: number) =>
         `stock/products/${productId}/entries`,
         z.array(StockEntrySchema),
       ),
+  });
+
+export const useShoppingList = () =>
+  useQuery({
+    queryKey: grocyKeys.shoppingList(),
+    queryFn: () =>
+      grocyFetch("objects/shopping_list", z.array(ShoppingListItemSchema)),
   });

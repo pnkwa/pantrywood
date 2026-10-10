@@ -1,10 +1,11 @@
 "use client";
 
-import type { Ref } from "react";
+import { useRef, type PointerEvent, type Ref } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
-import { CameraRig, type CameraApi } from "./CameraRig";
+import { CameraRig, type CameraApi, type CameraFocus } from "./CameraRig";
 import { Decor } from "./Decor";
+import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { Room } from "./Room";
 import { Storage } from "./Storage";
 import type { SceneStorage } from "./types";
@@ -36,6 +37,25 @@ type StorageRoomSceneProps = {
   cameraRef?: Ref<CameraApi>;
   tagLayer: HTMLElement | null;
   label: string;
+  hoveredLocationId: number | null;
+  selectedLocationId: number | null;
+  openDoorLocationId: number | null;
+  focus: CameraFocus | null;
+  onFocusSettled: () => void;
+  onHoverChange: (locationId: number | null) => void;
+  onSelectStorage: (locationId: number) => void;
+  onSelectItem: (locationId: number, productId: number) => void;
+  onBackgroundClick: () => void;
+};
+
+const highlightFor = (
+  locationId: number,
+  hoveredLocationId: number | null,
+  selectedLocationId: number | null,
+): Highlight => {
+  if (locationId === selectedLocationId) return "selected";
+  if (locationId === hoveredLocationId) return "hover";
+  return "none";
 };
 
 /** Renders on demand rather than every frame, to stay light on phones. */
@@ -44,32 +64,76 @@ export const StorageRoomScene = ({
   cameraRef,
   tagLayer,
   label,
-}: StorageRoomSceneProps) => (
-  <Canvas
-    frameloop="demand"
-    shadows
-    flat
-    dpr={[1, 2]}
-    gl={{ antialias: true, alpha: true }}
-    aria-label={label}
-    role="img"
-    className="touch-none"
-  >
-    <CameraRig ref={cameraRef} />
-    <Lights />
-    <Room />
-    <Decor />
-    {storages.map((storage) => (
-      <Storage key={storage.locationId} storage={storage} tagLayer={tagLayer} />
-    ))}
-    <ContactShadows
-      position={[0, -0.82, 0]}
-      scale={18}
-      blur={2.6}
-      far={3}
-      opacity={0.35}
-      color="#4A3B2E"
-      frames={1}
-    />
-  </Canvas>
-);
+  hoveredLocationId,
+  selectedLocationId,
+  openDoorLocationId,
+  focus,
+  onFocusSettled,
+  onHoverChange,
+  onSelectStorage,
+  onSelectItem,
+  onBackgroundClick,
+}: StorageRoomSceneProps) => {
+  const pointerDown = useRef({ x: 0, y: 0 });
+
+  const rememberPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    pointerDown.current = { x: event.clientX, y: event.clientY };
+  };
+
+  const handlePointerMissed = (event: MouseEvent) => {
+    const moved = Math.hypot(
+      event.clientX - pointerDown.current.x,
+      event.clientY - pointerDown.current.y,
+    );
+    if (moved <= CLICK_DRAG_TOLERANCE) onBackgroundClick();
+  };
+
+  return (
+    <Canvas
+      frameloop="demand"
+      shadows
+      flat
+      dpr={[1, 2]}
+      gl={{ antialias: true, alpha: true }}
+      aria-label={label}
+      role="img"
+      className="touch-none"
+      onPointerDown={rememberPointerDown}
+      onPointerMissed={handlePointerMissed}
+    >
+      <CameraRig
+        ref={cameraRef}
+        focus={focus}
+        onFocusSettled={onFocusSettled}
+      />
+      <Lights />
+      <Room />
+      <Decor />
+      {storages.map((storage) => (
+        <Storage
+          key={storage.locationId}
+          storage={storage}
+          tagLayer={tagLayer}
+          highlight={highlightFor(
+            storage.locationId,
+            hoveredLocationId,
+            selectedLocationId,
+          )}
+          doorOpen={storage.locationId === openDoorLocationId}
+          onHoverChange={onHoverChange}
+          onSelect={onSelectStorage}
+          onSelectItem={onSelectItem}
+        />
+      ))}
+      <ContactShadows
+        position={[0, -0.82, 0]}
+        scale={18}
+        blur={2.6}
+        far={3}
+        opacity={0.35}
+        color="#4A3B2E"
+        frames={1}
+      />
+    </Canvas>
+  );
+};

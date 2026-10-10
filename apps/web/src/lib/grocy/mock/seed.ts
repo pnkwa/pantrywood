@@ -8,12 +8,13 @@ import {
   type ProductBarcode,
   type ProductGroup,
   type QuantityUnit,
+  type ShoppingListItem,
   type StockEntry,
 } from "@pantrywood/shared";
 
 export const locations: Location[] = [
   { id: 1, name: "Fridge", description: "Retro cream fridge", is_freezer: 0 },
-  { id: 2, name: "Freezer", description: "Chest freezer", is_freezer: 1 },
+  { id: 2, name: "Counter", description: "Kitchen counter", is_freezer: 0 },
   {
     id: 3,
     name: "Pantry Shelf",
@@ -32,6 +33,12 @@ export const locations: Location[] = [
     name: "Home Supplies",
     description: "Open supplies cabinet",
     is_freezer: 0,
+  },
+  {
+    id: 7,
+    name: "Freezer",
+    description: "Top compartment of the fridge",
+    is_freezer: 1,
   },
 ];
 
@@ -238,7 +245,7 @@ const food: Seed[] = [
     name: "Frozen dumplings",
     thai: "เกี๊ยวซ่าแช่แข็ง",
     group: 8,
-    location: 2,
+    location: 7,
     unit: "bag",
     shelfLife: 90,
     price: 99,
@@ -249,7 +256,7 @@ const food: Seed[] = [
     name: "Minced pork",
     thai: "หมูสับ",
     group: 3,
-    location: 2,
+    location: 7,
     unit: "pack",
     shelfLife: 60,
     price: 59,
@@ -259,7 +266,7 @@ const food: Seed[] = [
     name: "Shrimp",
     thai: "กุ้ง",
     group: 3,
-    location: 2,
+    location: 7,
     unit: "bag",
     shelfLife: 90,
     price: 189,
@@ -269,7 +276,7 @@ const food: Seed[] = [
     name: "Vanilla ice cream",
     thai: "ไอศกรีมวานิลลา",
     group: 8,
-    location: 2,
+    location: 7,
     unit: "cup",
     shelfLife: 120,
     price: 45,
@@ -280,7 +287,7 @@ const food: Seed[] = [
     name: "Frozen edamame",
     thai: "ถั่วแระญี่ปุ่น",
     group: 8,
-    location: 2,
+    location: 7,
     unit: "bag",
     shelfLife: 180,
     price: 69,
@@ -442,6 +449,38 @@ const food: Seed[] = [
     price: 40,
     batches: [[2, 280]],
   },
+  {
+    name: "Sourdough loaf",
+    thai: "ขนมปังซาวร์โดว์",
+    group: 4,
+    location: 2,
+    unit: "pack",
+    shelfLife: 5,
+    price: 120,
+    batches: [[1, 2]],
+  },
+  {
+    name: "Bananas",
+    thai: "กล้วยหอม",
+    group: 2,
+    location: 2,
+    unit: "pcs",
+    shelfLife: 6,
+    price: 8,
+    batches: [[4, 4]],
+  },
+  {
+    name: "Coffee beans",
+    thai: "เมล็ดกาแฟ",
+    group: 5,
+    location: 2,
+    unit: "bag",
+    shelfLife: 120,
+    minStock: 1,
+    price: 290,
+    barcode: "885000000018",
+    batches: [[1, 60, true]],
+  },
 ];
 const supplies: Seed[] = [
   {
@@ -586,6 +625,7 @@ export type MockDatabase = {
   products: Product[];
   stock: StockEntry[];
   product_barcodes: ProductBarcode[];
+  shopping_list: ShoppingListItem[];
 };
 
 // Dates are relative to today, so "use soon" and "past its date" stay true whenever the app runs.
@@ -668,6 +708,7 @@ export const buildMockDatabase = (today = new Date()): MockDatabase => {
     products,
     stock,
     product_barcodes,
+    shopping_list: [],
   };
 };
 

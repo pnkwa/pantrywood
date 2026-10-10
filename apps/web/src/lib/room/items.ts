@@ -1,18 +1,8 @@
-import {
-  classifyProduct,
-  foodStatus,
-  isRunningLow,
-  type Product,
-  type ProductGroup,
-  type ProductKind,
-  type QuantityUnit,
-  type StockEntry,
-} from "@pantrywood/shared";
+import type { PantryItem } from "@/lib/pantry/model";
 import type {
   ItemMarker,
   ItemShape,
   SceneItem,
-  StorageTag,
 } from "@/components/scene/types";
 
 const GROUP_COLORS: [RegExp, string][] = [
@@ -50,30 +40,21 @@ const LID_COLORS = ["#F2D27A", "#E9A9A9", "#A9C9DA", "#8FA67A", "#FFFBF3"];
 const COUNTABLE_UNITS =
   /^(pcs|piece|carton|cup|tube|jar|pack|bag|bottle|can|roll|refill|spool|box|bunch)/;
 
-const MARKER_PRIORITY: Record<ItemMarker, number> = {
-  expired: 0,
-  soon: 1,
-  low: 2,
-};
+const MAX_COPIES = 3;
 
 const colorFor = (table: [RegExp, string][], text: string): string =>
-  table.find(([pattern]) => pattern.test(text))?.[1] ?? DEFAULT_COLOR;
+  table.find(([pattern]) => pattern.test(text.toLowerCase()))?.[1] ??
+  DEFAULT_COLOR;
 
 const lidColorFor = (productId: number): string =>
   LID_COLORS[productId % LID_COLORS.length] ?? DEFAULT_COLOR;
 
-const shapeFor = (
-  kind: ProductKind,
-  productName: string,
-  unitName: string,
-  groupName: string,
-): ItemShape => {
-  const name = productName.toLowerCase();
-  const unit = unitName.toLowerCase();
-  if (kind === "supply") {
+const shapeFor = (item: PantryItem): ItemShape => {
+  const name = item.name.toLowerCase();
+  const unit = item.unitName.toLowerCase();
+  if (item.kind === "supply") {
     if (/filament|spool/.test(name) || unit === "spool") return "spool";
-    if (/tissue|towel|paper|toilet/.test(name) || unit === "roll")
-      return "roll";
+    if (/tissue|towel|paper|toilet/.test(name) || unit === "roll") return "roll";
     if (/detergent|powder/.test(name)) return "box";
     return "bottle";
   }
@@ -82,154 +63,41 @@ const shapeFor = (
   if (unit === "jar" || unit === "cup" || unit === "bottle") return "jar";
   if (unit === "bag") return "bag";
   if (unit === "pack" || unit === "box") return "box";
-  if (/produce|veg|fruit|herb/.test(groupName.toLowerCase())) return "bag";
+  if (/produce|veg|fruit|herb/.test(item.groupName.toLowerCase())) return "bag";
   return "box";
 };
 
-const markerFor = (
-  kind: ProductKind,
-  entries: readonly StockEntry[],
-  totalInStock: number,
-  product: Product,
-  today: Date,
-): ItemMarker | null => {
-  if (kind === "food") {
-    const statuses = entries.map((entry) =>
-      foodStatus(entry.best_before_date, today),
-    );
-    if (statuses.includes("expired")) return "expired";
-    if (statuses.includes("soon")) return "soon";
-  }
-  return isRunningLow(totalInStock, product.min_stock_amount) ? "low" : null;
+const markerFor = (item: PantryItem): ItemMarker | null => {
+  if (item.status === "expired") return "expired";
+  if (item.status === "soon") return "soon";
+  return item.isRunningLow ? "low" : null;
 };
 
-export type LocationStock = {
-  items: SceneItem[];
-  tag: Omit<StorageTag, "name">;
-};
+const MARKER_RANK: Record<ItemMarker, number> = { expired: 0, soon: 1, low: 2 };
 
-export type StockInput = {
-  products: readonly Product[];
-  productGroups: readonly ProductGroup[];
-  quantityUnits: readonly QuantityUnit[];
-  stockEntries: readonly StockEntry[];
-  today: Date;
-};
-
-type ProductStock = { product: Product; entries: StockEntry[] };
-
-const emptyLocationStock = (): LocationStock => ({
-  items: [],
-  tag: { itemCount: 0, useSoon: 0, expired: 0, low: 0 },
-});
-
-export const stockByLocation = ({
-  products,
-  productGroups,
-  quantityUnits,
-  stockEntries,
-  today,
-}: StockInput): Map<number, LocationStock> => {
-  const productById = new Map(products.map((product) => [product.id, product]));
-  const groupNameOf = (product: Product) =>
-    productGroups.find((group) => group.id === product.product_group_id)
-      ?.name ?? "";
-  const unitNameOf = (product: Product) =>
-    quantityUnits.find((unit) => unit.id === product.qu_id_stock)?.name ?? "";
-
-  const totalInStock = new Map<number, number>();
-  for (const entry of stockEntries) {
-    totalInStock.set(
-      entry.product_id,
-      (totalInStock.get(entry.product_id) ?? 0) + entry.amount,
-    );
-  }
-
-  const stockPerLocation = new Map<number, Map<number, ProductStock>>();
-  for (const entry of stockEntries) {
-    const product = productById.get(entry.product_id);
-    if (!product || entry.amount <= 0) continue;
-    const locationId = entry.location_id ?? product.location_id;
-    const productsHere =
-      stockPerLocation.get(locationId) ?? new Map<number, ProductStock>();
-    const productStock = productsHere.get(product.id) ?? {
-      product,
-      entries: [],
-    };
-    productStock.entries.push(entry);
-    productsHere.set(product.id, productStock);
-    stockPerLocation.set(locationId, productsHere);
-  }
-
-  const result = new Map<number, LocationStock>();
-  const locationStockFor = (locationId: number) => {
-    const existing = result.get(locationId);
-    if (existing) return existing;
-    const created = emptyLocationStock();
-    result.set(locationId, created);
-    return created;
-  };
-
-  for (const [locationId, productsHere] of stockPerLocation) {
-    const locationStock = locationStockFor(locationId);
-    for (const { product, entries } of productsHere.values()) {
-      const kind = classifyProduct(product, productGroups);
-      const unitName = unitNameOf(product);
-      const amount = entries.reduce((total, entry) => total + entry.amount, 0);
-      const marker = markerFor(
-        kind,
-        entries,
-        totalInStock.get(product.id) ?? 0,
-        product,
-        today,
-      );
-      const shape = shapeFor(
-        kind,
-        product.name,
-        unitName,
-        groupNameOf(product),
-      );
-
-      locationStock.tag.itemCount += 1;
-      if (marker === "soon") locationStock.tag.useSoon += 1;
-      if (marker === "expired") locationStock.tag.expired += 1;
-
-      locationStock.items.push({
-        key: `${locationId}-${product.id}`,
+/** Urgent items first so they get the front spots on the shelf. */
+export const sceneItemsFor = (items: readonly PantryItem[]): SceneItem[] =>
+  items
+    .filter((item) => item.amount > 0)
+    .map((item): SceneItem => {
+      const shape = shapeFor(item);
+      return {
+        key: item.key,
+        productId: item.productId,
         shape,
         color:
           shape === "spool"
-            ? colorFor(FILAMENT_COLORS, product.name.toLowerCase())
-            : colorFor(GROUP_COLORS, groupNameOf(product).toLowerCase()),
-        accent: lidColorFor(product.id),
-        copies: COUNTABLE_UNITS.test(unitName.toLowerCase())
-          ? Math.min(3, Math.max(1, Math.round(amount)))
+            ? colorFor(FILAMENT_COLORS, item.name)
+            : colorFor(GROUP_COLORS, item.groupName),
+        accent: lidColorFor(item.productId),
+        copies: COUNTABLE_UNITS.test(item.unitName.toLowerCase())
+          ? Math.min(MAX_COPIES, Math.max(1, Math.round(item.amount)))
           : 1,
-        marker,
-      });
-    }
-  }
-
-  // Counted where the product is stocked, or at its default location when none is left.
-  for (const product of products) {
-    if (product.active === 0) continue;
-    if (
-      !isRunningLow(totalInStock.get(product.id) ?? 0, product.min_stock_amount)
-    )
-      continue;
-    const stockedAt = [...stockPerLocation].find(([, productsHere]) =>
-      productsHere.has(product.id),
-    )?.[0];
-    locationStockFor(stockedAt ?? product.location_id).tag.low += 1;
-  }
-
-  const priorityOf = (item: SceneItem) =>
-    item.marker ? MARKER_PRIORITY[item.marker] : 3;
-  for (const locationStock of result.values()) {
-    locationStock.items.sort(
-      (first, second) => priorityOf(first) - priorityOf(second),
+        marker: markerFor(item),
+      };
+    })
+    .sort(
+      (first, second) =>
+        (first.marker ? MARKER_RANK[first.marker] : 3) -
+        (second.marker ? MARKER_RANK[second.marker] : 3),
     );
-  }
-
-  return result;
-};

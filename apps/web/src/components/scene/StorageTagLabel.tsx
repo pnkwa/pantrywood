@@ -3,7 +3,12 @@
 import { useMemo } from "react";
 import { useThree } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { Basket, Hourglass, Leaf, type Icon } from "@phosphor-icons/react";
+import {
+  BasketIcon,
+  HourglassIcon,
+  type Icon,
+  LeafIcon,
+} from "@phosphor-icons/react";
 import type { StorageTag } from "./types";
 
 const COMPACT_CANVAS_WIDTH = 640;
@@ -30,7 +35,7 @@ const statusesFor = (tag: StorageTag, compact: boolean): TagStatus[] => {
   if (tag.expired > 0) {
     statuses.push({
       key: "expired",
-      icon: Leaf,
+      icon: LeafIcon,
       text: compact ? `${tag.expired} past` : `${tag.expired} past its date`,
       className: "text-status-expired-foreground",
     });
@@ -38,7 +43,7 @@ const statusesFor = (tag: StorageTag, compact: boolean): TagStatus[] => {
   if (tag.useSoon > 0) {
     statuses.push({
       key: "soon",
-      icon: Hourglass,
+      icon: HourglassIcon,
       text: compact ? `${tag.useSoon} soon` : `${tag.useSoon} use soon`,
       className: "text-status-soon-foreground",
     });
@@ -46,7 +51,7 @@ const statusesFor = (tag: StorageTag, compact: boolean): TagStatus[] => {
   if (tag.low > 0) {
     statuses.push({
       key: "low",
-      icon: Basket,
+      icon: BasketIcon,
       text: `${tag.low} low`,
       className: "text-status-low-foreground",
     });
@@ -58,12 +63,14 @@ type StorageTagLabelProps = {
   tag: StorageTag;
   height: number;
   tagLayer: HTMLElement | null;
+  selected: boolean;
 };
 
 export const StorageTagLabel = ({
   tag,
   height,
   tagLayer,
+  selected,
 }: StorageTagLabelProps) => {
   const compact = useThree((state) => state.size.width < COMPACT_CANVAS_WIDTH);
   // drei's Html loses its content if its default DOM target changes after mount, so it gets a fixed layer.
@@ -81,7 +88,7 @@ export const StorageTagLabel = ({
       style={{ pointerEvents: "none" }}
     >
       <div
-        className={`flex -translate-x-1/2 -translate-y-full items-center whitespace-nowrap rounded-sm border-[1.5px] border-border bg-card text-foreground shadow-paper animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:slide-in-from-bottom-0 motion-reduce:duration-150 ${
+        className={`${selected ? "border-sage-deep" : "border-border"} flex -translate-x-1/2 -translate-y-full items-center whitespace-nowrap rounded-sm border-[1.5px] bg-card text-foreground transition-colors shadow-paper animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:slide-in-from-bottom-0 motion-reduce:duration-150 ${
           compact
             ? "gap-1 px-2 py-0.5 text-xs"
             : "gap-1.5 px-2.5 py-1 text-[13px]"
