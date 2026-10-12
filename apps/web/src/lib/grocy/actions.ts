@@ -41,7 +41,6 @@ export type StockAction =
 
 const StockLogSchema = z.array(StockLogEntrySchema);
 
-/** Stock actions answer with log rows; their transaction id is what Undo needs. */
 const postStockAction = async (
   path: string,
   body: Parameters<typeof grocyPostFor>[1],
@@ -111,8 +110,7 @@ const runStockAction = async (action: StockAction): Promise<string | null> => {
 
 const useRefreshGrocy = () => {
   const queryClient = useQueryClient();
-  return () =>
-    queryClient.invalidateQueries({ queryKey: grocyKeys.all });
+  return () => queryClient.invalidateQueries({ queryKey: grocyKeys.all });
 };
 
 /** Every action refreshes Grocy data afterwards so the room, panels and stats stay in sync. */
@@ -129,7 +127,6 @@ export type NewProduct = {
   productGroupId: number | null;
   locationId: number;
   quantityUnitId: number;
-  /** -1 = never expires (supplies). */
   bestBeforeDays: number;
   minStock: number;
   barcode: string;
@@ -151,11 +148,16 @@ const createProduct = async (product: NewProduct) => {
     },
     CreatedSchema,
   );
-  await grocyPost("objects/product_barcodes", {
-    product_id: productId,
-    barcode: product.barcode,
-    amount: 1,
-  });
+  try {
+    await grocyPost("objects/product_barcodes", {
+      product_id: productId,
+      barcode: product.barcode,
+      amount: 1,
+    });
+  } catch (error) {
+    await grocyDelete(`objects/products/${productId}`).catch(() => undefined);
+    throw error;
+  }
   if (product.thaiName) {
     await grocyPut(`userfields/products/${productId}`, {
       [THAI_NAME_USERFIELD]: product.thaiName,
@@ -172,13 +174,19 @@ export const useCreateProduct = () => {
 type BarcodeLink = {
   productId: number;
   barcode: string;
-  /** An existing link to replace ("Not right?"). */
   replaceBarcodeId?: number;
 };
 
-const linkBarcode = async ({ productId, barcode, replaceBarcodeId }: BarcodeLink) => {
+const linkBarcode = async ({
+  productId,
+  barcode,
+  replaceBarcodeId,
+}: BarcodeLink) => {
   if (replaceBarcodeId !== undefined) {
-    await grocyDelete(`objects/product_barcodes/${replaceBarcodeId}`);
+    await grocyPut(`objects/product_barcodes/${replaceBarcodeId}`, {
+      product_id: productId,
+    });
+    return;
   }
   await grocyPost("objects/product_barcodes", {
     product_id: productId,
@@ -192,7 +200,6 @@ export const useLinkBarcode = () => {
   return useMutation({ mutationFn: linkBarcode, onSettled: refresh });
 };
 
-/** Links printed label codes to products that had no barcode. */
 export const useLinkLabelBarcodes = () => {
   const refresh = useRefreshGrocy();
   return useMutation({

@@ -78,7 +78,7 @@ export const ProductForm = ({
       className="flex flex-col gap-2.5"
       onSubmit={(event) => {
         event.preventDefault();
-        if (canSave) save();
+        if (canSave && !createProduct.isPending) save();
       }}
     >
       <div className="flex items-center justify-between gap-2">

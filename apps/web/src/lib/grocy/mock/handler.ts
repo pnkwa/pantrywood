@@ -352,7 +352,6 @@ const PRODUCT_ACTIONS = {
   inventory: handleInventory,
 };
 
-/** Runs a stock action and answers like Grocy: stock-log rows carrying a transaction id. */
 const runAsTransaction = (
   product: Product,
   body: JsonBody,
@@ -369,7 +368,12 @@ const runAsTransaction = (
     ? (amounts.data.amount ?? amounts.data.new_amount ?? 0)
     : 0;
   return json([
-    { id: nextTransactionNumber, product_id: product.id, amount, transaction_id: transactionId },
+    {
+      id: nextTransactionNumber,
+      product_id: product.id,
+      amount,
+      transaction_id: transactionId,
+    },
   ]);
 };
 
@@ -392,8 +396,11 @@ const productDetails = (current: MockDatabase, product: Product) => {
       (barcode) => barcode.product_id === product.id,
     ),
     stock_amount: totalAmount(entries),
-    stock_amount_opened: totalAmount(entries.filter((entry) => entry.open === 1)),
-    next_due_date: entries.map((entry) => entry.best_before_date).sort()[0] ?? null,
+    stock_amount_opened: totalAmount(
+      entries.filter((entry) => entry.open === 1),
+    ),
+    next_due_date:
+      entries.map((entry) => entry.best_before_date).sort()[0] ?? null,
     last_price: latest?.price ?? null,
     last_shopping_location_id: latest?.shopping_location_id ?? null,
     default_shopping_location_id: product.shopping_location_id ?? null,
@@ -443,7 +450,11 @@ const handleCreateObject = (entity: string, body: JsonBody) => {
       id: nextId(current.product_barcodes),
     });
     if (!parsed.success) return error(400, z.prettifyError(parsed.error));
-    if (current.product_barcodes.some((row) => row.barcode === parsed.data.barcode)) {
+    if (
+      current.product_barcodes.some(
+        (row) => row.barcode === parsed.data.barcode,
+      )
+    ) {
       return error(400, "This barcode is already linked to a product");
     }
     current.product_barcodes.push(parsed.data);
@@ -454,20 +465,40 @@ const handleCreateObject = (entity: string, body: JsonBody) => {
 
 const handleDeleteObject = (entity: string, id: number) => {
   const current = getDatabase();
-  if (entity !== "product_barcodes") {
+  if (entity !== "products") {
     return error(404, `Deleting ${entity} is not available in mock mode yet.`);
   }
-  current.product_barcodes = current.product_barcodes.filter(
-    (row) => row.id !== id,
-  );
+  current.products = current.products.filter((product) => product.id !== id);
+  return new Response(null, { status: 204 });
+};
+
+const handleUpdateObject = (entity: string, id: number, body: JsonBody) => {
+  const fields = ObjectBodySchema.safeParse(body);
+  if (!fields.success) return error(400, "Body must be an object");
+  const current = getDatabase();
+  if (entity !== "product_barcodes") {
+    return error(404, `Editing ${entity} is not available in mock mode yet.`);
+  }
+  const index = current.product_barcodes.findIndex((row) => row.id === id);
+  const parsed = ProductBarcodeSchema.safeParse({
+    ...current.product_barcodes[index],
+    ...fields.data,
+    id,
+  });
+  if (index === -1 || !parsed.success)
+    return error(400, "Object does not exist");
+  current.product_barcodes[index] = parsed.data;
   return new Response(null, { status: 204 });
 };
 
 const handleSetUserfields = (entity: string, id: number, body: JsonBody) => {
   const parsed = UserfieldsBodySchema.safeParse(body);
   if (!parsed.success) return error(400, z.prettifyError(parsed.error));
-  const product = getDatabase().products.find((candidate) => candidate.id === id);
-  if (entity !== "products" || !product) return error(400, "Object does not exist");
+  const product = getDatabase().products.find(
+    (candidate) => candidate.id === id,
+  );
+  if (entity !== "products" || !product)
+    return error(400, "Object does not exist");
   product.userfields = { ...product.userfields, ...parsed.data };
   return new Response(null, { status: 204 });
 };
@@ -501,7 +532,9 @@ const handleGet = (path: string[]) => {
     fourth &&
     path.length === 4
   ) {
-    const barcode = current.product_barcodes.find((row) => row.barcode === fourth);
+    const barcode = current.product_barcodes.find(
+      (row) => row.barcode === fourth,
+    );
     const product = current.products.find(
       (candidate) => candidate.id === barcode?.product_id,
     );
@@ -592,6 +625,9 @@ export const handleMockRequest = async (
   }
   if (request.method === "DELETE" && first === "objects" && second && third) {
     return handleDeleteObject(second, Number(third));
+  }
+  if (request.method === "PUT" && first === "objects" && second && third) {
+    return handleUpdateObject(second, Number(third), await readBody(request));
   }
   return error(501, `${request.method} is not available in mock mode yet.`);
 };
