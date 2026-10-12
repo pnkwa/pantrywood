@@ -81,7 +81,7 @@ export const ProductPicker = ({
               type="button"
               disabled={linkBarcode.isPending}
               onClick={() => link(product.id, product.name)}
-              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border-[1.5px] border-border bg-card px-3 py-2 text-left text-sm transition-colors duration-150 ease-out hover:bg-muted disabled:opacity-60"
+              className="flex min-h-11 w-full items-center justify-between gap-2 rounded-md border-[1.5px] border-border bg-card px-3 py-2 text-left text-sm transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-60"
             >
               <span className="font-semibold">{product.name}</span>
               <span className="text-muted-foreground">

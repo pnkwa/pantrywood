@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import { CheckIcon, WarningIcon } from "@phosphor-icons/react";
 import { THAI_NAME_USERFIELD, toIsoDate, type ReceiptScan } from "@pantrywood/shared";
@@ -79,10 +79,17 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const showToast = useUiStore((state) => state.showToast);
 
   const [choices, setChoices] = useState<LineChoice[] | null>(null);
+  // Lines that needed you when the receipt was read come first, and keep their place once fixed.
+  const [lineOrder, setLineOrder] = useState<number[]>([]);
+  const [openLine, setOpenLine] = useState<number | null>(null);
   const [added, setAdded] = useState<ReadonlySet<number>>(new Set());
   const [filter, setFilter] = useState<"all" | "needsYou">("all");
   const [rememberMatches, setRememberMatches] = useState(true);
-  const [zoom, setZoom] = useState(1);
+  // Zoom and pan the photo around its center: translate + scale, so it stays smooth and never re-lays out.
+  const photoRef = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ pointerX: 0, pointerY: 0, x: 0, y: 0 });
   const [saving, setSaving] = useState(false);
   // Phones and tablets: the lines sit in a sheet over the photo; lowering it shows the receipt.
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -94,12 +101,17 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       name: product.name,
       thaiName: product.userfields?.[THAI_NAME_USERFIELD] ?? "",
     }));
-    setChoices(
-      scan.lines.map((line) => ({
-        ...matchReceiptLine(line.name, line.name_en, matchable, remembered.data),
-        amount: line.quantity,
-      })),
-    );
+    const matched = scan.lines.map((line) => ({
+      ...matchReceiptLine(line.name, line.name_en, matchable, remembered.data),
+      amount: line.quantity,
+    }));
+    const order = matched
+      .map((choice, index) => ({ index, first: needsYou(choice) }))
+      .sort((first, second) => Number(second.first) - Number(first.first))
+      .map((entry) => entry.index);
+    setChoices(matched);
+    setLineOrder(order);
+    setOpenLine(order.find((index) => matched[index] && needsYou(matched[index])) ?? null);
   }
 
   const reviewProducts = new Map<number, ReviewProduct>(
@@ -112,6 +124,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
           {
             id: product.id,
             name: product.name,
+            thaiName: product.userfields?.[THAI_NAME_USERFIELD] ?? "",
             placeName: places.find((place) => place.id === product.location_id)?.name ?? "",
             stockAmount: stock.data?.find((row) => row.product_id === product.id)?.amount ?? 0,
             unitFor: (count: number) => (count === 1 ? unit?.name : (unit?.name_plural ?? unit?.name)) ?? "",
@@ -125,13 +138,50 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const rows = (choices ?? []).map((choice, index) => ({ choice, index, line: scan.lines[index] }));
   const needsYouCount = rows.filter((row) => needsYou(row.choice)).length;
   const toAdd = rows.filter((row) => row.choice.productId !== null && row.choice.how !== "skipped" && !added.has(row.index));
-  const visibleRows = rows
-    .filter((row) => filter === "all" || needsYou(row.choice))
-    .sort((first, second) => Number(needsYou(second.choice)) - Number(needsYou(first.choice)));
+  const visibleRows = lineOrder
+    .flatMap((index) => rows[index] ?? [])
+    .filter((row) => filter === "all" || needsYou(row.choice));
   const shopId = shops.data?.find((shop) => shop.name.toLowerCase() === scan.store?.toLowerCase())?.id;
 
   const updateChoice = (index: number, choice: LineChoice) =>
     setChoices((current) => current?.map((existing, position) => (position === index ? choice : existing)) ?? null);
+
+  // Keeps the photo's edges inside the panel at any zoom.
+  const clampedView = (zoom: number, x: number, y: number) => {
+    const photo = photoRef.current;
+    if (!photo || zoom <= 1) return { zoom, x: 0, y: 0 };
+    const maxX = (photo.offsetWidth * (zoom - 1)) / 2;
+    const maxY = (photo.offsetHeight * (zoom - 1)) / 2;
+    return { zoom, x: Math.min(maxX, Math.max(-maxX, x)), y: Math.min(maxY, Math.max(-maxY, y)) };
+  };
+
+  // The point in the middle of the panel stays in the middle while zooming.
+  const zoomTo = (zoom: number) =>
+    setView((current) => clampedView(zoom, (current.x * zoom) / current.zoom, (current.y * zoom) / current.zoom));
+
+  // When zoomed in, opening a line glides the photo to that line: panning without a drag.
+  const openLineAt = (index: number | null) => {
+    setOpenLine(index);
+    const lineY = index === null ? null : scan.lines[index]?.y;
+    const photo = photoRef.current;
+    if (lineY === null || lineY === undefined || !photo) return;
+    setView((current) =>
+      current.zoom <= 1 ? current : clampedView(current.zoom, current.x, (0.5 - lineY) * photo.offsetHeight * current.zoom),
+    );
+  };
+
+  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (view.zoom <= 1) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragStart.current = { pointerX: event.clientX, pointerY: event.clientY, x: view.x, y: view.y };
+    setDragging(true);
+  };
+
+  const drag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!dragging) return;
+    const start = dragStart.current;
+    setView(clampedView(view.zoom, start.x + event.clientX - start.pointerX, start.y + event.clientY - start.pointerY));
+  };
 
   const keepMemory = async () => {
     const memory = {
@@ -207,16 +257,23 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
           className="flex min-h-0 min-w-0 flex-col gap-3 max-lg:absolute max-lg:inset-0 max-lg:px-4 max-lg:pt-20 max-lg:pb-[calc(9.5rem+0.75rem)] lg:flex-[1_1_420px]"
         >
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:rounded-xl lg:bg-[#EFE6D3]">
-          {/* Zoom scales from the top-left corner so the enlarged photo stays reachable by scrolling. */}
-          <div className="flex min-h-0 flex-1 overflow-auto p-6">
+          <div className="flex min-h-0 flex-1 overflow-hidden p-6">
             <div
-              style={{ transform: `scale(${zoom})` }}
-              className="relative m-auto origin-top-left transition-transform duration-300 ease-out motion-reduce:transition-none"
+              ref={photoRef}
+              onPointerDown={startDrag}
+              onPointerMove={drag}
+              onPointerUp={() => setDragging(false)}
+              onPointerCancel={() => setDragging(false)}
+              style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}
+              className={`relative m-auto origin-center select-none motion-reduce:transition-none ${
+                dragging ? "cursor-grabbing" : "transition-transform duration-300 ease-out"
+              } ${view.zoom > 1 ? "touch-none cursor-grab" : ""}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing to optimize */}
               <img
                 src={photoUrl}
                 alt={`Photo of the ${scan.store ?? ""} receipt`}
+                draggable={false}
                 className="block max-h-[calc(100dvh-20rem)] w-auto max-w-full rounded-md shadow-paper lg:max-h-[calc(100dvh-260px)]"
               />
               {rows.map(({ choice, index, line }) =>
@@ -244,21 +301,21 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
             <button
               type="button"
               aria-label="Zoom out"
-              disabled={zoom <= 1}
-              onClick={() => setZoom((current) => Math.max(1, current - ZOOM_STEP))}
-              className="size-11 rounded-full text-lg font-semibold transition-colors duration-150 ease-out hover:bg-muted disabled:opacity-40"
+              disabled={view.zoom <= 1}
+              onClick={() => zoomTo(Math.max(1, view.zoom - ZOOM_STEP))}
+              className="size-11 rounded-full text-lg font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-40"
             >
               −
             </button>
             <span className="tabular w-11 text-center text-[13px] font-semibold text-muted-foreground">
-              {Math.round(zoom * 100)}%
+              {Math.round(view.zoom * 100)}%
             </span>
             <button
               type="button"
               aria-label="Zoom in"
-              disabled={zoom >= MAX_ZOOM}
-              onClick={() => setZoom((current) => Math.min(MAX_ZOOM, current + ZOOM_STEP))}
-              className="size-11 rounded-full text-lg font-semibold transition-colors duration-150 ease-out hover:bg-muted disabled:opacity-40"
+              disabled={view.zoom >= MAX_ZOOM}
+              onClick={() => zoomTo(Math.min(MAX_ZOOM, view.zoom + ZOOM_STEP))}
+              className="size-11 rounded-full text-lg font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-40"
             >
               +
             </button>
@@ -266,7 +323,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
             <button
               type="button"
               onClick={onRetake}
-              className="h-11 rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150 ease-out hover:bg-muted"
+              className="h-11 rounded-full px-3.5 text-[13px] font-semibold transition-colors duration-150 ease-out hover:bg-muted/40"
             >
               Retake
             </button>
@@ -284,9 +341,9 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
             onClick={() => setSheetOpen((open) => !open)}
             aria-expanded={sheetOpen}
             aria-label={sheetOpen ? "Lower the list to see the photo" : "Raise the list"}
-            className="flex h-8 shrink-0 items-center justify-center lg:hidden"
+            className="group flex h-8 shrink-0 items-center justify-center lg:hidden"
           >
-            <span aria-hidden className="h-1.5 w-11 rounded-full bg-oat" />
+            <span aria-hidden className="h-1.5 w-11 rounded-full bg-oat transition-colors duration-150 ease-out group-hover:bg-muted-foreground/40" />
           </button>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 pb-2.5 lg:pt-3.5">
             <div className="flex min-w-0 flex-col leading-tight">
@@ -312,7 +369,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   className={`h-9 rounded-full px-3.5 text-[13px] transition-colors duration-150 ease-out ${
                     filter === tab.value
                       ? "bg-card font-semibold shadow-[0_2px_6px_rgba(74,59,46,.12)]"
-                      : "font-medium text-muted-foreground"
+                      : "font-medium text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {tab.label}
@@ -341,8 +398,10 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   choice={choice}
                   currency={scan.currency}
                   added={added.has(index)}
+                  open={openLine === index}
                   products={reviewProducts}
                   places={places}
+                  onToggle={() => openLineAt(openLine === index ? null : index)}
                   onChange={(next) => updateChoice(index, next)}
                 />
               ) : null,
@@ -377,7 +436,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
               type="button"
               disabled={saving || toAdd.length === 0}
               onClick={addToStock}
-              className="h-13 rounded-full bg-sage-deep text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-transform duration-150 ease-out active:translate-y-px disabled:opacity-60"
+              className="h-13 rounded-full bg-sage-deep text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px disabled:opacity-60"
             >
               {saving ? "Adding…" : `Add ${toAdd.length} ${toAdd.length === 1 ? "item" : "items"} to stock`}
             </button>

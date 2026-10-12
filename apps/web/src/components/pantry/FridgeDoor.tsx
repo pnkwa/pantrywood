@@ -45,7 +45,7 @@ export const FridgeDoor = ({ location, onPickItem, onClose }: FridgeDoorProps) =
           <button
             type="button"
             onClick={onClose}
-            className="flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             <ArrowLeftIcon size={16} weight="bold" aria-hidden />
             Back to room
@@ -74,7 +74,7 @@ export const FridgeDoor = ({ location, onPickItem, onClose }: FridgeDoorProps) =
               <button
                 type="button"
                 onClick={() => onPickItem(item.productId, item.key)}
-                className={`relative flex min-h-28 w-full flex-col items-start gap-1 rounded-[6px_6px_16px_6px] px-3.5 pt-5 pb-3 text-left shadow-[0_6px_14px_-8px_rgba(74,59,46,.35)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${NOTE_PAPER[item.status]}`}
+                className={`relative flex min-h-28 w-full flex-col items-start gap-1 rounded-[6px_6px_16px_6px] px-3.5 pt-5 pb-3 text-left shadow-[0_6px_14px_-8px_rgba(74,59,46,.35)] transition-transform duration-150 ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${NOTE_PAPER[item.status]}`}
               >
                 <span
                   aria-hidden

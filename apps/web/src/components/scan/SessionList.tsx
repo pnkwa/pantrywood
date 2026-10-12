@@ -73,7 +73,7 @@ export const SessionList = () => {
                   },
                 );
               }}
-              className="h-11 shrink-0 rounded-full px-3 text-[13px] font-semibold text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted"
+              className="h-11 shrink-0 rounded-full px-3 text-[13px] font-semibold text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted/40"
             >
               Undo
             </button>

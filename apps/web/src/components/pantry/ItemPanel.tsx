@@ -56,8 +56,8 @@ const ActionButton = ({
     aria-expanded={expanded}
     className={`flex h-12 items-center justify-center gap-2 rounded-full px-4 text-[15px] font-semibold transition-[transform,background-color] duration-150 ease-out active:translate-y-px disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
       primary
-        ? "bg-primary text-primary-foreground shadow-[0_2px_0_var(--sage-deep)]"
-        : "border-[1.5px] border-border bg-muted hover:bg-oat"
+        ? "bg-primary text-primary-foreground shadow-[0_2px_0_var(--sage-deep)] hover:bg-primary/85"
+        : "border-[1.5px] border-border bg-muted hover:bg-oat/30"
     }`}
   >
     <ActionIcon size={18} weight="duotone" aria-hidden />
@@ -100,7 +100,7 @@ export const ItemPanel = ({
         <button
           type="button"
           onClick={onBack}
-          className="-ml-2 flex h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-sage-deep transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="-ml-2 flex h-11 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-sage-deep transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <ArrowLeftIcon size={16} weight="bold" aria-hidden />
           {locationName}
@@ -261,7 +261,7 @@ export const ItemPanel = ({
                         `Moved ${item.name} to ${destination.name}`,
                       );
                     }}
-                    className="h-11 rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    className="h-11 rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
                   >
                     {destination.name}
                   </button>

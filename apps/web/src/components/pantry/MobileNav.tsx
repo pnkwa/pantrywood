@@ -16,10 +16,10 @@ type MobileNavProps = {
 };
 
 const navButtonClass = (active: boolean) =>
-  `flex min-h-11 min-w-16 flex-col items-center gap-0.5 rounded-md px-3 text-[11px] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+  `flex min-h-11 min-w-16 flex-col items-center gap-0.5 rounded-md px-3 text-[11px] transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
     active
       ? "font-semibold text-sage-deep"
-      : "font-medium text-muted-foreground"
+      : "font-medium text-muted-foreground hover:text-foreground"
   }`;
 
 export const MobileNav = ({
@@ -44,7 +44,7 @@ export const MobileNav = ({
       href="/scan"
       transitionTypes={OPEN_SCAN}
       aria-label="Scan a barcode"
-      className="-mt-8 flex size-16 items-center justify-center rounded-full border-4 border-card bg-terracotta text-accent-foreground shadow-[0_3px_0_#9A4F37,0_12px_22px_-10px_rgba(154,79,55,.8)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      className="-mt-8 flex size-16 items-center justify-center rounded-full border-4 border-card bg-terracotta text-accent-foreground transition-colors duration-150 ease-out hover:bg-terracotta/85 shadow-[0_3px_0_#9A4F37,0_12px_22px_-10px_rgba(154,79,55,.8)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
     >
       <BarcodeIcon size={26} weight="duotone" aria-hidden />
     </Link>

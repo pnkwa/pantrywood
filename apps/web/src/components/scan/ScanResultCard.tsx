@@ -18,7 +18,7 @@ import { formatDate } from "@/lib/pantry/format";
 import type { GrocyPlace } from "@/lib/pantry/model";
 import { useScanStore, type ScanMode } from "@/lib/store/scan-store";
 import { useUiStore } from "@/lib/store/ui-store";
-import { AmountStepper, FIELD_INPUT_CLASS, FieldTile, PrimaryButton } from "./fields";
+import { AmountStepper, FIELD_INPUT_CLASS, FieldSelect, FieldTile, NO_CHOICE, PrimaryButton } from "./fields";
 import { ProductPicker } from "./ProductPicker";
 import { ProductTile } from "./ProductTile";
 
@@ -184,17 +184,11 @@ export const ScanResultCard = ({ barcode, details, mode, places, onDone }: ScanR
       {mode === "add" && (
         <div className="grid grid-cols-2 gap-2">
           <FieldTile label="Put in">
-            <select
-              value={placeId}
-              onChange={(event) => setPlaceId(Number(event.target.value))}
-              className={FIELD_INPUT_CLASS}
-            >
-              {places.map((place) => (
-                <option key={place.id} value={place.id}>
-                  {place.name}
-                </option>
-              ))}
-            </select>
+            <FieldSelect
+              value={String(placeId)}
+              onChange={(value) => setPlaceId(Number(value))}
+              options={places.map((place) => ({ value: String(place.id), label: place.name }))}
+            />
           </FieldTile>
           <FieldTile label="Best before">
             {neverExpires ? (
@@ -221,20 +215,14 @@ export const ScanResultCard = ({ barcode, details, mode, places, onDone }: ScanR
             />
           </FieldTile>
           <FieldTile label="Shop">
-            <select
-              value={shopId ?? ""}
-              onChange={(event) =>
-                setShopId(event.target.value ? Number(event.target.value) : null)
-              }
-              className={FIELD_INPUT_CLASS}
-            >
-              <option value="">—</option>
-              {(shops.data ?? []).map((shop) => (
-                <option key={shop.id} value={shop.id}>
-                  {shop.name}
-                </option>
-              ))}
-            </select>
+            <FieldSelect
+              value={shopId === null ? NO_CHOICE : String(shopId)}
+              onChange={(value) => setShopId(value === NO_CHOICE ? null : Number(value))}
+              options={[
+                { value: NO_CHOICE, label: "—" },
+                ...(shops.data ?? []).map((shop) => ({ value: String(shop.id), label: shop.name })),
+              ]}
+            />
           </FieldTile>
         </div>
       )}

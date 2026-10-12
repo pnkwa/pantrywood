@@ -18,7 +18,7 @@ export const ReceiptMemories = () => {
           href="/"
           transitionTypes={NAV_BACK}
           aria-label="Back to the storage room"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-border"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-border transition-colors duration-150 ease-out hover:bg-muted/40"
         >
           <ArrowLeftIcon size={18} weight="bold" aria-hidden />
         </Link>
@@ -29,7 +29,7 @@ export const ReceiptMemories = () => {
         <Link
           href="/scan/receipt"
           transitionTypes={NAV_FORWARD}
-          className="ml-auto flex h-11 items-center gap-2 rounded-full bg-terracotta px-4.5 text-sm font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37] transition-transform duration-150 ease-out active:translate-y-px"
+          className="ml-auto flex h-11 items-center gap-2 rounded-full bg-terracotta px-4.5 text-sm font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37] transition-[transform,background-color] duration-150 ease-out hover:bg-terracotta/85 active:translate-y-px"
         >
           <ReceiptIcon size={20} weight="duotone" aria-hidden />
           Scan receipt

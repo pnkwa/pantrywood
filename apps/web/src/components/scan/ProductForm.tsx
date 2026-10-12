@@ -9,7 +9,7 @@ import {
 } from "@/lib/grocy";
 import type { GrocyPlace } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
-import { FIELD_INPUT_CLASS, FieldTile, PrimaryButton } from "./fields";
+import { FIELD_INPUT_CLASS, FieldSelect, FieldTile, NO_CHOICE, PrimaryButton } from "./fields";
 
 const DEFAULT_SHELF_LIFE_DAYS = 7;
 const supplyGroupNames = new Set(SUPPLY_GROUP_NAMES.map((name) => name.toLowerCase()));
@@ -136,7 +136,7 @@ export const ProductForm = ({
             className={`h-11 flex-1 rounded-full text-sm transition-colors duration-150 ease-out ${
               isSupply === option.supply
                 ? "bg-card font-semibold shadow-[0_2px_6px_rgba(74,59,46,.12)]"
-                : "font-medium text-muted-foreground"
+                : "font-medium text-muted-foreground hover:text-foreground"
             }`}
           >
             {option.label}
@@ -145,44 +145,28 @@ export const ProductForm = ({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <FieldTile label="Group">
-          <select
-            value={chosenGroupId ?? ""}
-            onChange={(event) => setGroupId(event.target.value ? Number(event.target.value) : null)}
-            className={FIELD_INPUT_CLASS}
-          >
-            <option value="">—</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            value={chosenGroupId === null ? NO_CHOICE : String(chosenGroupId)}
+            onChange={(value) => setGroupId(value === NO_CHOICE ? null : Number(value))}
+            options={[
+              { value: NO_CHOICE, label: "—" },
+              ...groups.map((group) => ({ value: String(group.id), label: group.name })),
+            ]}
+          />
         </FieldTile>
         <FieldTile label="Unit">
-          <select
-            value={chosenUnitId ?? ""}
-            onChange={(event) => setUnitId(Number(event.target.value))}
-            className={FIELD_INPUT_CLASS}
-          >
-            {units.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.name}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            value={chosenUnitId === null ? "" : String(chosenUnitId)}
+            onChange={(value) => setUnitId(Number(value))}
+            options={units.map((unit) => ({ value: String(unit.id), label: unit.name }))}
+          />
         </FieldTile>
         <FieldTile label="Lives in">
-          <select
-            value={placeId ?? ""}
-            onChange={(event) => setPlaceId(Number(event.target.value))}
-            className={FIELD_INPUT_CLASS}
-          >
-            {places.map((place) => (
-              <option key={place.id} value={place.id}>
-                {place.name}
-              </option>
-            ))}
-          </select>
+          <FieldSelect
+            value={placeId === null ? "" : String(placeId)}
+            onChange={(value) => setPlaceId(Number(value))}
+            options={places.map((place) => ({ value: String(place.id), label: place.name }))}
+          />
         </FieldTile>
         {isSupply ? (
           <FieldTile label="Keep at least">

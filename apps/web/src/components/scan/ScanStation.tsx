@@ -49,7 +49,7 @@ const ModeSwitch = () => {
             className={`h-11 rounded-full px-4 text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-10 ${
               selected
                 ? "bg-sage-deep font-semibold text-primary-foreground"
-                : "font-medium text-[#F3EADB] lg:text-foreground"
+                : "font-medium text-[#F3EADB] hover:bg-[#F3EADB]/10 lg:text-foreground lg:hover:bg-card/70"
             }`}
           >
             <span className="lg:hidden">{option.shortLabel}</span>
@@ -64,7 +64,7 @@ const ModeSwitch = () => {
 const KIND_TAB_CLASS = "flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm lg:flex-none";
 const KIND_TAB_SELECTED =
   "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,.12)]";
-const KIND_TAB_IDLE = "font-medium text-muted-foreground";
+const KIND_TAB_IDLE = "font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground";
 
 type ScanKindTabsProps = {
   current: "barcode" | "receipt";
@@ -210,7 +210,7 @@ export const ScanStation = () => {
       return (
         <div role="alert" className="flex items-center gap-3 rounded-md bg-status-expired px-4 py-3 text-sm text-status-expired-foreground">
           <span className="flex-1">Couldn&apos;t reach Grocy. {lookup.error.message}</span>
-          <button type="button" onClick={() => lookup.refetch()} className="h-11 font-semibold">
+          <button type="button" onClick={() => lookup.refetch()} className="h-11 font-semibold underline-offset-4 hover:underline">
             Try again
           </button>
         </div>
@@ -246,7 +246,7 @@ export const ScanStation = () => {
               type="button"
               onClick={leave}
               aria-label="Back to the storage room"
-              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] transition-colors duration-150 ease-out hover:bg-[#2B261F]/80 lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground lg:hover:bg-muted/40"
             >
               <XIcon size={18} weight="bold" className="lg:hidden" aria-hidden />
               <ArrowLeftIcon size={18} weight="bold" className="hidden lg:block" aria-hidden />
@@ -314,7 +314,7 @@ export const ScanStation = () => {
               <Link
                 href="/scan/labels"
                 transitionTypes={NAV_FORWARD}
-                className="flex h-11 shrink-0 items-center rounded-full bg-card px-3.5 text-[13px] font-semibold"
+                className="flex h-11 shrink-0 items-center rounded-full bg-card px-3.5 text-[13px] font-semibold transition-colors duration-150 ease-out hover:bg-oat/25"
               >
                 Print labels
               </Link>
@@ -322,7 +322,7 @@ export const ScanStation = () => {
             <button
               type="button"
               onClick={leave}
-              className="h-12 shrink-0 rounded-full bg-sage-deep text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-transform duration-150 ease-out active:translate-y-px"
+              className="h-12 shrink-0 rounded-full bg-sage-deep text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px"
             >
               Done · {addedCount} {addedCount === 1 ? "item" : "items"} added
             </button>

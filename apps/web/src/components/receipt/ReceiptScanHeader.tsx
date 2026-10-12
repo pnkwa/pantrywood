@@ -17,7 +17,7 @@ export const ReceiptScanHeader = ({ children }: { children?: ReactNode }) => (
           href="/"
           transitionTypes={CLOSE_SCAN}
           aria-label="Back to the storage room"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] transition-colors duration-150 ease-out hover:bg-[#2B261F]/80 lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground lg:hover:bg-muted/40"
         >
           <XIcon size={18} weight="bold" className="lg:hidden" aria-hidden />
           <ArrowLeftIcon size={18} weight="bold" className="hidden lg:block" aria-hidden />

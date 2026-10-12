@@ -29,7 +29,7 @@ export const Toasts = () => {
               animate={{ opacity: 1, y: 0, rotate: -1 }}
               exit={{ opacity: 0, y: 8, transition: { duration: 0.15 } }}
               transition={PANEL_SPRING}
-              className={`pointer-events-auto flex min-h-11 max-w-sm items-center gap-2.5 rounded-md border-[1.5px] px-4 py-2.5 text-left text-sm font-medium shadow-paper ${
+              className={`pointer-events-auto flex min-h-11 max-w-sm items-center gap-2.5 rounded-md border-[1.5px] px-4 py-2.5 text-left text-sm font-medium shadow-paper transition-[filter] duration-150 ease-out hover:brightness-[.97] ${
                 toast.tone === "error"
                   ? "border-status-expired bg-status-expired text-status-expired-foreground"
                   : "border-border bg-card text-foreground"

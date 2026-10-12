@@ -66,7 +66,7 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
   };
 
   return (
-    <header className="flex flex-wrap items-center gap-3 rounded-[22px] border-[1.5px] border-border bg-card px-3 py-2.5 shadow-paper lg:gap-4 lg:px-4 lg:py-3">
+    <header className="flex flex-wrap items-center gap-3 lg:gap-4 lg:rounded-[22px] lg:border-[1.5px] lg:border-border lg:bg-card lg:px-4 lg:py-3 lg:shadow-paper">
       <div className="flex items-center gap-2.5">
         <span className="flex size-10 items-center justify-center rounded-[14px] bg-status-fresh text-sage-deep">
           <PlantIcon size={24} weight="duotone" aria-hidden />
@@ -77,7 +77,7 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
       </div>
 
       <div className="relative order-last w-full lg:order-none lg:w-auto lg:flex-1">
-        <label className="flex h-11 items-center gap-2.5 rounded-full border-[1.5px] border-border bg-muted px-4 focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring">
+        <label className="flex h-11 items-center gap-2.5 rounded-full border-[1.5px] border-border bg-card px-4 lg:bg-muted focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring">
           <MagnifyingGlassIcon
             size={18}
             className="shrink-0 text-muted-foreground"
@@ -128,7 +128,7 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
                   <button
                     type="button"
                     onClick={() => pick(item, storageId)}
-                    className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted"
+                    className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted/40"
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate text-[15px] font-semibold">
@@ -152,7 +152,7 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
       <Link
         href="/receipts"
         transitionTypes={NAV_FORWARD}
-        className="hidden h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-[15px] font-medium transition-colors duration-150 ease-out hover:bg-muted lg:inline-flex"
+        className="hidden h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-[15px] font-medium transition-colors duration-150 ease-out hover:bg-muted/40 lg:inline-flex"
       >
         <ReceiptIcon
           size={18}

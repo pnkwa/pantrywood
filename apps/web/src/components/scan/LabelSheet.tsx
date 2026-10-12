@@ -57,7 +57,7 @@ export const LabelSheet = () => {
           href="/scan"
           transitionTypes={NAV_BACK}
           aria-label="Back to scanning"
-          className="flex size-11 items-center justify-center rounded-full border-[1.5px] border-border"
+          className="flex size-11 items-center justify-center rounded-full border-[1.5px] border-border transition-colors duration-150 ease-out hover:bg-muted/40"
         >
           <ArrowLeftIcon size={18} weight="bold" aria-hidden />
         </Link>
@@ -66,7 +66,7 @@ export const LabelSheet = () => {
           type="button"
           disabled={labels.length === 0}
           onClick={() => window.print()}
-          className="ml-auto flex h-11 items-center gap-2 rounded-full bg-sage-deep px-5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          className="ml-auto flex h-11 items-center gap-2 rounded-full bg-sage-deep px-5 text-sm font-semibold text-primary-foreground transition-colors duration-150 ease-out hover:bg-sage-deep/85 disabled:opacity-50"
         >
           <PrinterIcon size={18} weight="duotone" aria-hidden />
           Print {labels.length} {labels.length === 1 ? "label" : "labels"}
@@ -89,7 +89,7 @@ export const LabelSheet = () => {
             type="button"
             disabled={linkLabels.isPending}
             onClick={makeLabels}
-            className="h-11 rounded-full bg-card px-4 text-sm font-semibold disabled:opacity-60"
+            className="h-11 rounded-full bg-card px-4 text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-60"
           >
             Make {withoutBarcode.length} labels
           </button>

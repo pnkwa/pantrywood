@@ -102,7 +102,7 @@ const StorageList = ({
               <button
                 type="button"
                 onClick={() => selectStorage(location.id)}
-                className="flex min-h-14 w-full items-center gap-3 rounded-md border-[1.5px] border-border px-3 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="flex min-h-14 w-full items-center gap-3 rounded-md border-[1.5px] border-border px-3 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 <span className="flex size-10 items-center justify-center rounded-[12px] bg-muted text-muted-foreground">
                   <StorageIcon size={22} weight="duotone" aria-hidden />

@@ -1,9 +1,10 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 
 const TILE_CLASS =
-  "flex min-h-14 flex-col gap-0.5 rounded-md border-[1.5px] border-border bg-card px-3 py-2 focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring";
+  "flex min-h-14 cursor-pointer flex-col gap-0.5 rounded-md border-[1.5px] border-border bg-card px-3 py-2 transition-colors duration-150 ease-out hover:border-sage/60 focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring";
 
 /** One of the result sheet's small tiles: a label over a native input or select. */
 export const FieldTile = ({ label, children }: { label: string; children: ReactNode }) => (
@@ -33,7 +34,7 @@ export const AmountStepper = ({ label, value, unit, min, onChange }: StepperProp
         aria-label="Less"
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex size-11 items-center justify-center rounded-full bg-card text-lg font-semibold transition-transform duration-150 ease-out active:scale-95 disabled:opacity-40"
+        className="flex size-11 items-center justify-center rounded-full bg-card text-lg font-semibold transition-[transform,background-color] duration-150 ease-out hover:bg-oat/25 active:scale-95 disabled:opacity-40"
       >
         −
       </button>
@@ -44,7 +45,7 @@ export const AmountStepper = ({ label, value, unit, min, onChange }: StepperProp
         type="button"
         aria-label="More"
         onClick={() => onChange(value + 1)}
-        className="flex size-11 items-center justify-center rounded-full bg-card text-lg font-semibold transition-transform duration-150 ease-out active:scale-95"
+        className="flex size-11 items-center justify-center rounded-full bg-card text-lg font-semibold transition-[transform,background-color] duration-150 ease-out hover:bg-oat/25 active:scale-95"
       >
         +
       </button>
@@ -65,8 +66,24 @@ export const PrimaryButton = ({
     type="button"
     disabled={disabled}
     onClick={onClick}
-    className="h-13 w-full rounded-full bg-sage-deep px-5 text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-transform duration-150 ease-out active:translate-y-px disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    className="h-13 w-full rounded-full bg-sage-deep px-5 text-base font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
   >
     {children}
   </button>
+);
+
+/** The value of a "nothing picked" option, such as Shop: —. */
+export const NO_CHOICE = "none";
+
+type FieldSelectProps = {
+  value: string;
+  options: ComboboxOption[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+};
+
+/** A searchable dropdown in place of a native <select>; `value` "" shows the placeholder. */
+export const FieldSelect = ({ className = FIELD_INPUT_CLASS, ...props }: FieldSelectProps) => (
+  <Combobox className={className} {...props} />
 );

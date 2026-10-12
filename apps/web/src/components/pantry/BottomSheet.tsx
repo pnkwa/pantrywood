@@ -35,7 +35,7 @@ export const BottomSheet = ({ open, label, onClose, children }: BottomSheetProps
               onClose();
             }
           }}
-          className="fixed inset-x-0 bottom-0 z-40 flex max-h-[72dvh] flex-col rounded-t-xl border-[1.5px] border-b-0 border-border bg-card px-4 pb-[calc(96px+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_-12px_rgba(74,59,46,.35)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex h-[72dvh] flex-col rounded-t-xl border-[1.5px] border-b-0 border-border bg-card px-4 pb-[calc(96px+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_-12px_rgba(74,59,46,.35)] lg:hidden"
         >
           <div
             onPointerDown={(event) => dragControls.start(event)}

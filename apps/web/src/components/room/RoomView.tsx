@@ -75,7 +75,7 @@ const ControlButton = ({
     aria-label={label}
     title={label}
     onClick={onClick}
-    className={`flex size-11 items-center justify-center rounded-sm text-foreground transition-[background-color,transform] duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 ${className}`}
+    className={`flex size-11 items-center justify-center rounded-sm text-foreground transition-[background-color,transform] duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring active:scale-95 ${className}`}
   >
     {children}
   </button>
@@ -216,7 +216,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         href="/scan"
         transitionTypes={OPEN_SCAN}
         aria-label="Scan a barcode"
-        className="absolute right-5 bottom-5 z-30 hidden h-15 items-center gap-2.5 rounded-full bg-terracotta pr-5.5 pl-4.5 text-base font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37,0_14px_28px_-10px_rgba(154,79,55,.7)] transition-transform duration-150 ease-out active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:flex"
+        className="absolute right-5 bottom-5 z-30 hidden h-15 items-center gap-2.5 rounded-full bg-terracotta pr-5.5 pl-4.5 text-base font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37,0_14px_28px_-10px_rgba(154,79,55,.7)] transition-[transform,background-color] duration-150 ease-out hover:bg-terracotta/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:flex"
       >
         <BarcodeIcon size={24} weight="duotone" aria-hidden />
         Scan
@@ -280,7 +280,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
           <button
             type="button"
             onClick={error.retry}
-            className="h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_2px_0_var(--sage-deep)] transition-transform duration-150 ease-out active:translate-y-px"
+            className="h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-[0_2px_0_var(--sage-deep)] transition-[transform,background-color] duration-150 ease-out hover:bg-primary/85 active:translate-y-px"
           >
             Try again
           </button>

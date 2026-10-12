@@ -59,7 +59,7 @@ export const CloseButton = ({
     type="button"
     aria-label={label}
     onClick={onClick}
-    className="flex size-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-border bg-card transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+    className="flex size-11 shrink-0 items-center justify-center rounded-full border-[1.5px] border-border bg-card transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
   >
     <XIcon size={16} weight="bold" aria-hidden />
   </button>
@@ -136,7 +136,7 @@ export const StoragePanel = ({
               className={`h-11 flex-1 rounded-full text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                 selected
                   ? "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,.12)]"
-                  : "font-medium text-muted-foreground"
+                  : "font-medium text-muted-foreground hover:text-foreground"
               }`}
             >
               {FILTER_LABELS[option]} {countFor(option)}
@@ -167,7 +167,7 @@ export const StoragePanel = ({
           <button
             type="button"
             onClick={onOpenFridgeDoor}
-            className="h-12 flex-1 rounded-full bg-sage-deep px-5 text-[15px] font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-transform duration-150 ease-out active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="h-12 flex-1 rounded-full bg-sage-deep px-5 text-[15px] font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             Open fridge door
           </button>
@@ -177,7 +177,7 @@ export const StoragePanel = ({
             type="button"
             disabled={busy}
             onClick={onAddLowToShoppingList}
-            className="h-12 flex-1 rounded-full border-[1.5px] border-border bg-muted px-5 text-[15px] font-semibold transition-colors duration-150 ease-out hover:bg-oat disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="h-12 flex-1 rounded-full border-[1.5px] border-border bg-muted px-5 text-[15px] font-semibold transition-colors duration-150 ease-out hover:bg-oat/30 disabled:opacity-60 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             Add low items to shopping list
           </button>

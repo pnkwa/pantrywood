@@ -78,14 +78,14 @@ export const NewBarcodeCard = ({ barcode, places }: NewBarcodeCardProps) => {
             <button
               type="button"
               onClick={() => setStep("create")}
-              className="h-11 rounded-[14px] bg-sage-deep text-sm font-semibold text-primary-foreground"
+              className="h-11 rounded-[14px] bg-sage-deep text-sm font-semibold text-primary-foreground transition-colors duration-150 ease-out hover:bg-sage-deep/85"
             >
               Create product
             </button>
             <button
               type="button"
               onClick={() => setStep("link")}
-              className="h-11 rounded-[14px] border-[1.5px] border-border bg-card text-sm font-semibold"
+              className="h-11 rounded-[14px] border-[1.5px] border-border bg-card text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted/40"
             >
               Link to existing
             </button>
@@ -93,7 +93,7 @@ export const NewBarcodeCard = ({ barcode, places }: NewBarcodeCardProps) => {
               type="button"
               disabled={lookup === "looking"}
               onClick={lookUp}
-              className="h-11 rounded-[14px] border-[1.5px] border-border bg-card text-sm font-semibold disabled:opacity-60"
+              className="h-11 rounded-[14px] border-[1.5px] border-border bg-card text-sm font-semibold transition-colors duration-150 ease-out hover:bg-muted/40 disabled:opacity-60"
             >
               {lookup === "looking" ? "Looking…" : "Look up online"}
             </button>
