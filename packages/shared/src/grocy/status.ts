@@ -1,5 +1,4 @@
 import { NEVER_EXPIRES_DATE } from "./schemas";
-import type { ProductKind } from "./classify";
 
 export const USE_SOON_DAYS = 3;
 
@@ -36,5 +35,3 @@ export const isRunningLow = (
   minStockAmount: number,
 ): boolean => minStockAmount > 0 && amountInStock < minStockAmount;
 
-/** Supplies only ever show "Stocked" or "Running low", never expiry. */
-export const showsExpiry = (kind: ProductKind): boolean => kind === "food";

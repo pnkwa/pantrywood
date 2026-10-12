@@ -11,7 +11,7 @@ import { highlightFor, type Highlight } from "@/components/scene/interaction";
 import { registerIn, type SceneOverlay } from "@/components/scene/overlay";
 import type { SceneStorage, StorageTag } from "@/components/scene/types";
 
-type TagStatus = {
+export type TagStatus = {
   key: string;
   icon: Icon;
   text: string;
@@ -19,7 +19,7 @@ type TagStatus = {
   className: string;
 };
 
-const statusesFor = (tag: StorageTag): TagStatus[] => {
+export const statusesFor = (tag: StorageTag): TagStatus[] => {
   const statuses: TagStatus[] = [];
   if (tag.expired > 0) {
     statuses.push({

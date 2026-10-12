@@ -157,5 +157,4 @@ export type ProductBarcode = z.infer<typeof ProductBarcodeSchema>;
 export type CurrentStock = z.infer<typeof CurrentStockSchema>;
 export type ShoppingListItem = z.infer<typeof ShoppingListItemSchema>;
 export type ShoppingLocation = z.infer<typeof ShoppingLocationSchema>;
-export type StockLogEntry = z.infer<typeof StockLogEntrySchema>;
 export type ProductDetails = z.infer<typeof ProductDetailsSchema>;

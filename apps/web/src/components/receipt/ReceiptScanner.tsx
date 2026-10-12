@@ -223,7 +223,7 @@ const PhotoPicker = ({ problem, onPhoto }: PhotoPickerProps) => {
       }}
       onDragLeave={() => setDragging(false)}
       onDrop={drop}
-      className={`flex flex-col items-center justify-center gap-5 overflow-hidden bg-[#3A322A] px-5 pt-24 pb-8 text-center text-[#F3EADB] outline-3 -outline-offset-8 transition-[outline-color] duration-150 ease-out max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:py-8 lg:text-foreground ${
+      className={`animate-in fade-in duration-200 flex flex-col items-center justify-center gap-5 overflow-hidden bg-[#3A322A] px-5 pt-24 pb-8 text-center text-[#F3EADB] outline-3 -outline-offset-8 transition-[outline-color] duration-150 ease-out max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:py-8 lg:text-foreground ${
         dragging ? "outline-dashed outline-sage-deep" : "outline-transparent"
       }`}
     >
@@ -302,7 +302,7 @@ const PhotoPicker = ({ problem, onPhoto }: PhotoPickerProps) => {
 const ReadingReceipt = ({ photoUrl }: { photoUrl: string }) => (
   <section
     aria-label="Reading the receipt"
-    className="flex items-center justify-center overflow-hidden bg-[#3A322A] px-5 pt-24 pb-20 max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:p-5"
+    className="animate-in fade-in duration-200 flex items-center justify-center overflow-hidden bg-[#3A322A] px-5 pt-24 pb-20 max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:p-5"
   >
     <div className="relative overflow-hidden rounded-md">
       {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing to optimize */}

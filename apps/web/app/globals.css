@@ -171,6 +171,12 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  /* One visible keyboard focus ring everywhere (DESIGN.md section 12). Zero specificity, so
+     components that draw their own focus state (field tiles, the 3D room) still win. */
+  :where(a, button, summary, input, select, textarea, [role="button"], [role="tab"], [role="radio"], [role="combobox"], [tabindex]):focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+  }
 }
 
 @utility tabular {

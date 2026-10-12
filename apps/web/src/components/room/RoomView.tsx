@@ -11,10 +11,11 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { OPEN_SCAN } from "@/lib/page-transitions";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type MotionProps } from "motion/react";
 import {
   ArrowDownIcon,
   BarcodeIcon,
+  CubeIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
   ArrowUpIcon,
@@ -22,11 +23,13 @@ import {
   type Icon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
+  ListBulletsIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
 import { createSceneOverlay } from "@/components/scene/overlay";
 import type { SceneStorage } from "@/components/scene/types";
 import { SceneOverlayLayer } from "./SceneOverlayLayer";
+import { StorageListView } from "./StorageListView";
 import { FridgeDoor } from "@/components/pantry/FridgeDoor";
 import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -39,6 +42,18 @@ const StorageRoomScene = dynamic(
     ),
   { ssr: false },
 );
+
+const VIEW_FADE = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.2, ease: "easeOut" },
+} satisfies MotionProps;
+
+const VIEW_OPTIONS: { label: string; list: boolean; icon: Icon }[] = [
+  { label: "3D room", list: false, icon: CubeIcon },
+  { label: "List", list: true, icon: ListBulletsIcon },
+];
 
 const FRIDGE_DOOR_ZOOM = 2.6;
 const FRIDGE_FRONT_OFFSET = 0.9;
@@ -113,6 +128,8 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
   const setHoveredLocation = useUiStore((state) => state.setHoveredLocation);
   const showFridgeDoor = useUiStore((state) => state.showFridgeDoor);
   const closeFridgeDoor = useUiStore((state) => state.closeFridgeDoor);
+  const listView = useUiStore((state) => state.listView);
+  const setListView = useUiStore((state) => state.setListView);
 
   const fridgeStorage = storages.find((storage) => storage.locationId === fridgeLocationId);
   const fridgeLocation = pantry?.locations.find((location) => location.id === fridgeLocationId);
@@ -130,9 +147,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
       reducedMotion ? 0 : DOOR_HOLD_MILLISECONDS,
     );
   }, [reducedMotion, showFridgeDoor]);
-  // Without a fridge piece to glide to, the door view shows straight away.
+  // Without a 3D fridge to glide to (list view, or no fridge piece), the door view shows straight away.
   const doorVisible =
-    view === "fridgeDoor" || (view === "enteringDoor" && !fridgeStorage);
+    view === "fridgeDoor" || (view === "enteringDoor" && (!fridgeStorage || listView));
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent<HTMLElement>) => {
@@ -154,60 +171,99 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
 
   return (
     <section
-      aria-label="3D storage room"
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
+      aria-label={listView ? "Storage list" : "3D storage room"}
+      tabIndex={listView ? undefined : 0}
+      onKeyDown={listView ? undefined : handleKeyDown}
       className="relative min-h-[420px] flex-1 overflow-hidden rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[560px]"
     >
-      <div className="absolute inset-0">
-        <StorageRoomScene
-          storages={storages}
-          cameraRef={cameraRef}
-          overlay={overlay}
-          label={description}
-          hoveredLocationId={hoveredLocationId}
-          selectedLocationId={selection?.locationId ?? null}
-          openDoorLocationId={view === "room" ? null : fridgeLocationId}
-          focus={focus}
-          onFocusSettled={handleFocusSettled}
-          onHoverChange={setHoveredLocation}
-          onSelectStorage={onSelectStorage}
-          onSelectItem={selectItem}
-          onBackgroundClick={clearSelection}
-        />
-      </div>
-      <SceneOverlayLayer
-        overlay={overlay}
-        storages={storages}
-        hoveredLocationId={hoveredLocationId}
-        selectedLocationId={selection?.locationId ?? null}
-        openDoorLocationId={view === "room" ? null : fridgeLocationId}
-      />
-
-      <div className="absolute top-4 right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper">
-        <ControlButton label="Zoom in" onClick={() => cameraRef.current?.zoomIn()}>
-          <MagnifyingGlassPlusIcon size={20} weight="duotone" />
-        </ControlButton>
-        <ControlButton label="Zoom out" onClick={() => cameraRef.current?.zoomOut()}>
-          <MagnifyingGlassMinusIcon size={20} weight="duotone" />
-        </ControlButton>
-        <ControlButton label="Back to whole room" onClick={() => cameraRef.current?.reset()}>
-          <HouseSimpleIcon size={20} weight="duotone" />
-        </ControlButton>
-      </div>
-
-      <div className="absolute bottom-4 left-4 z-30 hidden grid-cols-3 grid-rows-3 rounded-lg border-[1.5px] border-border bg-card/90 p-1 shadow-paper sm:grid">
-        {PAN_BUTTONS.map((button) => {
-          const ButtonIcon = button.icon;
-          return (
-            <ControlButton
-              key={button.direction}
-              label={button.label}
-              className={button.area}
-              onClick={() => cameraRef.current?.panBy(button.direction)}
-            >
-              <ButtonIcon size={18} weight="bold" />
+      <AnimatePresence initial={false}>
+        {listView ? (
+          <motion.div key="list" {...VIEW_FADE} className="absolute inset-0 z-20 bg-background/70">
+            <StorageListView
+              storages={storages}
+              selectedLocationId={selection?.locationId ?? null}
+              onSelectStorage={onSelectStorage}
+            />
+          </motion.div>
+        ) : (
+          <motion.div key="room" {...VIEW_FADE} className="absolute inset-0">
+          <div className="absolute inset-0">
+            <StorageRoomScene
+              storages={storages}
+              cameraRef={cameraRef}
+              overlay={overlay}
+              label={description}
+              hoveredLocationId={hoveredLocationId}
+              selectedLocationId={selection?.locationId ?? null}
+              openDoorLocationId={view === "room" ? null : fridgeLocationId}
+              focus={focus}
+              onFocusSettled={handleFocusSettled}
+              onHoverChange={setHoveredLocation}
+              onSelectStorage={onSelectStorage}
+              onSelectItem={selectItem}
+              onBackgroundClick={clearSelection}
+            />
+          </div>
+          <SceneOverlayLayer
+            overlay={overlay}
+            storages={storages}
+            hoveredLocationId={hoveredLocationId}
+            selectedLocationId={selection?.locationId ?? null}
+            openDoorLocationId={view === "room" ? null : fridgeLocationId}
+          />
+          <div className="absolute top-4 right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper">
+            <ControlButton label="Zoom in" onClick={() => cameraRef.current?.zoomIn()}>
+              <MagnifyingGlassPlusIcon size={20} weight="duotone" />
             </ControlButton>
+            <ControlButton label="Zoom out" onClick={() => cameraRef.current?.zoomOut()}>
+              <MagnifyingGlassMinusIcon size={20} weight="duotone" />
+            </ControlButton>
+            <ControlButton label="Back to whole room" onClick={() => cameraRef.current?.reset()}>
+              <HouseSimpleIcon size={20} weight="duotone" />
+            </ControlButton>
+          </div>
+
+          <div className="absolute bottom-4 left-4 z-30 hidden grid-cols-3 grid-rows-3 rounded-lg border-[1.5px] border-border bg-card/90 p-1 shadow-paper sm:grid">
+            {PAN_BUTTONS.map((button) => {
+              const ButtonIcon = button.icon;
+              return (
+                <ControlButton
+                  key={button.direction}
+                  label={button.label}
+                  className={button.area}
+                  onClick={() => cameraRef.current?.panBy(button.direction)}
+                >
+                  <ButtonIcon size={18} weight="bold" />
+                </ControlButton>
+              );
+            })}
+          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        role="radiogroup"
+        aria-label="Room view"
+        className="absolute top-4 left-4 z-30 flex gap-1 rounded-full border-[1.5px] border-border bg-card p-1 shadow-paper"
+      >
+        {VIEW_OPTIONS.map((option) => {
+          const OptionIcon = option.icon;
+          const selected = option.list === listView;
+          return (
+            <button
+              key={option.label}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setListView(option.list)}
+              className={`flex h-11 items-center justify-center gap-1.5 rounded-full text-sm transition-colors max-lg:w-11 lg:px-3.5 duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                selected ? "bg-sage-deep font-semibold text-primary-foreground" : "font-medium text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <OptionIcon size={18} weight="duotone" aria-hidden />
+              <span className="max-lg:sr-only">{option.label}</span>
+            </button>
           );
         })}
       </div>
@@ -222,10 +278,13 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         Scan
       </Link>
 
+      {!listView && (
       <p className="pointer-events-none absolute right-36 bottom-6 z-30 hidden rounded-full bg-card/80 px-3 py-1.5 text-[13px] text-muted-foreground xl:block">
         Drag to look around · scroll to zoom · tap storage to peek inside
       </p>
+      )}
 
+      {!listView && (
       <nav aria-label="Storage pieces" className="sr-only">
         <ul>
           {storages.map((storage) => (
@@ -237,6 +296,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
           ))}
         </ul>
       </nav>
+      )}
 
       <AnimatePresence>
         {doorVisible && fridgeLocation && (

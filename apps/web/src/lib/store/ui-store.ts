@@ -28,6 +28,9 @@ type UiState = {
   fridgeLocationId: number | null;
   flyingItemKey: string | null;
   toasts: Toast[];
+  /** 2D fallback for the 3D room (slow phones, or a plain list is simply easier). */
+  listView: boolean;
+  setListView: (listView: boolean) => void;
   selectStorage: (locationId: number) => void;
   selectItem: (locationId: number, productId: number, itemKey?: string) => void;
   clearSelection: () => void;
@@ -50,6 +53,8 @@ export const useUiStore = create<UiState>()((set, get) => ({
   fridgeLocationId: null,
   flyingItemKey: null,
   toasts: [],
+  listView: false,
+  setListView: (listView) => set({ listView, hoveredLocationId: null }),
   selectStorage: (locationId) =>
     set({ selection: { type: "storage", locationId } }),
   selectItem: (locationId, productId, itemKey) =>

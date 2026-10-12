@@ -8,7 +8,6 @@ import {
   ProductGroupSchema,
   ProductSchema,
   QuantityUnitSchema,
-  ShoppingListItemSchema,
   ShoppingLocationSchema,
   StockEntrySchema,
 } from "@pantrywood/shared";
@@ -28,9 +27,6 @@ export const grocyKeys = {
   stock: () => queryKey("grocy", "stock"),
   currentStock: () => queryKey("grocy", "stock", "current"),
   stockEntries: () => queryKey("grocy", "stock", "entries"),
-  productStockEntries: (productId: number) =>
-    queryKey("grocy", "stock", "entries", productId),
-  shoppingList: () => queryKey("grocy", "shopping_list"),
   shoppingLocations: () => queryKey("grocy", "shopping_locations"),
   barcode: (barcode: string) => queryKey("grocy", "stock", "barcode", barcode),
 };
@@ -85,23 +81,6 @@ export const useStockEntries = () =>
   useQuery({
     queryKey: grocyKeys.stockEntries(),
     queryFn: () => grocyFetch("objects/stock", z.array(StockEntrySchema)),
-  });
-
-export const useProductStockEntries = (productId: number) =>
-  useQuery({
-    queryKey: grocyKeys.productStockEntries(productId),
-    queryFn: () =>
-      grocyFetch(
-        `stock/products/${productId}/entries`,
-        z.array(StockEntrySchema),
-      ),
-  });
-
-export const useShoppingList = () =>
-  useQuery({
-    queryKey: grocyKeys.shoppingList(),
-    queryFn: () =>
-      grocyFetch("objects/shopping_list", z.array(ShoppingListItemSchema)),
   });
 
 export const useShoppingLocations = () =>

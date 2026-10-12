@@ -46,7 +46,7 @@ const ModeSwitch = () => {
             role="radio"
             aria-checked={selected}
             onClick={() => setMode(option.mode)}
-            className={`h-11 rounded-full px-4 text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-10 ${
+            className={`h-11 rounded-full px-4 text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:h-10 lg:pointer-coarse:h-11 ${
               selected
                 ? "bg-sage-deep font-semibold text-primary-foreground"
                 : "font-medium text-[#F3EADB] hover:bg-[#F3EADB]/10 lg:text-foreground lg:hover:bg-card/70"
@@ -61,7 +61,7 @@ const ModeSwitch = () => {
   );
 };
 
-const KIND_TAB_CLASS = "flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm lg:flex-none";
+const KIND_TAB_CLASS = "flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm pointer-coarse:h-11 lg:flex-none";
 const KIND_TAB_SELECTED =
   "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,.12)]";
 const KIND_TAB_IDLE = "font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground";

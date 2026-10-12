@@ -44,4 +44,3 @@ export const ReceiptMatchSchema = z.object({
   productId: z.number(),
 });
 
-export type ReceiptMatch = z.infer<typeof ReceiptMatchSchema>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type PointerEvent, type Ref } from "react";
+import { useRef, useState, type PointerEvent, type Ref } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { CameraRig, type CameraApi, type CameraFocus } from "./CameraRig";
@@ -11,7 +11,7 @@ import { Room } from "./Room";
 import { Storage } from "./Storage";
 import type { SceneStorage } from "./types";
 
-const Lights = () => (
+const Lights = ({ shadowMapSize }: { shadowMapSize: number }) => (
   <>
     <hemisphereLight args={["#FFF3DE", "#D9BC93", 2.3]} />
     <ambientLight intensity={0.35} color="#FFF8EC" />
@@ -20,7 +20,7 @@ const Lights = () => (
       intensity={1.5}
       color="#FFE6C2"
       castShadow
-      shadow-mapSize={[2048, 2048]}
+      shadow-mapSize={[shadowMapSize, shadowMapSize]}
       shadow-camera-left={-10}
       shadow-camera-right={10}
       shadow-camera-top={10}
@@ -66,6 +66,8 @@ export const StorageRoomScene = ({
   onBackgroundClick,
 }: StorageRoomSceneProps) => {
   const pointerDown = useRef({ x: 0, y: 0 });
+  // Touch devices: fewer pixels and a smaller shadow map keep the room smooth on a mid-range phone GPU.
+  const [onTouchDevice] = useState(() => window.matchMedia("(pointer: coarse)").matches);
 
   const rememberPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     pointerDown.current = { x: event.clientX, y: event.clientY };
@@ -84,7 +86,7 @@ export const StorageRoomScene = ({
       frameloop="demand"
       shadows
       flat
-      dpr={[1, 2]}
+      dpr={onTouchDevice ? [1, 1.5] : [1, 2]}
       gl={{ antialias: true, alpha: true }}
       aria-label={label}
       role="img"
@@ -97,7 +99,7 @@ export const StorageRoomScene = ({
         focus={focus}
         onFocusSettled={onFocusSettled}
       />
-      <Lights />
+      <Lights shadowMapSize={onTouchDevice ? 1024 : 2048} />
       <Room />
       <Decor />
       {storages.map((storage) => (

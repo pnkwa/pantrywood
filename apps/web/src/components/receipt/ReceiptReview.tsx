@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { CheckIcon, WarningIcon } from "@phosphor-icons/react";
 import { THAI_NAME_USERFIELD, toIsoDate, type ReceiptScan } from "@pantrywood/shared";
@@ -18,6 +18,7 @@ import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
 import { matchReceiptLine, normalizeReceiptName } from "@/lib/receipt/match";
 import { receiptMatches, receiptMemories, useRefreshReceipts, useRememberedMatches } from "@/lib/receipt/store";
 import { useUiStore } from "@/lib/store/ui-store";
+import { AnimatedNumber } from "@/components/pantry/AnimatedNumber";
 import { ReceiptScanHeader } from "./ReceiptScanHeader";
 import { needsYou, ReceiptLineCard, type LineChoice, type ReviewProduct } from "./ReceiptLineCard";
 
@@ -38,7 +39,7 @@ const bestBeforeFor = (shelfLifeDays: number) => {
 
 type SummaryTileProps = {
   label: string;
-  value: string;
+  value: ReactNode;
   tone?: "plain" | "sage" | "honey";
 };
 
@@ -245,13 +246,13 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   return (
     <>
       <ReceiptScanHeader>
-        <SummaryTile label="Lines" value={String(scan.lines.length)} />
+        <SummaryTile label="Lines" value={<AnimatedNumber value={scan.lines.length} />} />
         <SummaryTile label="Total" value={formatMoney(scan.total ?? lineTotal, scan.currency)} />
-        <SummaryTile label="Matched" value={String(rows.length - needsYouCount)} tone="sage" />
-        <SummaryTile label="Needs you" value={String(needsYouCount)} tone="honey" />
+        <SummaryTile label="Matched" value={<AnimatedNumber value={rows.length - needsYouCount} />} tone="sage" />
+        <SummaryTile label="Needs you" value={<AnimatedNumber value={needsYouCount} />} tone="honey" />
       </ReceiptScanHeader>
 
-      <div className="lg:mx-auto lg:flex lg:w-full lg:max-w-[1240px] lg:min-h-0 lg:flex-1 lg:gap-5">
+      <div className="animate-in fade-in duration-200 lg:mx-auto lg:flex lg:w-full lg:max-w-[1240px] lg:min-h-0 lg:flex-1 lg:gap-5">
         <section
           aria-label="Receipt photo"
           className="flex min-h-0 min-w-0 flex-col gap-3 max-lg:absolute max-lg:inset-0 max-lg:px-4 max-lg:pt-20 max-lg:pb-[calc(9.5rem+0.75rem)] lg:flex-[1_1_420px]"
@@ -341,7 +342,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
             onClick={() => setSheetOpen((open) => !open)}
             aria-expanded={sheetOpen}
             aria-label={sheetOpen ? "Lower the list to see the photo" : "Raise the list"}
-            className="group flex h-8 shrink-0 items-center justify-center lg:hidden"
+            className="group -my-1.5 flex h-11 shrink-0 items-center justify-center lg:hidden"
           >
             <span aria-hidden className="h-1.5 w-11 rounded-full bg-oat transition-colors duration-150 ease-out group-hover:bg-muted-foreground/40" />
           </button>
@@ -366,7 +367,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   role="tab"
                   aria-selected={filter === tab.value}
                   onClick={() => setFilter(tab.value === "all" ? "all" : "needsYou")}
-                  className={`h-9 rounded-full px-3.5 text-[13px] transition-colors duration-150 ease-out ${
+                  className={`h-9 rounded-full px-3.5 text-[13px] transition-colors duration-150 ease-out pointer-coarse:h-11 ${
                     filter === tab.value
                       ? "bg-card font-semibold shadow-[0_2px_6px_rgba(74,59,46,.12)]"
                       : "font-medium text-muted-foreground hover:text-foreground"
@@ -380,8 +381,8 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
 
           <div className="grid grid-cols-3 gap-2 px-4 pb-2.5 lg:hidden">
             <SummaryTile label="Total" value={formatMoney(scan.total ?? lineTotal, scan.currency)} />
-            <SummaryTile label="Matched" value={String(rows.length - needsYouCount)} tone="sage" />
-            <SummaryTile label="Needs you" value={String(needsYouCount)} tone="honey" />
+            <SummaryTile label="Matched" value={<AnimatedNumber value={rows.length - needsYouCount} />} tone="sage" />
+            <SummaryTile label="Needs you" value={<AnimatedNumber value={needsYouCount} />} tone="honey" />
           </div>
 
           <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pt-1 pb-3">
