@@ -15,16 +15,23 @@ const DEFAULT_SHELF_LIFE_DAYS = 7;
 const supplyGroupNames = new Set(SUPPLY_GROUP_NAMES.map((name) => name.toLowerCase()));
 
 type ProductFormProps = {
-  barcode: string;
+  /** Linked to the new product when given. */
+  barcode?: string;
   suggestedName: string;
+  suggestedThaiName?: string;
+  suggestedSupply?: boolean;
+  suggestedGroupName?: string | null;
   places: GrocyPlace[];
   onCancel: () => void;
-  onCreated: () => void;
+  onCreated: (productId: number) => void;
 };
 
 export const ProductForm = ({
   barcode,
   suggestedName,
+  suggestedThaiName = "",
+  suggestedSupply = false,
+  suggestedGroupName = null,
   places,
   onCancel,
   onCreated,
@@ -35,9 +42,10 @@ export const ProductForm = ({
   const showToast = useUiStore((state) => state.showToast);
 
   const [name, setName] = useState(suggestedName);
-  const [thaiName, setThaiName] = useState("");
-  const [isSupply, setIsSupply] = useState(false);
-  const [groupId, setGroupId] = useState<number | null>(null);
+  const [thaiName, setThaiName] = useState(suggestedThaiName);
+  const [isSupply, setIsSupply] = useState(suggestedSupply);
+  // undefined = not touched yet, so the suggested group shows once groups have loaded.
+  const [groupId, setGroupId] = useState<number | null | undefined>(undefined);
   const [unitId, setUnitId] = useState<number | null>(null);
   const [placeId, setPlaceId] = useState<number | null>(places[0]?.id ?? null);
   const [shelfLifeDays, setShelfLifeDays] = useState(DEFAULT_SHELF_LIFE_DAYS);
@@ -46,6 +54,10 @@ export const ProductForm = ({
   const groups = (productGroups.data ?? []).filter(
     (group) => supplyGroupNames.has(group.name.toLowerCase()) === isSupply,
   );
+  const chosenGroupId =
+    groupId === undefined
+      ? (groups.find((group) => group.name.toLowerCase() === suggestedGroupName?.toLowerCase())?.id ?? null)
+      : groupId;
   const units = quantityUnits.data ?? [];
   const chosenUnitId = unitId ?? units[0]?.id ?? null;
   const canSave = name.trim() !== "" && chosenUnitId !== null && placeId !== null;
@@ -56,17 +68,17 @@ export const ProductForm = ({
       {
         name: name.trim(),
         thaiName: thaiName.trim(),
-        productGroupId: groupId,
+        productGroupId: chosenGroupId,
         locationId: placeId,
         quantityUnitId: chosenUnitId,
         bestBeforeDays: isSupply ? -1 : shelfLifeDays,
         minStock,
-        barcode,
+        barcode: barcode ?? "",
       },
       {
-        onSuccess: () => {
+        onSuccess: (productId) => {
           showToast(`${name.trim()} is in Grocy now`);
-          onCreated();
+          onCreated(productId);
         },
         onError: (error) => showToast(error.message, "error"),
       },
@@ -134,7 +146,7 @@ export const ProductForm = ({
       <div className="grid grid-cols-2 gap-2">
         <FieldTile label="Group">
           <select
-            value={groupId ?? ""}
+            value={chosenGroupId ?? ""}
             onChange={(event) => setGroupId(event.target.value ? Number(event.target.value) : null)}
             className={FIELD_INPUT_CLASS}
           >

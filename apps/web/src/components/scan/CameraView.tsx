@@ -32,7 +32,7 @@ export const CameraView = ({ videoRef, status, mirrored, flashKey, found }: Came
     <div aria-hidden className="absolute inset-0 bg-[#2B261F]/25" />
     <div
       aria-hidden
-      className={`absolute top-[22%] left-1/2 h-48 w-[min(300px,78%)] -translate-x-1/2 rounded-[22px] transition-colors duration-150 lg:top-1/2 lg:-translate-y-1/2 ${
+      className={`absolute top-1/2 left-1/2 h-48 w-[min(300px,78%)] -translate-x-1/2 -translate-y-1/2 rounded-[22px] transition-colors duration-150 ${
         found ? "bg-sage/15 outline-3 outline-sage" : ""
       }`}
     >
@@ -56,7 +56,7 @@ export const CameraView = ({ videoRef, status, mirrored, flashKey, found }: Came
     </span>
     <p
       role="status"
-      className="absolute inset-x-6 top-[calc(22%+13rem)] text-center text-sm text-[#F3EADB] lg:top-auto lg:bottom-5"
+      className="absolute inset-x-6 top-[calc(50%+7rem)] text-center text-sm text-[#F3EADB] lg:top-auto lg:bottom-5"
     >
       {found ? "Found it · or use your barcode scanner" : STATUS_HINTS[status]}
     </p>

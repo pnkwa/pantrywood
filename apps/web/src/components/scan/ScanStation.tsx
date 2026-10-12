@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import Link from "next/link";
-import { CLOSE_SCAN, NAV_FORWARD } from "@/lib/page-transitions";
+import { CLOSE_SCAN, NAV_FORWARD, SCAN_TAB } from "@/lib/page-transitions";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { ArrowLeftIcon, KeyboardIcon, PrinterIcon, XIcon } from "@phosphor-icons/react";
@@ -15,6 +15,7 @@ import { useScanStore, type ScanMode } from "@/lib/store/scan-store";
 import { Toasts } from "@/components/pantry/Toasts";
 import { CameraView } from "./CameraView";
 import { NewBarcodeCard } from "./NewBarcodeCard";
+import { PinnedScanHeader, SlidingTabPill } from "./PinnedScanHeader";
 import { ScanResultCard } from "./ScanResultCard";
 import { SessionList } from "./SessionList";
 
@@ -60,30 +61,48 @@ const ModeSwitch = () => {
   );
 };
 
-const ScanKindTabs = () => (
+const KIND_TAB_CLASS = "flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm lg:flex-none";
+const KIND_TAB_SELECTED =
+  "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,.12)]";
+const KIND_TAB_IDLE = "font-medium text-muted-foreground";
+
+type ScanKindTabsProps = {
+  current: "barcode" | "receipt";
+  /** Over the phone camera the switch sits on a dark tint. */
+  overCamera?: boolean;
+};
+
+export const ScanKindTabs = ({ current, overCamera = false }: ScanKindTabsProps) => (
   <div
     role="tablist"
     aria-label="What to scan"
-    className="flex flex-1 gap-1 rounded-full bg-[#2B261F]/60 p-1 lg:flex-none lg:bg-muted"
+    className={`flex flex-1 gap-1 rounded-full p-1 lg:flex-none ${
+      overCamera ? "bg-[#2B261F]/60 lg:bg-muted [&>a]:max-lg:text-[#F3EADB]" : "bg-muted"
+    }`}
   >
-    <button
-      type="button"
-      role="tab"
-      aria-selected
-      className="h-10 flex-1 rounded-full bg-card px-4 text-sm font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,.12)] lg:flex-none"
-    >
-      Barcode
-    </button>
-    <button
-      type="button"
-      role="tab"
-      aria-selected={false}
-      aria-disabled
-      title="Receipt scanning comes next"
-      className="h-10 flex-1 cursor-not-allowed rounded-full px-4 text-sm font-medium text-[#F3EADB]/60 lg:flex-none lg:text-muted-foreground"
-    >
-      Receipt
-    </button>
+    {[
+      { kind: "barcode", label: "Barcode", href: "/scan" },
+      { kind: "receipt", label: "Receipt", href: "/scan/receipt" },
+    ].map((tab) =>
+      tab.kind === current ? (
+        <SlidingTabPill key={tab.kind}>
+          <span role="tab" aria-selected className={`${KIND_TAB_CLASS} ${KIND_TAB_SELECTED}`}>
+            {tab.label}
+          </span>
+        </SlidingTabPill>
+      ) : (
+        <Link
+          key={tab.kind}
+          href={tab.href}
+          transitionTypes={SCAN_TAB}
+          role="tab"
+          aria-selected={false}
+          className={`${KIND_TAB_CLASS} ${KIND_TAB_IDLE}`}
+        >
+          {tab.label}
+        </Link>
+      ),
+    )}
   </div>
 );
 
@@ -220,24 +239,26 @@ export const ScanStation = () => {
 
   return (
     <div className="relative h-dvh overflow-hidden bg-[#2B261F] lg:flex lg:flex-col lg:gap-4 lg:bg-background lg:p-5">
-      <header className="absolute inset-x-4 top-4 z-20 flex flex-col gap-3 lg:static lg:mx-auto lg:w-full lg:max-w-[1240px] lg:flex-row lg:flex-wrap lg:items-center lg:rounded-[22px] lg:border-[1.5px] lg:border-border lg:bg-card lg:px-4 lg:py-3 lg:shadow-paper">
-        <div className="flex items-center gap-2 lg:gap-3">
-          <button
-            type="button"
-            onClick={leave}
-            aria-label="Back to the storage room"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground"
-          >
-            <XIcon size={18} weight="bold" className="lg:hidden" aria-hidden />
-            <ArrowLeftIcon size={18} weight="bold" className="hidden lg:block" aria-hidden />
-          </button>
-          <h1 className="hidden text-2xl lg:block">Scan</h1>
-          <ScanKindTabs />
-        </div>
-        <div className="self-center lg:ml-auto lg:self-auto">
-          <ModeSwitch />
-        </div>
-      </header>
+      <PinnedScanHeader>
+        <header className="absolute inset-x-4 top-4 z-20 flex flex-col gap-3 lg:static lg:mx-auto lg:w-full lg:max-w-[1240px] lg:flex-row lg:flex-wrap lg:items-center lg:rounded-[22px] lg:border-[1.5px] lg:border-border lg:bg-card lg:px-4 lg:py-3 lg:shadow-paper">
+          <div className="flex items-center gap-2 lg:gap-3">
+            <button
+              type="button"
+              onClick={leave}
+              aria-label="Back to the storage room"
+              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#2B261F]/60 text-[#F3EADB] lg:border-[1.5px] lg:border-border lg:bg-card lg:text-foreground"
+            >
+              <XIcon size={18} weight="bold" className="lg:hidden" aria-hidden />
+              <ArrowLeftIcon size={18} weight="bold" className="hidden lg:block" aria-hidden />
+            </button>
+            <h1 className="hidden text-2xl lg:block">Scan</h1>
+            <ScanKindTabs current="barcode" overCamera />
+          </div>
+          <div className="self-center lg:ml-auto lg:self-auto">
+            <ModeSwitch />
+          </div>
+        </header>
+      </PinnedScanHeader>
 
       <div className="lg:mx-auto lg:flex lg:min-h-0 lg:w-full lg:max-w-[1240px] lg:flex-1 lg:gap-5">
         <section aria-label="Scanner" className="lg:flex lg:min-h-0 lg:flex-[1_1_420px] lg:flex-col lg:gap-3">
@@ -248,7 +269,7 @@ export const ScanStation = () => {
             flashKey={scanCount}
             found={Boolean(currentBarcode) && found}
           />
-          <span className="absolute top-[calc(22%+17rem)] left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#2B261F]/60 px-3 py-1.5 text-xs font-medium text-[#F3EADB] lg:hidden">
+          <span className="absolute top-[calc(50%+11rem)] left-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#2B261F]/60 px-3 py-1.5 text-xs font-medium text-[#F3EADB] lg:hidden">
             <span aria-hidden className="size-2 rounded-full bg-[#A9D18E]" />
             USB scanner ready
           </span>

@@ -11,6 +11,7 @@
     "test": "node --experimental-strip-types --no-warnings --test scripts/*.test.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@pantrywood/shared": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
     "@react-three/drei": "^10.7.9",

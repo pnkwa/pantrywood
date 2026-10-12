@@ -129,6 +129,7 @@ export type NewProduct = {
   quantityUnitId: number;
   bestBeforeDays: number;
   minStock: number;
+  /** Empty when the product comes from a receipt line rather than a scan. */
   barcode: string;
 };
 
@@ -148,15 +149,18 @@ const createProduct = async (product: NewProduct) => {
     },
     CreatedSchema,
   );
-  try {
-    await grocyPost("objects/product_barcodes", {
-      product_id: productId,
-      barcode: product.barcode,
-      amount: 1,
-    });
-  } catch (error) {
-    await grocyDelete(`objects/products/${productId}`).catch(() => undefined);
-    throw error;
+  if (product.barcode) {
+    try {
+      await grocyPost("objects/product_barcodes", {
+        product_id: productId,
+        barcode: product.barcode,
+        amount: 1,
+      });
+    } catch (error) {
+      // A product without its barcode invites a duplicate on the next try, so undo it.
+      await grocyDelete(`objects/products/${productId}`).catch(() => undefined);
+      throw error;
+    }
   }
   if (product.thaiName) {
     await grocyPut(`userfields/products/${productId}`, {

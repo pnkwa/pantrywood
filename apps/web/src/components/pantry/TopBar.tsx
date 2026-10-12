@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import {
   HouseSimpleIcon,
   MagnifyingGlassIcon,
   PlantIcon,
+  ReceiptIcon,
 } from "@phosphor-icons/react";
 import type { Pantry, PantryItem } from "@/lib/pantry/model";
 import { formatAmount } from "@/lib/pantry/format";
 import { QUICK_FADE } from "@/lib/motion";
+import { NAV_FORWARD } from "@/lib/page-transitions";
 import { StatusChip } from "./StatusChip";
 
 const MAX_RESULTS = 6;
@@ -89,7 +92,8 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
             onKeyDown={(event) => {
               if (event.key === "Escape") setQuery("");
               const first = results[0];
-              if (event.key === "Enter" && first) pick(first.item, first.storageId);
+              if (event.key === "Enter" && first)
+                pick(first.item, first.storageId);
             }}
             placeholder="Search your storage… milk, ข้าว, tissue"
             className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
@@ -145,6 +149,19 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
         </AnimatePresence>
       </div>
 
+      <Link
+        href="/receipts"
+        transitionTypes={NAV_FORWARD}
+        className="hidden h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-[15px] font-medium transition-colors duration-150 ease-out hover:bg-muted lg:inline-flex"
+      >
+        <ReceiptIcon
+          size={18}
+          weight="duotone"
+          className="text-muted-foreground"
+          aria-hidden
+        />
+        Receipts
+      </Link>
       <span className="hidden h-11 items-center gap-2.5 rounded-full border-[1.5px] border-border bg-card pr-4 pl-1.5 text-[15px] font-medium lg:inline-flex">
         <span className="flex size-8 items-center justify-center rounded-full bg-status-low text-status-low-foreground">
           <HouseSimpleIcon size={18} weight="duotone" aria-hidden />

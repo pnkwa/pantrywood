@@ -14,6 +14,7 @@ import { AnimatedNumber } from "./AnimatedNumber";
 type StatCard = {
   key: string;
   label: string;
+  shortLabel: string;
   value: number;
   hint: string;
   icon: Icon;
@@ -24,6 +25,7 @@ const cardsFor = (stats: PantryStats): StatCard[] => [
   {
     key: "use-soon",
     label: "Use soon",
+    shortLabel: "Use soon",
     value: stats.useSoon.count,
     hint: stats.useSoon.count
       ? listNames(stats.useSoon.names)
@@ -34,6 +36,7 @@ const cardsFor = (stats: PantryStats): StatCard[] => [
   {
     key: "running-low",
     label: "Running low",
+    shortLabel: "Low",
     value: stats.runningLow.count,
     hint: stats.runningLow.count
       ? listNames(stats.runningLow.names)
@@ -44,6 +47,7 @@ const cardsFor = (stats: PantryStats): StatCard[] => [
   {
     key: "in-stock",
     label: "In stock",
+    shortLabel: "In stock",
     value: stats.inStock.count,
     hint: `food & supplies · ${stats.inStock.spots} spots`,
     icon: PlantIcon,
@@ -52,6 +56,7 @@ const cardsFor = (stats: PantryStats): StatCard[] => [
   {
     key: "added-this-week",
     label: "Added this week",
+    shortLabel: "This week",
     value: stats.addedThisWeek.count,
     hint: stats.addedThisWeek.count
       ? listNames(stats.addedThisWeek.names)
@@ -66,7 +71,7 @@ export const StatCards = ({ stats }: { stats: PantryStats | null }) => {
     return (
       <div
         aria-hidden
-        className="grid h-[88px] grid-cols-2 gap-4 lg:grid-cols-4"
+        className="grid h-[68px] grid-cols-4 gap-2 lg:h-[88px] lg:gap-4"
       >
         {Array.from({ length: 4 }, (_, index) => (
           <div key={index} className="animate-pulse rounded-lg bg-muted" />
@@ -78,25 +83,27 @@ export const StatCards = ({ stats }: { stats: PantryStats | null }) => {
   const cards = cardsFor(stats);
   return (
     <section aria-label="Storage at a glance">
-      <ul className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 lg:hidden">
+      <ul className="grid grid-cols-4 py-1 lg:hidden">
         {cards.map((card) => {
           const CardIcon = card.icon;
           return (
             <li
               key={card.key}
-              className="flex shrink-0 snap-start items-center gap-2 rounded-md border-[1.5px] border-border bg-card px-3 py-2"
+              className="flex min-w-0 flex-col items-center gap-1 px-1"
             >
-              <span
-                className={`flex size-8 items-center justify-center rounded-full ${card.tint}`}
-              >
-                <CardIcon size={16} weight="duotone" aria-hidden />
+              <span className="flex items-center gap-1.5">
+                <span
+                  className={`flex size-7 items-center justify-center rounded-full ${card.tint}`}
+                >
+                  <CardIcon size={15} weight="duotone" aria-hidden />
+                </span>
+                <AnimatedNumber
+                  value={card.value}
+                  className="text-xl leading-none font-semibold tracking-[-0.02em]"
+                />
               </span>
-              <AnimatedNumber
-                value={card.value}
-                className="text-xl font-semibold tracking-[-0.02em]"
-              />
-              <span className="text-[13px] font-medium text-muted-foreground">
-                {card.label}
+              <span className="w-full truncate text-center text-[11px] font-medium text-muted-foreground">
+                {card.shortLabel}
               </span>
             </li>
           );

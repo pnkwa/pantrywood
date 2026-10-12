@@ -1,6 +1,6 @@
 import type { PantryItem } from "./model";
 
-const formatNumber = (value: number) =>
+export const formatNumber = (value: number) =>
   Number.isInteger(value) ? String(value) : value.toFixed(1);
 
 export const unitFor = (item: PantryItem, amount: number) =>
@@ -31,3 +31,18 @@ export const listNames = (names: readonly string[], shown = 3) =>
   names.length <= shown
     ? names.join(", ")
     : `${names.slice(0, shown).join(", ")} +${names.length - shown}`;
+
+const MONEY_FORMATS = new Map<string, Intl.NumberFormat>();
+
+/** "฿189.00"; falls back to "189.00 XYZ" for a code the browser doesn't know. */
+export const formatMoney = (value: number, currency: string) => {
+  try {
+    const format =
+      MONEY_FORMATS.get(currency) ??
+      new Intl.NumberFormat("en-GB", { style: "currency", currency, currencyDisplay: "narrowSymbol" });
+    MONEY_FORMATS.set(currency, format);
+    return format.format(value);
+  } catch {
+    return `${value.toFixed(2)} ${currency}`;
+  }
+};

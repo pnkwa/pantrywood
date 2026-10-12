@@ -329,3 +329,33 @@
     translate: var(--page-slide) 0;
   }
 }
+
+/* Receipt reading: a sage line sweeps down the photo and back. */
+@keyframes receipt-scan {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Barcode ↔ Receipt: the header is pinned (no animation), the selected tab pill slides. */
+::view-transition-group(.scan-header) {
+  animation: none;
+  z-index: 100;
+}
+
+::view-transition-old(.scan-header) {
+  display: none;
+}
+
+::view-transition-new(.scan-header) {
+  animation: none;
+}
+
+::view-transition-group(.scan-tab-pill) {
+  z-index: 101;
+  animation-duration: 260ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
