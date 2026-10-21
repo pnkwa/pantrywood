@@ -315,7 +315,7 @@ A life-sim style editor for the storage room. People can swap **storage furnitur
 - Shelf items, wallpaper, floor and decor are cosmetic only — they never touch Grocy data.
 - Room layout is saved by Pantrywood itself (local storage in Phase 1–2, own server in Phase 3),
   not in Grocy.
-- Placement on a floor grid (1 cell = 50 cm). Footprints: fridge 2×2, shelf 3×1, cabinet 1×2, rug 3×3…
+- Placement on a floor grid (1 cell = 50 cm). Footprints: fridge 2×2, shelf 3×1, cabinet 3×1, rug 3×3…
 - Currency: **leaves**, earned from XP (eating things before they expire, scanning receipts).
   Owned items show "Owned", placed items "In room".
 - Selected piece gets a dashed honey outline and a floating toolbar: *Swap style · Rotate · Move · Put away*.
