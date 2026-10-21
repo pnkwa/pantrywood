@@ -338,7 +338,6 @@ const ReadingReceipt = ({ photoUrl }: { photoUrl: string }) => (
 const STEPS = ["Snap the slip", "Check the matches", "Add it all to stock"];
 const RECENT_COUNT = 3;
 
-/** Recent receipts beside the scanner, so a new slip joins the pile you can see. */
 const RecentReceipts = () => {
   const memories = useReceiptMemories();
   const recent = (memories.data ?? []).slice(0, RECENT_COUNT);
@@ -384,7 +383,6 @@ const RecentReceipts = () => {
   );
 };
 
-/** /scan/receipt: pick a photo, let the vision model read it, then review the matches. */
 export const ReceiptScanner = () => {
   const productGroups = useProductGroups();
   const [stage, setStage] = useState<Stage>({ name: "pick", problem: null });

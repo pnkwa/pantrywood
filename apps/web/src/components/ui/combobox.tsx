@@ -24,10 +24,6 @@ type ComboboxProps = {
   className?: string;
 };
 
-/**
- * A dropdown with search: Radix Popover + cmdk. The menu fades and lifts in (transform and
- * opacity only), options are 44 px, the chosen one has a sage check. Reduced motion keeps the fade.
- */
 export const Combobox = ({ value, options, onChange, placeholder = "Choose…", className }: ComboboxProps) => {
   const [open, setOpen] = useState(false);
   const commandRef = useRef<HTMLDivElement>(null);

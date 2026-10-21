@@ -30,7 +30,6 @@ export const overlaps = (first: Rect, second: Rect) =>
 export const canPlace = (rect: Rect, others: readonly Rect[]) =>
   insideRoom(rect) && others.every((other) => !overlaps(rect, other));
 
-/** World x and z of the middle of a piece. */
 export const worldCenter = (rect: Rect): [x: number, z: number] => [
   -ROOM_HALF + rect.x + rect.width / 2,
   -ROOM_HALF + rect.z + rect.depth / 2,

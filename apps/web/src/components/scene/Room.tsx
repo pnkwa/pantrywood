@@ -80,7 +80,6 @@ const Wall = ({ side, surface }: { side: "right" | "left"; surface: WallSurface 
   );
 };
 
-/** The room shell. Wallpaper and floor are materials (DESIGN.md section 14), never extra meshes. */
 export const Room = ({ wall, floor }: { wall: WallSurface; floor: FloorSurface }) => {
   const floorMap = useDisposable(useMemo(() => floorTexture(floor), [floor]));
   // On-demand rendering: a new wallpaper or floor must redraw the room.

@@ -6,7 +6,6 @@ import { Combobox, type ComboboxOption } from "@/components/ui/combobox";
 const TILE_CLASS =
   "flex min-h-14 cursor-pointer flex-col gap-0.5 rounded-md border-[1.5px] border-border bg-card px-3 py-2 transition-colors duration-150 ease-out hover:border-sage/60 focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring";
 
-/** One of the result sheet's small tiles: a label over a native input or select. */
 export const FieldTile = ({ label, children }: { label: string; children: ReactNode }) => (
   <label className={TILE_CLASS}>
     <span className="text-[11px] font-semibold text-muted-foreground">{label}</span>

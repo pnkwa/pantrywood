@@ -130,7 +130,6 @@ export const wallpaperTexture = (surface: WallSurface, width: number, height: nu
   }
 };
 
-/** A floor finish drawn as a repeating texture over the 10 × 10 room. */
 export const floorTexture = (surface: FloorSurface): Texture => {
   const { base, line } = surface;
   switch (surface.pattern) {

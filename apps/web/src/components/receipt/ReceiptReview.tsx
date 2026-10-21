@@ -67,7 +67,6 @@ type ReceiptReviewProps = {
   onRetake: () => void;
 };
 
-/** DESIGN.md section 19 "Receipt review": photo on one side, one card per line on the other. */
 export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReviewProps) => {
   const router = useRouter();
   const products = useProducts();

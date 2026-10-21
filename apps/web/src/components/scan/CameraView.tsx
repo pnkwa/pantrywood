@@ -20,7 +20,6 @@ type CameraViewProps = {
   found: boolean;
 };
 
-/** Camera with rounded cream corner brackets, a drifting sage scan line and a success flash. */
 export const CameraView = ({ videoRef, status, mirrored, flashKey, found }: CameraViewProps) => (
   <div className="absolute inset-0 overflow-hidden bg-[#3A322A] lg:relative lg:inset-auto lg:min-h-60 lg:flex-1 lg:rounded-xl">
     <video

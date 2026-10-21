@@ -10,7 +10,6 @@ type StorageListViewProps = {
   onSelectStorage: (locationId: number) => void;
 };
 
-/** The room as plain cards: same storage pieces, same statuses, no 3D. */
 export const StorageListView = ({ storages, selectedLocationId, onSelectStorage }: StorageListViewProps) => (
   <ul
     aria-label="Storage pieces"

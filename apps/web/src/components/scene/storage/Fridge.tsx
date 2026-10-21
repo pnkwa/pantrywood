@@ -221,7 +221,6 @@ const DoorInside = () => (
   </group>
 );
 
-/** Rounded retro fridge. Its door swings open on the hinge when the fridge-door view opens. */
 export const Fridge = ({
   doorOpen,
   palette = DEFAULT_PALETTE,

@@ -54,7 +54,6 @@ export type SceneStorage = {
   tag: StorageTag;
 };
 
-/** Wallpaper as a material: a base color plus a drawn pattern, never extra meshes. */
 export type WallSurface = {
   pattern: "plain" | "shiplap" | "grid" | "dots" | "gingham" | "wainscot";
   base: string;

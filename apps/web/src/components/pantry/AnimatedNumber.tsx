@@ -40,7 +40,6 @@ const Tween = ({ from, to, className, reducedMotion }: TweenProps) => {
   );
 };
 
-/** Tweens to the new value instead of snapping (DESIGN.md section 10). */
 export const AnimatedNumber = ({
   value,
   className,

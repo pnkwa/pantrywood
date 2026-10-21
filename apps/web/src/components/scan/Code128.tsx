@@ -17,7 +17,6 @@ const barsFor = (widths: number[]): Bar[] => {
   return bars;
 };
 
-/** A Code 128 barcode as crisp SVG bars, sized for printing. */
 export const Code128 = ({ value }: { value: string }) => {
   const widths = encodeCode128(value);
   const totalModules =

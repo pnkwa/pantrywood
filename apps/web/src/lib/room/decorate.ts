@@ -243,7 +243,6 @@ export const placeDecor = (room: RoomContext, itemId: string, placementId: strin
   return null;
 };
 
-/** Where an owned thing is: on the floor, on a wall, or in the box. */
 export type Whereabouts = "floor" | "rug" | "leftWall" | "rightWall" | "box";
 
 export const whereIs = (room: RoomContext, placement: DecorPlacement | undefined): Whereabouts => {
@@ -281,7 +280,6 @@ export const isInRoom = (room: RoomContext, itemId: string) =>
   room.storage.some((placement) => placement.itemId === itemId && !placement.stored) ||
   room.layout.decor.some((placement) => placement.itemId === itemId);
 
-/** Where a piece sits, how many cells it covers as turned, and which catalog item it is. */
 export const pieceInfo = (room: RoomContext, key: string) => {
   if (key.startsWith("storage:")) {
     const locationId = Number(key.slice("storage:".length));

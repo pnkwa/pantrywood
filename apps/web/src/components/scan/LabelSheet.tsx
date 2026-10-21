@@ -16,7 +16,6 @@ import { Code128 } from "./Code128";
 
 const LABEL_PREFIX = "PW";
 
-/** Printable Pantrywood labels for market goods that came without a barcode. */
 export const LabelSheet = () => {
   const products = useProducts();
   const barcodes = useProductBarcodes();

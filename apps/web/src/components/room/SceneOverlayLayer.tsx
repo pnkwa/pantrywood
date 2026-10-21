@@ -139,7 +139,6 @@ const outlineFor = (
   return highlightFor(locationId, props.hoveredLocationId, props.selectedLocationId);
 };
 
-/** Storage outlines and tags over the 3D room, kept in the page's React tree. */
 export const SceneOverlayLayer = (props: SceneOverlayLayerProps) => {
   const { overlay, storages, decorKeys, selectedLocationId, editing } = props;
   return (

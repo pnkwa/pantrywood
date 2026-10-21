@@ -28,7 +28,6 @@ const SURFACES: Surface[] = [
   { y: COUNTERTOP_Y, x: -1.15, width: 1.3, z: 0.35, rows: 2 },
 ];
 
-/** Kitchen counter: sage cabinet with two doors under a butcher-block top. */
 export const Counter = ({ items }: { items: readonly SceneItem[] }) => (
   <group>
     <mesh position={[0, TOE_KICK_HEIGHT / 2, -0.05]} receiveShadow>
