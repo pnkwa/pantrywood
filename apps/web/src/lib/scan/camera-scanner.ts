@@ -108,8 +108,12 @@ export const useCameraScanner = ({ enabled, onDetect }: CameraScannerOptions) =>
         setMirrored(facingMode !== "environment");
         video.srcObject = stream;
         await video.play().catch(() => undefined);
-        const native = await nativeReader();
-        const readFrame = native ?? (await zxingReader());
+        const native = await nativeReader().catch(() => null);
+        const readFrame = native ?? (await zxingReader().catch(() => null));
+        if (!readFrame) {
+          setStatus("unavailable");
+          return;
+        }
         setEngine(native ? "native" : "zxing");
         setStatus("scanning");
 
