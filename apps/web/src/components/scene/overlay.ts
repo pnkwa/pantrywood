@@ -4,7 +4,8 @@
  */
 export type SceneOverlay = {
   tags: Map<number, HTMLElement>;
-  outlines: Map<number, SVGGElement>;
+  /** Keyed by piece: "storage:<location id>" or "decor:<placement id>". */
+  outlines: Map<string, SVGGElement>;
 };
 
 export const createSceneOverlay = (): SceneOverlay => ({
@@ -13,11 +14,11 @@ export const createSceneOverlay = (): SceneOverlay => ({
 });
 
 export const registerIn =
-  <T extends Element>(elements: Map<number, T>, locationId: number) =>
+  <Key, T extends Element>(elements: Map<Key, T>, key: Key) =>
   (element: T | null) => {
     if (!element) return;
-    elements.set(locationId, element);
+    elements.set(key, element);
     return () => {
-      if (elements.get(locationId) === element) elements.delete(locationId);
+      if (elements.get(key) === element) elements.delete(key);
     };
   };

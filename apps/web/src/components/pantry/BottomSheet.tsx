@@ -11,10 +11,12 @@ type BottomSheetProps = {
   label: string;
   onClose: () => void;
   children: React.ReactNode;
+  /** "short" leaves the room visible above it, e.g. for the Decorate catalog. */
+  size?: "tall" | "short";
 };
 
 /** Mobile inspect panel. Drag the handle down to close; the panel's close button does the same. */
-export const BottomSheet = ({ open, label, onClose, children }: BottomSheetProps) => {
+export const BottomSheet = ({ open, label, onClose, children, size = "tall" }: BottomSheetProps) => {
   const dragControls = useDragControls();
   return (
     <AnimatePresence>
@@ -35,7 +37,7 @@ export const BottomSheet = ({ open, label, onClose, children }: BottomSheetProps
               onClose();
             }
           }}
-          className="fixed inset-x-0 bottom-0 z-40 flex h-[72dvh] flex-col rounded-t-xl border-[1.5px] border-b-0 border-border bg-card px-4 pb-[calc(96px+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_-12px_rgba(74,59,46,.35)] lg:hidden"
+          className={`fixed inset-x-0 bottom-0 z-40 flex ${size === "tall" ? "h-[72dvh]" : "h-[46dvh]"} flex-col rounded-t-xl border-[1.5px] border-b-0 border-border bg-card px-4 pb-[calc(96px+env(safe-area-inset-bottom))] shadow-[0_-12px_32px_-12px_rgba(74,59,46,.35)] lg:hidden`}
         >
           <div
             onPointerDown={(event) => dragControls.start(event)}

@@ -5,11 +5,12 @@ import { Matte } from "../materials";
 import type { SceneItem } from "../types";
 import type { Surface } from "../items/arrange";
 import { StoredItems } from "./StoredItems";
+import type { StoragePalette } from "../types";
 
 const WIDTH = 1.4;
 const HEIGHT = 1.1;
 const DEPTH = 1.3;
-const BACK_COLOR = "#A47551";
+const DEFAULT_PALETTE: StoragePalette = { body: "#C49770", trim: "#C9A27A", accent: "#A47551" };
 const SLAT_HEIGHTS = [0.2, 0.55, 0.9];
 
 const SURFACES: Surface[] = [
@@ -17,11 +18,11 @@ const SURFACES: Surface[] = [
   { y: 0.08 + HEIGHT, x: -0.6, width: 1.2, z: 0.3, rows: 2 },
 ];
 
-const Crate = ({ y, slatColor }: { y: number; slatColor: string }) => (
+const Crate = ({ y, slatColor, backColor }: { y: number; slatColor: string; backColor: string }) => (
   <group position={[0, y, 0]}>
     <mesh position={[0, HEIGHT / 2, -DEPTH / 2 + 0.03]} receiveShadow>
       <boxGeometry args={[WIDTH, HEIGHT, 0.06]} />
-      <Matte color={BACK_COLOR} />
+      <Matte color={backColor} />
     </mesh>
     {[-WIDTH / 2 + 0.05, WIDTH / 2 - 0.05].map((sideX) => (
       <group key={sideX}>
@@ -49,10 +50,16 @@ const Crate = ({ y, slatColor }: { y: number; slatColor: string }) => (
   </group>
 );
 
-export const Crates = ({ items }: { items: readonly SceneItem[] }) => (
+export const Crates = ({
+  items,
+  palette = DEFAULT_PALETTE,
+}: {
+  items: readonly SceneItem[];
+  palette?: StoragePalette;
+}) => (
   <group>
-    <Crate y={0} slatColor="#C49770" />
-    <Crate y={HEIGHT} slatColor="#C9A27A" />
+    <Crate y={0} slatColor={palette.body} backColor={palette.accent} />
+    <Crate y={HEIGHT} slatColor={palette.trim} backColor={palette.accent} />
     <RoundedBox
       args={[1.1, 0.75, 1.0]}
       radius={0.05}

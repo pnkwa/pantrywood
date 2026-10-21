@@ -122,6 +122,8 @@ export const StockLogEntrySchema = z.looseObject({
   product_id: id,
   amount,
   transaction_id: z.string(),
+  /** The best-before date of the stock entry the action touched. */
+  best_before_date: z.string().nullish(),
 });
 
 /** GET /stock/products/by-barcode/{barcode}: the product behind a barcode and its stock. */

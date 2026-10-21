@@ -52,23 +52,24 @@ const Piece = ({
   storage: SceneStorage;
   doorOpen: boolean;
 }) => {
+  const palette = storage.palette ?? undefined;
   switch (storage.kind) {
     case "fridge":
-      return <Fridge doorOpen={doorOpen} />;
+      return <Fridge doorOpen={doorOpen} palette={palette} />;
     case "counter":
       return <Counter items={storage.items} />;
     case "pantryShelf":
-      return <PantryShelf items={storage.items} />;
+      return <PantryShelf items={storage.items} palette={palette} />;
     case "suppliesCabinet":
-      return <SuppliesCabinet items={storage.items} />;
+      return <SuppliesCabinet items={storage.items} palette={palette} />;
     case "makerShelf":
       return <MakerShelf items={storage.items} />;
     case "crates":
-      return <Crates items={storage.items} />;
+      return <Crates items={storage.items} palette={palette} />;
     case "riceBin":
-      return <RiceBarrel />;
+      return <RiceBarrel palette={palette} />;
     case "basket":
-      return <WickerBasket items={storage.items} />;
+      return <WickerBasket items={storage.items} palette={palette} />;
   }
 };
 
@@ -105,6 +106,10 @@ type StorageProps = {
   onHoverChange: (locationId: number | null) => void;
   onSelect: (locationId: number) => void;
   onSelectItem: (locationId: number, productId: number) => void;
+  /** Off while decorating: a click then picks the piece, never an item inside it. */
+  itemsPickable: boolean;
+  /** Pressing a piece: picks it up in Decorate mode, starts a long press otherwise. */
+  onPointerDown: (locationId: number) => void;
 };
 
 export const Storage = ({
@@ -115,6 +120,8 @@ export const Storage = ({
   onHoverChange,
   onSelect,
   onSelectItem,
+  itemsPickable,
+  onPointerDown,
 }: StorageProps) => {
   const liftRef = useLift(highlight !== "none");
 
@@ -135,7 +142,7 @@ export const Storage = ({
     if (event.delta > CLICK_DRAG_TOLERANCE) return;
     // Items are tiny, so the first click opens the whole piece; items can be picked once it's selected.
     const productId =
-      highlight === "selected"
+      highlight === "selected" && itemsPickable
         ? event.intersections
             .map((intersection) => itemProductIdAt(intersection))
             .find((candidate) => candidate !== null)
@@ -156,6 +163,10 @@ export const Storage = ({
       onPointerOver={handlePointerOver}
       onPointerOut={handlePointerOut}
       onClick={handleClick}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        onPointerDown(storage.locationId);
+      }}
     >
       <mesh position={[0, hitCenterY, 0]} visible={false}>
         <boxGeometry args={[hitWidth, hitHeight, hitDepth]} />
@@ -163,7 +174,7 @@ export const Storage = ({
         <group ref={liftRef}>
           <Piece storage={storage} doorOpen={doorOpen} />
           <StorageOutline
-            locationId={storage.locationId}
+            outlineKey={`storage:${storage.locationId}`}
             box={HIT_BOXES[storage.kind]}
             highlight={doorOpen ? "none" : highlight}
             overlay={overlay}

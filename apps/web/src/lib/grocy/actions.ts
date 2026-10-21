@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { StockLogEntrySchema, THAI_NAME_USERFIELD } from "@pantrywood/shared";
 import { grocyDelete, grocyPost, grocyPostFor, grocyPut } from "./client";
+import { rewardLeaves } from "@/lib/room/leaf-rewards";
 import { grocyKeys } from "./queries";
 
 const SHOPPING_LIST_ID = 1;
@@ -41,15 +42,17 @@ export type StockAction =
 
 const StockLogSchema = z.array(StockLogEntrySchema);
 
-const postStockAction = async (
-  path: string,
-  body: Parameters<typeof grocyPostFor>[1],
-): Promise<string | null> => {
-  const log = await grocyPostFor(path, body, StockLogSchema);
-  return log[0]?.transaction_id ?? null;
+/** What Grocy logged: the transaction (for Undo) and the best-before date of the stock it touched. */
+export type StockResult = { transactionId: string | null; bestBeforeDate: string | null };
+
+const NOTHING_LOGGED: StockResult = { transactionId: null, bestBeforeDate: null };
+
+const postStockAction = async (path: string, body: Parameters<typeof grocyPostFor>[1]): Promise<StockResult> => {
+  const [entry] = await grocyPostFor(path, body, StockLogSchema);
+  return entry ? { transactionId: entry.transaction_id, bestBeforeDate: entry.best_before_date ?? null } : NOTHING_LOGGED;
 };
 
-const runStockAction = async (action: StockAction): Promise<string | null> => {
+const runStockAction = async (action: StockAction): Promise<StockResult> => {
   switch (action.type) {
     case "consume":
       return postStockAction(`stock/products/${action.productId}/consume`, {
@@ -86,14 +89,14 @@ const runStockAction = async (action: StockAction): Promise<string | null> => {
       });
     case "undo":
       await grocyPost(`stock/transactions/${action.transactionId}/undo`, {});
-      return null;
+      return NOTHING_LOGGED;
     case "addToShoppingList":
       await grocyPost("stock/shoppinglist/add-product", {
         product_id: action.productId,
         product_amount: action.amount,
         list_id: SHOPPING_LIST_ID,
       });
-      return null;
+      return NOTHING_LOGGED;
     case "addItemsToShoppingList":
       await Promise.all(
         action.items.map((item) =>
@@ -104,7 +107,7 @@ const runStockAction = async (action: StockAction): Promise<string | null> => {
           }),
         ),
       );
-      return null;
+      return NOTHING_LOGGED;
   }
 };
 
@@ -113,10 +116,17 @@ const useRefreshGrocy = () => {
   return () => queryClient.invalidateQueries({ queryKey: grocyKeys.all });
 };
 
-/** Every action refreshes Grocy data afterwards so the room, panels and stats stay in sync. */
+/** Resolves to the transaction id, for Undo. */
 export const useStockAction = () => {
   const refresh = useRefreshGrocy();
-  return useMutation({ mutationFn: runStockAction, onSettled: refresh });
+  return useMutation({
+    mutationFn: async (action: StockAction) => {
+      const result = await runStockAction(action);
+      rewardLeaves(action, result);
+      return result.transactionId;
+    },
+    onSettled: refresh,
+  });
 };
 
 const CreatedSchema = z.object({ created_object_id: z.coerce.number().int() });

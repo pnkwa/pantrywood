@@ -5,7 +5,10 @@ import { useRouter } from "next/navigation";
 import { OPEN_SCAN } from "@/lib/page-transitions";
 import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
-import { useRoomStorages } from "@/lib/room/use-room";
+import { BuyDialog } from "@/components/decorate/BuyDialog";
+import { CatalogPanel } from "@/components/decorate/CatalogPanel";
+import { useDecorate } from "@/lib/room/use-decorate";
+import { useRoom } from "@/lib/room/use-room";
 import { useHardwareScanner } from "@/lib/scan/hardware-scanner";
 import { useScanStore } from "@/lib/store/scan-store";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -29,7 +32,12 @@ export const PantryHome = () => {
   useHardwareScanner(openScanWith);
   const pantryState = usePantry();
   const pantry = pantryState.status === "ready" ? pantryState.pantry : null;
-  const storages = useRoomStorages(pantry);
+  const room = useRoom(pantry);
+  // Put-away storage is out of the room but still a Grocy location, so panels and lists keep it.
+  const storages = [...room.storages, ...room.storedAway];
+  const decorate = useDecorate(room.context);
+  const decorating = useUiStore((state) => state.decorating);
+  const decorPiece = useUiStore((state) => state.decorPiece);
 
   const selection = useUiStore((state) => state.selection);
   const view = useUiStore((state) => state.view);
@@ -56,7 +64,11 @@ export const PantryHome = () => {
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      if (useUiStore.getState().view === "room") clearSelection();
+      const ui = useUiStore.getState();
+      if (ui.decorating) {
+        if (ui.decorPiece) ui.selectDecorPiece(null);
+        else ui.setDecorating(false);
+      } else if (ui.view === "room") clearSelection();
       else closeFridgeDoor();
     };
     window.addEventListener("keydown", handleEscape);
@@ -75,7 +87,9 @@ export const PantryHome = () => {
         <div className="flex flex-1 flex-col gap-5 lg:h-[min(720px,calc(100dvh-240px))] lg:min-h-[560px] lg:flex-none lg:flex-row">
           <RoomView
             pantry={pantry}
-            storages={storages}
+            storages={room.storages}
+            room={room}
+            decorate={decorate}
             loading={pantryState.status === "loading"}
             error={
               pantryState.status === "error"
@@ -85,33 +99,56 @@ export const PantryHome = () => {
             onSelectStorage={handleSelectStorage}
           />
           <aside
-            aria-label={`${selectedName} details`}
+            aria-label={decorating ? "Catalog" : `${selectedName} details`}
             className="relative hidden min-h-0 w-[380px] shrink-0 flex-col rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
-            {pantry && (
-              <InspectPanelContent
-                pantry={pantry}
-                storages={storages}
-                layoutGroup="desktop-panel"
+            {decorating ? (
+              <CatalogPanel
+                room={room.context}
+                decorate={decorate}
+                selectedPieceKey={decorPiece}
+                storages={room.storages}
+                storedAway={room.storedAway}
               />
+            ) : (
+              pantry && (
+                <InspectPanelContent
+                  pantry={pantry}
+                  storages={storages}
+                  layoutGroup="desktop-panel"
+                />
+              )
             )}
           </aside>
         </div>
       </div>
 
       <BottomSheet
-        open={Boolean(pantry && selection) && !doorShowsStorage}
-        label={`${selectedName} details`}
-        onClose={clearSelection}
+        open={decorating || (Boolean(pantry && selection) && !doorShowsStorage)}
+        label={decorating ? "Catalog" : `${selectedName} details`}
+        onClose={decorating ? () => useUiStore.getState().setDecorating(false) : clearSelection}
+        size={decorating ? "short" : "tall"}
       >
-        {pantry && (
-          <InspectPanelContent
-            pantry={pantry}
-            storages={storages}
-            layoutGroup="mobile-sheet"
-          />
+        {decorating ? (
+          <CatalogPanel
+                room={room.context}
+                decorate={decorate}
+                selectedPieceKey={decorPiece}
+                storages={room.storages}
+                storedAway={room.storedAway}
+              />
+        ) : (
+          pantry && (
+            <InspectPanelContent
+              pantry={pantry}
+              storages={storages}
+              layoutGroup="mobile-sheet"
+            />
+          )
         )}
       </BottomSheet>
+
+      {decorating && <BuyDialog />}
 
       <MobileNav
         current={view === "room" ? "room" : "fridgeDoor"}

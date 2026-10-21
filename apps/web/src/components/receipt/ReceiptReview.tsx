@@ -17,6 +17,8 @@ import { usePantry } from "@/lib/pantry/use-pantry";
 import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
 import { matchReceiptLine, normalizeReceiptName } from "@/lib/receipt/match";
 import { receiptMatches, receiptMemories, useRefreshReceipts, useRememberedMatches } from "@/lib/receipt/store";
+import { LEAVES_PER_RECEIPT } from "@/lib/room/leaves";
+import { useRoomStore } from "@/lib/room/room-store";
 import { useUiStore } from "@/lib/store/ui-store";
 import { AnimatedNumber } from "@/components/pantry/AnimatedNumber";
 import { ReceiptScanHeader } from "./ReceiptScanHeader";
@@ -78,6 +80,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const stockAction = useStockAction();
   const refreshReceipts = useRefreshReceipts();
   const showToast = useUiStore((state) => state.showToast);
+  const earnLeaves = useRoomStore((state) => state.earn);
 
   const [choices, setChoices] = useState<LineChoice[] | null>(null);
   // Lines that needed you when the receipt was read come first, and keep their place once fixed.
@@ -240,6 +243,8 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
     await keepMemory();
     await refreshReceipts();
     showToast(`Added ${nowAdded.size} ${nowAdded.size === 1 ? "item" : "items"} to stock`);
+    earnLeaves(LEAVES_PER_RECEIPT);
+    showToast(`+${LEAVES_PER_RECEIPT} leaves for scanning a receipt`);
     router.push("/receipts", { transitionTypes: NAV_FORWARD });
   };
 

@@ -7,6 +7,7 @@ import type { Group } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { Matte } from "../materials";
+import type { StoragePalette } from "../types";
 
 const WIDTH = 2.2;
 const HEIGHT = 4.5;
@@ -17,7 +18,7 @@ const BACK_Z = -0.9;
 const FRONT_Z = 0.9;
 const SEAM_Z = 0.6;
 const DOOR_DEPTH = FRONT_Z - SEAM_Z;
-const SEAM_COLOR = "#D9CCB0";
+const DEFAULT_PALETTE: StoragePalette = { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" };
 const SEAM_LINE_PIXELS = 1.5;
 const SEAM_CORNER_STEPS = 8;
 const HINGE_X = -WIDTH / 2;
@@ -127,7 +128,7 @@ const useDoorSwing = (open: boolean) => {
   return hingeRef;
 };
 
-const Interior = () => (
+const Interior = ({ seam }: { seam: string }) => (
   <group position={[0, 0, SEAM_Z + 0.002]}>
     <mesh position={[0, CENTER_Y, 0]}>
       <planeGeometry args={[1.5, 3.8]} />
@@ -139,7 +140,7 @@ const Interior = () => (
     </mesh>
     <mesh position={[0, 3.28, 0.06]}>
       <boxGeometry args={[1.5, 0.08, 0.12]} />
-      <Matte color={SEAM_COLOR} />
+      <Matte color={seam} />
     </mesh>
     {SHELF_HEIGHTS.map((shelfY) => (
       <mesh key={shelfY} position={[0, shelfY, 0.04]}>
@@ -150,11 +151,11 @@ const Interior = () => (
   </group>
 );
 
-const DoorFront = () => (
+const DoorFront = ({ seam, handle }: { seam: string; handle: string }) => (
   <group position={[0, 0, DOOR_DEPTH]}>
     <mesh position={[0, 3.28, 0.002]}>
       <planeGeometry args={[1.4, 0.05]} />
-      <Matte color={SEAM_COLOR} />
+      <Matte color={seam} />
     </mesh>
     <RoundedBox
       args={[0.14, 0.7, 0.12]}
@@ -163,7 +164,7 @@ const DoorFront = () => (
       position={[0.68, 3.85, 0.05]}
       castShadow
     >
-      <Matte color="#C9B79A" />
+      <Matte color={handle} />
     </RoundedBox>
     <RoundedBox
       args={[0.14, 1.1, 0.12]}
@@ -172,7 +173,7 @@ const DoorFront = () => (
       position={[0.68, 2.35, 0.05]}
       castShadow
     >
-      <Matte color="#C9B79A" />
+      <Matte color={handle} />
     </RoundedBox>
     <group position={[-0.3, 2.55, 0.01]} rotation={[0, 0, 0.1]}>
       <mesh>
@@ -221,7 +222,13 @@ const DoorInside = () => (
 );
 
 /** Rounded retro fridge. Its door swings open on the hinge when the fridge-door view opens. */
-export const Fridge = ({ doorOpen }: { doorOpen: boolean }) => {
+export const Fridge = ({
+  doorOpen,
+  palette = DEFAULT_PALETTE,
+}: {
+  doorOpen: boolean;
+  palette?: StoragePalette;
+}) => {
   const hingeRef = useDoorSwing(doorOpen);
   const bodyGeometry = useMemo(() => cutShell("back"), []);
   const doorGeometry = useMemo(() => cutShell("front"), []);
@@ -248,9 +255,9 @@ export const Fridge = ({ doorOpen }: { doorOpen: boolean }) => {
         castShadow
         receiveShadow
       >
-        <Matte color="#F3EADB" />
+        <Matte color={palette.body} />
       </mesh>
-      <Interior />
+      <Interior seam={palette.accent} />
       <group ref={hingeRef} position={[HINGE_X, 0, SEAM_Z]}>
         <group position={[-HINGE_X, 0, 0]}>
           <mesh
@@ -259,14 +266,14 @@ export const Fridge = ({ doorOpen }: { doorOpen: boolean }) => {
             castShadow
             receiveShadow
           >
-            <Matte color="#F3EADB" />
+            <Matte color={palette.body} />
           </mesh>
           <Line
             points={seamPoints}
-            color={SEAM_COLOR}
+            color={palette.accent}
             lineWidth={SEAM_LINE_PIXELS}
           />
-          <DoorFront />
+          <DoorFront seam={palette.accent} handle={palette.trim} />
           <DoorInside />
         </group>
       </group>

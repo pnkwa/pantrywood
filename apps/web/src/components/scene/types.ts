@@ -40,11 +40,55 @@ export type StorageTag = {
   low: number;
 };
 
+/** Light surface, mid trim, dark accent: the three colors a storage model is painted with. */
+export type StoragePalette = { body: string; trim: string; accent: string };
+
 export type SceneStorage = {
   locationId: number;
   kind: StorageKind;
+  /** null: the model's own colors. */
+  palette: StoragePalette | null;
   position: [x: number, y: number, z: number];
   rotationY: number;
   items: SceneItem[];
   tag: StorageTag;
+};
+
+/** Wallpaper as a material: a base color plus a drawn pattern, never extra meshes. */
+export type WallSurface = {
+  pattern: "plain" | "shiplap" | "grid" | "dots" | "gingham" | "wainscot";
+  base: string;
+  line: string;
+};
+
+export type FloorSurface = {
+  pattern: "checker" | "planks" | "tatami" | "speckle" | "tile" | "herringbone";
+  base: string;
+  line: string;
+};
+
+export type DecorShape =
+  | "rug"
+  | "roundRug"
+  | "stripedRug"
+  | "lantern"
+  | "mushroomLamp"
+  | "wallClock"
+  | "catBed"
+  | "ginghamWindow"
+  | "pictureFrames"
+  | "ovalRug"
+  | "cat"
+  | "maskCat"
+  | "plainCat"
+  | "veggieBasket";
+
+export type SceneDecor = {
+  id: string;
+  shape: DecorShape;
+  colors: [main: string, second: string];
+  position: [x: number, y: number, z: number];
+  rotationY: number;
+  /** Footprint in cells, for rugs. */
+  size: [width: number, depth: number];
 };

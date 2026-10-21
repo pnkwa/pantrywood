@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { CatalogItem } from "@/data/catalog";
 
 export type Selection =
   | { type: "storage"; locationId: number }
@@ -31,6 +32,18 @@ type UiState = {
   /** 2D fallback for the 3D room (slow phones, or a plain list is simply easier). */
   listView: boolean;
   setListView: (listView: boolean) => void;
+  /** Decorate mode (DESIGN.md section 14): pieces are picked for the toolbar, the catalog replaces the panel. */
+  decorating: boolean;
+  /** "storage:<location id>" or "decor:<placement id>". */
+  decorPiece: string | null;
+  moving: boolean;
+  setDecorating: (decorating: boolean) => void;
+  selectDecorPiece: (key: string | null) => void;
+  setMoving: (moving: boolean) => void;
+  /** A catalog item waiting for the Buy dialog; `confirm` spends the leaves and uses it. */
+  purchase: { item: CatalogItem; confirm: () => void } | null;
+  askToBuy: (item: CatalogItem, confirm: () => void) => void;
+  closePurchase: () => void;
   selectStorage: (locationId: number) => void;
   selectItem: (locationId: number, productId: number, itemKey?: string) => void;
   clearSelection: () => void;
@@ -55,6 +68,16 @@ export const useUiStore = create<UiState>()((set, get) => ({
   toasts: [],
   listView: false,
   setListView: (listView) => set({ listView, hoveredLocationId: null }),
+  decorating: false,
+  decorPiece: null,
+  moving: false,
+  setDecorating: (decorating) =>
+    set({ decorating, decorPiece: null, moving: false, selection: null, listView: false, view: "room", hoveredLocationId: null }),
+  selectDecorPiece: (key) => set({ decorPiece: key, moving: false }),
+  setMoving: (moving) => set({ moving }),
+  purchase: null,
+  askToBuy: (item, confirm) => set({ purchase: { item, confirm } }),
+  closePurchase: () => set({ purchase: null }),
   selectStorage: (locationId) =>
     set({ selection: { type: "storage", locationId } }),
   selectItem: (locationId, productId, itemKey) =>

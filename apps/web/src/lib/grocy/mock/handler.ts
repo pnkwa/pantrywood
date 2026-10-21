@@ -363,6 +363,7 @@ const runAsTransaction = (
   if (!response.ok) return response;
   const transactionId = `mock-transaction-${nextTransactionNumber++}`;
   stockBeforeTransaction.set(transactionId, before);
+  const firstEntry = before.filter((entry) => entry.product_id === product.id).sort(byConsumeOrder)[0];
   const amounts = ActionAmountSchema.safeParse(body);
   const amount = amounts.success
     ? (amounts.data.amount ?? amounts.data.new_amount ?? 0)
@@ -373,6 +374,7 @@ const runAsTransaction = (
       product_id: product.id,
       amount,
       transaction_id: transactionId,
+      best_before_date: firstEntry?.best_before_date ?? null,
     },
   ]);
 };

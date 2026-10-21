@@ -13,7 +13,10 @@ import Link from "next/link";
 import { OPEN_SCAN } from "@/lib/page-transitions";
 import { AnimatePresence, motion, type MotionProps } from "motion/react";
 import {
+  ArrowArcLeftIcon,
   ArrowDownIcon,
+  BroomIcon,
+  PackageIcon,
   BarcodeIcon,
   CubeIcon,
   ArrowLeftIcon,
@@ -23,13 +26,22 @@ import {
   type Icon,
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
+  PaintBrushIcon,
   ListBulletsIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
 import { createSceneOverlay } from "@/components/scene/overlay";
-import type { SceneStorage } from "@/components/scene/types";
+import type { SceneDecor, SceneStorage } from "@/components/scene/types";
 import { SceneOverlayLayer } from "./SceneOverlayLayer";
 import { StorageListView } from "./StorageListView";
+import { ConfirmDialog } from "@/components/decorate/ConfirmDialog";
+import { DecorateBar, PieceToolbar } from "@/components/decorate/DecorateControls";
+import { catalogItem } from "@/data/catalog";
+import { pieceInfo } from "@/lib/room/decorate";
+import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from "@/lib/room/grid";
+import { wallPose, type Room } from "@/lib/room/use-room";
+import type { WallSide } from "@pantrywood/shared";
+import type { useDecorate } from "@/lib/room/use-decorate";
 import { FridgeDoor } from "@/components/pantry/FridgeDoor";
 import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -59,13 +71,26 @@ const FRIDGE_DOOR_ZOOM = 2.6;
 const FRIDGE_FRONT_OFFSET = 0.9;
 const FRIDGE_DOOR_HEIGHT = 2.4;
 const DOOR_HOLD_MILLISECONDS = 250;
+const LONG_PRESS_MILLISECONDS = 450;
 
 const PAN_KEYS: Record<string, PanDirection> = {
-  ArrowUpIcon: "up",
-  ArrowDownIcon: "down",
-  ArrowLeftIcon: "left",
-  ArrowRightIcon: "right",
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
 };
+
+const NUDGE_KEYS: Record<string, GridCell> = {
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+};
+
+/** A piece in hand: dragged, or following the pointer in Move mode, with the cell it would land on. */
+type Carry = { key: string; cell: GridCell; dragging: boolean; wall: WallSide | null };
+
+type Confirm = { kind: "putAway"; key: string } | { kind: "clear" };
 
 const PAN_BUTTONS: { direction: PanDirection; label: string; icon: Icon; area: string }[] = [
   { direction: "up", label: "Look up", icon: ArrowUpIcon, area: "col-start-2 row-start-1" },
@@ -114,9 +139,11 @@ type RoomViewProps = {
   loading: boolean;
   error: { message: string; retry: () => void } | null;
   onSelectStorage: (locationId: number) => void;
+  room: Room;
+  decorate: ReturnType<typeof useDecorate>;
 };
 
-export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: RoomViewProps) => {
+export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, room, decorate }: RoomViewProps) => {
   const cameraRef = useRef<CameraApi>(null);
   const [overlay] = useState(createSceneOverlay);
   const selection = useUiStore((state) => state.selection);
@@ -129,6 +156,12 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
   const showFridgeDoor = useUiStore((state) => state.showFridgeDoor);
   const closeFridgeDoor = useUiStore((state) => state.closeFridgeDoor);
   const listView = useUiStore((state) => state.listView);
+  const decorating = useUiStore((state) => state.decorating);
+  const decorPiece = useUiStore((state) => state.decorPiece);
+  const moving = useUiStore((state) => state.moving);
+  const setDecorating = useUiStore((state) => state.setDecorating);
+  const selectDecorPiece = useUiStore((state) => state.selectDecorPiece);
+  const setMoving = useUiStore((state) => state.setMoving);
   const setListView = useUiStore((state) => state.setListView);
 
   const fridgeStorage = storages.find((storage) => storage.locationId === fridgeLocationId);
@@ -151,18 +184,153 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
   const doorVisible =
     view === "fridgeDoor" || (view === "enteringDoor" && (!fridgeStorage || listView));
 
-  const handleKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLElement>) => {
-      if (event.target !== event.currentTarget) return;
-      const direction = PAN_KEYS[event.key];
-      if (direction) {
+  const piece = decorPiece ? pieceInfo(room.context, decorPiece) : undefined;
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    // Decorate hotkeys work from the toolbar too: arrows nudge, R rotates, Delete puts away.
+    if (decorating && decorPiece && piece) {
+      const nudge = NUDGE_KEYS[event.key];
+      if (nudge) {
         event.preventDefault();
-        cameraRef.current?.panBy(direction);
+        decorate.moveTo(decorPiece, [piece.cell[0] + nudge[0], piece.cell[1] + nudge[1]]);
+        return;
       }
-      if (event.key === "+" || event.key === "=") cameraRef.current?.zoomIn();
-      if (event.key === "-") cameraRef.current?.zoomOut();
-    },
-    [],
+      if (event.key === "r" || event.key === "R") return decorate.rotate(decorPiece);
+      if (event.key === "w" || event.key === "W") return decorate.switchWall(decorPiece);
+      if (event.key === "Delete" || event.key === "Backspace") return requestPutAway(decorPiece);
+    }
+    if (event.target !== event.currentTarget) return;
+    const direction = PAN_KEYS[event.key];
+    if (direction) {
+      event.preventDefault();
+      cameraRef.current?.panBy(direction);
+    }
+    if (event.key === "+" || event.key === "=") cameraRef.current?.zoomIn();
+    if (event.key === "-") cameraRef.current?.zoomOut();
+  };
+
+  const [carry, setCarry] = useState<Carry | null>(null);
+  const activeCarry = carry && (carry.dragging || (moving && carry.key === decorPiece)) ? carry : null;
+  const carried = activeCarry ? pieceInfo(room.context, activeCarry.key) : undefined;
+  const carryWall = activeCarry?.wall ?? carried?.wall ?? null;
+  const onWall = carryWall !== null;
+  const carryRect =
+    activeCarry && carried
+      ? { x: activeCarry.cell[0], z: activeCarry.cell[1], width: carried.size[0], depth: carried.size[1] }
+      : null;
+  const carryMoved =
+    carryRect !== null &&
+    carried !== undefined &&
+    (carryRect.x !== carried.cell[0] || carryRect.z !== carried.cell[1] || carryWall !== carried.wall);
+  const [carryX, carryFloorZ] = carryRect ? worldCenter(carryRect) : [0, 0];
+  // On the wall the second number is a height, not a depth into the room.
+  const carryZ = carryRect && onWall ? wallCenterY(carryRect) : carryFloorZ;
+  const footprint =
+    activeCarry && carryRect
+      ? {
+          ...carryRect,
+          x: carryX,
+          z: carryZ,
+          fits: decorate.fits(activeCarry.key, activeCarry.cell, carryWall ?? undefined),
+          wall: carryWall,
+        }
+      : null;
+  const sceneStorages = storages.map(
+    (storage): SceneStorage =>
+      activeCarry?.key === `storage:${storage.locationId}` ? { ...storage, position: [carryX, 0, carryZ] } : storage,
+  );
+  const sceneDecor = room.decor.map(
+    (decor): SceneDecor =>
+      activeCarry?.key === decor.id
+        ? {
+            ...decor,
+            ...(carryWall ? wallPose(carryWall, carryX, carryZ) : { position: [carryX, decor.position[1], carryZ] }),
+          }
+        : decor,
+  );
+
+  // Outside Decorate mode, holding a piece opens Decorate with that piece already in hand.
+  const pressTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const cancelLongPress = () => clearTimeout(pressTimer.current);
+  const handlePiecePointerDown = (key: string) => {
+    const info = pieceInfo(room.context, key);
+    if (!info || !decorate.canMove(key)) return;
+    if (decorating) {
+      // In Move mode only the moving piece can be dragged; a press elsewhere is a tap to place it.
+      if (moving && key !== decorPiece) return;
+      const keepCarry = moving && carry?.key === key;
+      setCarry({ key, cell: keepCarry ? carry.cell : info.cell, wall: keepCarry ? carry.wall : info.wall, dragging: true });
+      return;
+    }
+    cancelLongPress();
+    pressTimer.current = setTimeout(() => {
+      setDecorating(true);
+      selectDecorPiece(key);
+      setCarry({ key, cell: info.cell, wall: info.wall, dragging: true });
+    }, LONG_PRESS_MILLISECONDS);
+  };
+  const handleFloorPointerMove = (floorX: number, floorZ: number, wall: WallSide, wallAlong: number, wallY: number) => {
+    const key = carry?.dragging ? carry.key : moving ? decorPiece : null;
+    const info = key ? pieceInfo(room.context, key) : undefined;
+    if (!key || !info) return;
+    // A wall piece follows the pointer onto whichever wall it's over.
+    const onWallNow = info.wall !== null;
+    const cell = onWallNow ? wallCellNear(wallAlong, wallY, info.size) : cellNear(floorX, floorZ, info.size);
+    const nextWall = onWallNow ? wall : null;
+    if (carry?.key === key && carry.cell[0] === cell[0] && carry.cell[1] === cell[1] && carry.wall === nextWall) return;
+    setCarry({ key, cell, wall: nextWall, dragging: carry?.key === key && carry.dragging });
+  };
+  const handleCarryEnd = (drop: boolean, tapped: boolean) => {
+    cancelLongPress();
+    if (!carry) return;
+    if (carry.dragging) {
+      setCarry(null);
+      // A blocked spot shows a toast and the piece goes back where it was.
+      if (drop && carryMoved && decorate.moveTo(carry.key, carry.cell, carryWall ?? undefined)) selectDecorPiece(carry.key);
+      return;
+    }
+    // Move mode lands on the cell the footprint showed, wherever the tap hit (floor, wall or another piece).
+    if (moving && decorPiece && activeCarry && drop && tapped) {
+      if (!carryMoved || decorate.moveTo(decorPiece, activeCarry.cell, carryWall ?? undefined)) setMoving(false);
+    }
+  };
+  const handleFloorClick = () => {
+    if (!moving) selectDecorPiece(null);
+  };
+
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
+  const requestPutAway = (key: string) => {
+    if (key.startsWith("storage:")) setConfirm({ kind: "putAway", key });
+    else decorate.putAway(key);
+  };
+  const totalItems = [...storages, ...room.storedAway].reduce((total, storage) => total + storage.tag.itemCount, 0);
+  const confirmStorage =
+    confirm?.kind === "putAway" ? storages.find((storage) => `storage:${storage.locationId}` === confirm.key) : undefined;
+  const pieceName = (() => {
+    if (!decorPiece) return "";
+    const item = catalogItem(piece?.itemId ?? null);
+    if (item) return item.name;
+    const locationId = Number(decorPiece.slice("storage:".length));
+    return storages.find((storage) => storage.locationId === locationId)?.tag.name ?? "Piece";
+  })();
+  const pieceToolbar = decorPiece && piece && (
+    <PieceToolbar
+      key={decorPiece}
+      name={pieceName}
+      isStorage={decorPiece.startsWith("storage:")}
+      swapOptions={decorate.swapOptions(decorPiece)}
+      currentItemId={piece.itemId}
+      owned={room.context.layout.owned}
+      canMove={decorate.canMove(decorPiece)}
+      onWall={piece.wall !== null}
+      moving={moving}
+      onSwap={(itemId) => decorate.swap(decorPiece, itemId)}
+      onRotate={() => decorate.rotate(decorPiece)}
+      onSwitchWall={() => decorate.switchWall(decorPiece)}
+      onToggleMove={() => setMoving(!moving)}
+      onNudge={([deltaX, deltaZ]) => decorate.moveTo(decorPiece, [piece.cell[0] + deltaX, piece.cell[1] + deltaZ])}
+      onPutAway={() => requestPutAway(decorPiece)}
+    />
   );
 
   const description = pantry
@@ -180,7 +348,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         {listView ? (
           <motion.div key="list" {...VIEW_FADE} className="absolute inset-0 z-20 bg-background/70">
             <StorageListView
-              storages={storages}
+              storages={[...storages, ...room.storedAway]}
               selectedLocationId={selection?.locationId ?? null}
               onSelectStorage={onSelectStorage}
             />
@@ -189,7 +357,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
           <motion.div key="room" {...VIEW_FADE} className="absolute inset-0">
           <div className="absolute inset-0">
             <StorageRoomScene
-              storages={storages}
+              storages={sceneStorages}
               cameraRef={cameraRef}
               overlay={overlay}
               label={description}
@@ -201,7 +369,20 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
               onHoverChange={setHoveredLocation}
               onSelectStorage={onSelectStorage}
               onSelectItem={selectItem}
-              onBackgroundClick={clearSelection}
+              onBackgroundClick={decorating ? () => !moving && selectDecorPiece(null) : clearSelection}
+              wall={room.wall}
+              floor={room.floor}
+              decor={sceneDecor}
+              editing={decorating}
+              selectedPieceKey={decorPiece}
+              onSelectPiece={(key) => !moving && selectDecorPiece(key)}
+              onFloorClick={handleFloorClick}
+              carrying={activeCarry?.dragging ?? false}
+              footprint={footprint}
+              onPiecePointerDown={handlePiecePointerDown}
+              onFloorPointerMove={handleFloorPointerMove}
+              onCarryEnd={handleCarryEnd}
+              onPointerDrift={cancelLongPress}
             />
           </div>
           <SceneOverlayLayer
@@ -210,8 +391,11 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
             hoveredLocationId={hoveredLocationId}
             selectedLocationId={selection?.locationId ?? null}
             openDoorLocationId={view === "room" ? null : fridgeLocationId}
+            decorKeys={room.decor.map((piece) => piece.id)}
+            editing={decorating}
+            selectedPieceKey={decorPiece}
           />
-          <div className="absolute top-4 right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper">
+          <div className={`absolute right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper transition-transform duration-200 ease-out ${decorating ? "top-4 translate-y-16 max-lg:hidden" : "top-4"}`}>
             <ControlButton label="Zoom in" onClick={() => cameraRef.current?.zoomIn()}>
               <MagnifyingGlassPlusIcon size={20} weight="duotone" />
             </ControlButton>
@@ -242,31 +426,101 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         )}
       </AnimatePresence>
 
-      <div
-        role="radiogroup"
-        aria-label="Room view"
-        className="absolute top-4 left-4 z-30 flex gap-1 rounded-full border-[1.5px] border-border bg-card p-1 shadow-paper"
-      >
-        {VIEW_OPTIONS.map((option) => {
-          const OptionIcon = option.icon;
-          const selected = option.list === listView;
-          return (
+      {decorating ? (
+        <DecorateBar
+          canUndo={decorate.canUndo}
+          onUndo={decorate.undo}
+          canClear={storages.length + room.decor.length > 0}
+          onClear={() => setConfirm({ kind: "clear" })}
+          onDone={() => setDecorating(false)}
+        />
+      ) : (
+        <div className="absolute top-4 left-4 z-30 flex gap-2">
+        <div
+          role="radiogroup"
+          aria-label="Room view"
+          className="flex gap-1 rounded-full border-[1.5px] border-border bg-card p-1 shadow-paper"
+        >
+          {VIEW_OPTIONS.map((option) => {
+            const OptionIcon = option.icon;
+            const selected = option.list === listView;
+            return (
+              <button
+                key={option.label}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setListView(option.list)}
+                className={`flex h-11 items-center justify-center gap-1.5 rounded-full text-sm transition-colors max-lg:w-11 lg:px-3.5 duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                  selected ? "bg-sage-deep font-semibold text-primary-foreground" : "font-medium text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <OptionIcon size={18} weight="duotone" aria-hidden />
+                <span className="max-lg:sr-only">{option.label}</span>
+              </button>
+            );
+          })}
+        </div>
+          {!listView && (
             <button
-              key={option.label}
               type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => setListView(option.list)}
-              className={`flex h-11 items-center justify-center gap-1.5 rounded-full text-sm transition-colors max-lg:w-11 lg:px-3.5 duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                selected ? "bg-sage-deep font-semibold text-primary-foreground" : "font-medium text-muted-foreground hover:text-foreground"
-              }`}
+              onClick={() => setDecorating(true)}
+              className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 max-lg:w-11 lg:px-4"
             >
-              <OptionIcon size={18} weight="duotone" aria-hidden />
-              <span className="max-lg:sr-only">{option.label}</span>
+              <PaintBrushIcon size={18} weight="duotone" aria-hidden />
+              <span className="max-lg:sr-only">Decorate</span>
             </button>
-          );
-        })}
-      </div>
+          )}
+        </div>
+      )}
+
+      {decorating && pieceToolbar}
+
+      <ConfirmDialog
+        open={confirm?.kind === "putAway"}
+        title={`Put away the ${confirmStorage?.tag.name ?? "storage"}?`}
+        confirmLabel="Put it away"
+        onConfirm={() => confirm?.kind === "putAway" && decorate.putAway(confirm.key)}
+        onClose={() => setConfirm(null)}
+      >
+        <p>
+          It leaves the room, but it&apos;s still a Grocy location: its {confirmStorage?.tag.itemCount ?? 0} items stay in
+          your item list and search, just not on show here.
+        </p>
+        <p>To see them in the room again, tap Put back on it in the catalog&apos;s My things.</p>
+      </ConfirmDialog>
+      <ConfirmDialog
+        open={confirm?.kind === "clear"}
+        title="Start with an empty room?"
+        confirmLabel="Empty the room"
+        onConfirm={decorate.clearRoom}
+        onClose={() => setConfirm(null)}
+      >
+        <ul className="flex flex-col gap-2.5">
+          {[
+            {
+              icon: BroomIcon,
+              text: `${storages.length} storage ${storages.length === 1 ? "piece" : "pieces"} and ${room.decor.length} ${
+                room.decor.length === 1 ? "decoration" : "decorations"
+              } leave the room, the window, clock and cat included. Wallpaper and floor stay.`,
+            },
+            {
+              icon: PackageIcon,
+              text: "Everything waits in the box in the catalog's My things, still yours and free to place again.",
+            },
+            { icon: ListBulletsIcon, text: `Grocy doesn't change: all ${totalItems} items stay in your list and search.` },
+            { icon: ArrowArcLeftIcon, text: "Changed your mind? Undo brings everything back." },
+          ].map((line) => {
+            const LineIcon = line.icon;
+            return (
+              <li key={line.text} className="flex gap-2.5">
+                <LineIcon size={18} weight="duotone" aria-hidden className="mt-px shrink-0 text-foreground" />
+                <span>{line.text}</span>
+              </li>
+            );
+          })}
+        </ul>
+      </ConfirmDialog>
 
       <Link
         href="/scan"
@@ -280,7 +534,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
 
       {!listView && (
       <p className="pointer-events-none absolute right-36 bottom-6 z-30 hidden rounded-full bg-card/80 px-3 py-1.5 text-[13px] text-muted-foreground xl:block">
-        Drag to look around · scroll to zoom · tap storage to peek inside
+        {decorating
+          ? "Drag a piece to move it · R rotates · W swaps walls · Delete puts away"
+          : "Drag to look around · scroll to zoom · tap storage to peek inside · hold a piece to move it"}
       </p>
       )}
 
@@ -289,8 +545,13 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage }: 
         <ul>
           {storages.map((storage) => (
             <li key={storage.locationId}>
-              <button type="button" onClick={() => onSelectStorage(storage.locationId)}>
-                Inspect {storage.tag.name}
+              <button
+                type="button"
+                onClick={() =>
+                  decorating ? selectDecorPiece(`storage:${storage.locationId}`) : onSelectStorage(storage.locationId)
+                }
+              >
+                {decorating ? "Decorate" : "Inspect"} {storage.tag.name}
               </button>
             </li>
           ))}

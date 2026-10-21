@@ -35,7 +35,7 @@ const convexHull = (points: ScreenPoint[]): ScreenPoint[] => {
 };
 
 type StorageOutlineProps = {
-  locationId: number;
+  outlineKey: string;
   /** width, height, depth, center height */
   box: [number, number, number, number];
   highlight: Highlight;
@@ -43,7 +43,7 @@ type StorageOutlineProps = {
 };
 
 /** Traces the piece's screen silhouette into its DOM outline, like the mockup. */
-export const StorageOutline = ({ locationId, box, highlight, overlay }: StorageOutlineProps) => {
+export const StorageOutline = ({ outlineKey, box, highlight, overlay }: StorageOutlineProps) => {
   const groupRef = useRef<Group>(null);
   const camera = useThree((state) => state.camera);
   const size = useThree((state) => state.size);
@@ -68,7 +68,7 @@ export const StorageOutline = ({ locationId, box, highlight, overlay }: StorageO
 
   useFrame(() => {
     const group = groupRef.current;
-    const outline = overlay.outlines.get(locationId);
+    const outline = overlay.outlines.get(outlineKey);
     if (!group || !outline || highlight === "none") return;
     group.updateWorldMatrix(true, false);
     const projected = corners.map((corner) => {

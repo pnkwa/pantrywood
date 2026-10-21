@@ -119,9 +119,11 @@ type CameraRigProps = {
   ref?: Ref<CameraApi>;
   focus?: CameraFocus | null;
   onFocusSettled?: () => void;
+  /** While a piece is dragged, the drag moves the piece instead of the camera. */
+  panLocked?: boolean;
 };
 
-export const CameraRig = ({ ref, focus, onFocusSettled }: CameraRigProps) => {
+export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: CameraRigProps) => {
   const cameraRef = useRef<OrthographicCameraImpl>(null);
   // drei rebuilds the controls when the default camera changes, so they're only reached through props or this ref.
   const controlsRef = useRef<MapControlsImpl>(null);
@@ -316,6 +318,7 @@ export const CameraRig = ({ ref, focus, onFocusSettled }: CameraRigProps) => {
       <MapControls
         ref={controlsRef}
         makeDefault
+        enabled={!panLocked}
         target={HOME_TARGET.toArray()}
         enableRotate={false}
         enableDamping={!reducedMotion}
