@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { isAllowedGrocyPath } from "@/lib/grocy/allowed-paths";
 import { getGrocyConfig } from "@/lib/grocy/config";
 import { handleMockRequest } from "@/lib/grocy/mock/handler";
 
@@ -25,6 +26,9 @@ const proxy = async (
     )
   ) {
     return grocyError(400, "Invalid path.");
+  }
+  if (!isAllowedGrocyPath(request.method, path.join("/"))) {
+    return grocyError(403, "Pantrywood doesn't use this Grocy endpoint.");
   }
 
   const config = getGrocyConfig();
