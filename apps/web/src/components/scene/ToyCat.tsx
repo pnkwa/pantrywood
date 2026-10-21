@@ -60,14 +60,15 @@ const TAIL = new CatmullRomCurve3([
 ]);
 const TAIL_TIP: [number, number, number] = [-0.07, 0.54, 0];
 
-type ToyCatProps = { pattern: CatPattern; colors: [body: string, accent: string] };
+/** `still`: hidden behind another view, so it stops asking for frames. */
+type ToyCatProps = { pattern: CatPattern; colors: [body: string, accent: string]; still: boolean };
 
-export const ToyCat = ({ pattern, colors: [body, accent] }: ToyCatProps) => {
+export const ToyCat = ({ pattern, colors: [body, accent], still }: ToyCatProps) => {
   const bodyRef = useRef<Group>(null);
   const tailRef = useRef<Group>(null);
   const eyesRef = useRef<Group>(null);
   const invalidate = useThree((state) => state.invalidate);
-  const reducedMotion = useReducedMotion();
+  const paused = useReducedMotion() || still;
   const shape = GUMDROP;
   const eyeHeight = shape.height * 0.5;
   const earHeight = shape.height * 0.94;
@@ -83,13 +84,13 @@ export const ToyCat = ({ pattern, colors: [body, accent] }: ToyCatProps) => {
 
   // On-demand rendering: the cat asks for its own frames, and stays still with reduced motion.
   useEffect(() => {
-    if (reducedMotion) return;
+    if (paused) return;
     const timer = setInterval(() => invalidate(), FRAME_MILLISECONDS);
     return () => clearInterval(timer);
-  }, [invalidate, reducedMotion]);
+  }, [invalidate, paused]);
 
   useFrame(({ clock }) => {
-    if (reducedMotion) return;
+    if (paused) return;
     const time = clock.elapsedTime;
     const breath = Math.sin(time * 2.2);
     const tilt = Math.max(0, Math.sin((time / 7) * Math.PI * 2) - 0.8) * 5;

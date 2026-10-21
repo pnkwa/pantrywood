@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useEffectEvent, useMemo } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { BufferGeometry, Float32BufferAttribute, Plane, Raycaster, Vector2, Vector3 } from "three";
 import type { WallSide } from "@pantrywood/shared";
@@ -58,6 +58,8 @@ export const FloorGrid = ({ footprint, onFloorClick, onFloorPointerMove }: Floor
   // Read straight off the camera ray, so pieces and walls under the pointer never hide the floor.
   const camera = useThree((state) => state.camera);
   const canvas = useThree((state) => state.gl.domElement);
+  // A new callback each render must not re-attach the listeners mid-drag.
+  const reportPointer = useEffectEvent(onFloorPointerMove);
   useEffect(() => {
     const raycaster = new Raycaster();
     const floorPlane = new Plane(new Vector3(0, 1, 0), 0);
@@ -78,8 +80,8 @@ export const FloorGrid = ({ footprint, onFloorClick, onFloorPointerMove }: Floor
       const right = ray.intersectPlane(rightWallPlane, rightHit) ? offWall(rightHit.x, rightHit.y) : Infinity;
       const left = ray.intersectPlane(leftWallPlane, leftHit) ? offWall(leftHit.z, leftHit.y) : Infinity;
       // The wall the pointer is over; off both, the nearer one, so a piece slides along it to the corner.
-      if (left < right) onFloorPointerMove(floorHit.x, floorHit.z, "left", leftHit.z, leftHit.y);
-      else onFloorPointerMove(floorHit.x, floorHit.z, "right", rightHit.x, rightHit.y);
+      if (left < right) reportPointer(floorHit.x, floorHit.z, "left", leftHit.z, leftHit.y);
+      else reportPointer(floorHit.x, floorHit.z, "right", rightHit.x, rightHit.y);
     };
     // pointerdown too: a touch tap has no hover before it.
     canvas.addEventListener("pointerdown", handleMove);
@@ -88,7 +90,7 @@ export const FloorGrid = ({ footprint, onFloorClick, onFloorPointerMove }: Floor
       canvas.removeEventListener("pointerdown", handleMove);
       canvas.removeEventListener("pointermove", handleMove);
     };
-  }, [camera, canvas, onFloorPointerMove]);
+  }, [camera, canvas]);
 
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     if (event.delta > CLICK_DRAG_TOLERANCE) return;

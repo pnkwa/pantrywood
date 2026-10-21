@@ -45,7 +45,7 @@ const boxFor = (shape: DecorShape, [width, depth]: [number, number]): [number, n
   }
 };
 
-const Shape = ({ decor }: { decor: SceneDecor }) => {
+const Shape = ({ decor, still }: { decor: SceneDecor; still: boolean }) => {
   const [main, second] = decor.colors;
   const [width, depth] = decor.size;
   switch (decor.shape) {
@@ -177,11 +177,11 @@ const Shape = ({ decor }: { decor: SceneDecor }) => {
     case "ovalRug":
       return <OvalRug />;
     case "cat":
-      return <ToyCat pattern="patch" colors={decor.colors} />;
+      return <ToyCat pattern="patch" colors={decor.colors} still={still} />;
     case "maskCat":
-      return <ToyCat pattern="mask" colors={decor.colors} />;
+      return <ToyCat pattern="mask" colors={decor.colors} still={still} />;
     case "plainCat":
-      return <ToyCat pattern="plain" colors={decor.colors} />;
+      return <ToyCat pattern="plain" colors={decor.colors} still={still} />;
     case "veggieBasket":
       return <VeggieBasket />;
   }
@@ -192,12 +192,14 @@ type DecorPiecesProps = {
   overlay: SceneOverlay;
   /** Only clickable while decorating; otherwise decor is just scenery. */
   editing: boolean;
+  /** Animated pieces hold still, e.g. while the fridge door view covers the room. */
+  still: boolean;
   selectedKey: string | null;
   onSelect: (key: string) => void;
   onPointerDown: (key: string) => void;
 };
 
-export const DecorPieces = ({ decor, overlay, editing, selectedKey, onSelect, onPointerDown }: DecorPiecesProps) => {
+export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSelect, onPointerDown }: DecorPiecesProps) => {
   // On-demand rendering: placing, moving or putting away a piece must redraw the room.
   const invalidate = useThree((state) => state.invalidate);
   useEffect(() => invalidate(), [decor, invalidate]);
@@ -222,7 +224,7 @@ export const DecorPieces = ({ decor, overlay, editing, selectedKey, onSelect, on
           <mesh position={[0, box[3], 0]} visible={false}>
             <boxGeometry args={[box[0], box[1], box[2]]} />
           </mesh>
-          <Shape decor={piece} />
+          <Shape decor={piece} still={still} />
           <StorageOutline outlineKey={piece.id} box={box} highlight={highlight} overlay={overlay} />
         </group>
       );

@@ -167,6 +167,7 @@ export const StorageRoomScene = ({
         decor={decor}
         overlay={overlay}
         editing={editing}
+        still={openDoorLocationId !== null}
         selectedKey={selectedPieceKey}
         onSelect={onSelectPiece}
         onPointerDown={onPiecePointerDown}

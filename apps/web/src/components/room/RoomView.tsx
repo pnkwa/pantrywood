@@ -188,7 +188,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     // Decorate hotkeys work from the toolbar too: arrows nudge, R rotates, Delete puts away.
-    if (decorating && decorPiece && piece) {
+    // React bubbles keys out of portals too; the swap popover and confirm dialogs keep theirs.
+    const fromPortal = !(event.target instanceof Node && event.currentTarget.contains(event.target));
+    if (decorating && decorPiece && piece && !fromPortal) {
       const nudge = NUDGE_KEYS[event.key];
       if (nudge) {
         event.preventDefault();
@@ -395,7 +397,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             editing={decorating}
             selectedPieceKey={decorPiece}
           />
-          <div className={`absolute right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper transition-transform duration-200 ease-out ${decorating ? "top-4 translate-y-16 max-lg:hidden" : "top-4"}`}>
+          <div className={`absolute right-4 z-30 flex flex-col gap-1 rounded-lg border-[1.5px] border-border bg-card p-1.5 shadow-paper transition-[transform,opacity,visibility] duration-200 ease-out ${decorating ? "top-4 translate-y-16 max-lg:invisible max-lg:opacity-0" : "top-4"}`}>
             <ControlButton label="Zoom in" onClick={() => cameraRef.current?.zoomIn()}>
               <MagnifyingGlassPlusIcon size={20} weight="duotone" />
             </ControlButton>
@@ -426,7 +428,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
         )}
       </AnimatePresence>
 
+      <AnimatePresence initial={false}>
       {decorating ? (
+        <motion.div key="decorate" {...VIEW_FADE}>
         <DecorateBar
           canUndo={decorate.canUndo}
           onUndo={decorate.undo}
@@ -434,8 +438,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
           onClear={() => setConfirm({ kind: "clear" })}
           onDone={() => setDecorating(false)}
         />
+        </motion.div>
       ) : (
-        <div className="absolute top-4 left-4 z-30 flex gap-2">
+        <motion.div key="view" {...VIEW_FADE} className="absolute top-4 left-4 z-30 flex gap-2">
         <div
           role="radiogroup"
           aria-label="Room view"
@@ -471,10 +476,17 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               <span className="max-lg:sr-only">Decorate</span>
             </button>
           )}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
-      {decorating && pieceToolbar}
+      <AnimatePresence>
+        {decorating && pieceToolbar && (
+          <motion.div key={decorPiece} {...VIEW_FADE}>
+            {pieceToolbar}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ConfirmDialog
         open={confirm?.kind === "putAway"}
