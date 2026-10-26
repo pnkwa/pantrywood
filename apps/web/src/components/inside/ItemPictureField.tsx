@@ -38,7 +38,7 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
   const hasOwn = pictures.data?.has(item.productId) ?? false;
   const source = hasOwn ? "Your picture" : item.pictureFileName ? "From Grocy" : "Default icon";
 
-  const use = async (file: File | undefined) => {
+  const savePictureFile = async (file: File | undefined) => {
     if (!file) return;
     setSaving(true);
     try {
@@ -55,7 +55,7 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
   const handleDrop = (event: DragEvent<HTMLLabelElement>) => {
     event.preventDefault();
     setDragOver(false);
-    void use(event.dataTransfer.files[0]);
+    void savePictureFile(event.dataTransfer.files[0]);
   };
 
   return (
@@ -108,7 +108,7 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
                 type="file"
                 accept={ACCEPTED}
                 disabled={saving}
-                onChange={(event) => void use(event.target.files?.[0])}
+                onChange={(event) => void savePictureFile(event.target.files?.[0])}
                 className="absolute size-px opacity-0"
               />
             </label>
