@@ -63,14 +63,14 @@ export const wallTileTexture = (width: number, height: number): Texture =>
     [width / WALL_TILE_SIZE, height / WALL_TILE_SIZE],
   );
 
-export const ginghamTexture = (repeatX: number, repeatY: number): Texture => {
+export const ginghamTexture = (repeatX: number, repeatY: number, check = "rgba(143, 179, 204, 0.55)"): Texture => {
   const texture = canvasTexture(
     16,
     (context, size) => {
       const half = size / 2;
       context.fillStyle = "#FFFBF3";
       context.fillRect(0, 0, size, size);
-      context.fillStyle = "rgba(143, 179, 204, 0.55)";
+      context.fillStyle = check;
       context.fillRect(0, 0, half, size);
       context.fillRect(0, 0, size, half);
     },

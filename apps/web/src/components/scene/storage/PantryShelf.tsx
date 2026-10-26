@@ -1,15 +1,20 @@
 "use client";
 
-import { RoundedBox } from "@react-three/drei";
 import { Matte } from "../materials";
 import type { SceneItem } from "../types";
 import type { Surface } from "../items/arrange";
+import { Brass, KIT, ShelfLip, Soft } from "../kit";
 import { StoredItems } from "./StoredItems";
 import type { StoragePalette } from "../types";
 
 const WIDTH = 3;
 const DEPTH = 1.2;
+const FRONT_Z = DEPTH / 2;
 const BOARD_HEIGHTS = [0.06, 1.14, 2.34, 3.54];
+const POST_WIDTH = 0.18;
+/** A brass rail with cup hooks under the top board, like a café shelf. */
+const RAIL_Y = 3.32;
+const HOOK_XS = [-0.9, -0.3, 0.3, 0.9];
 
 const SURFACES: Surface[] = BOARD_HEIGHTS.map((boardY) => ({
   y: boardY + 0.06,
@@ -21,6 +26,7 @@ const SURFACES: Surface[] = BOARD_HEIGHTS.map((boardY) => ({
 
 const DEFAULT_PALETTE: StoragePalette = { body: "#A47551", trim: "#A47551", accent: "#6E4E33" };
 
+/** An open framed shelf: rounded posts to the floor, a lip on each board and a crown on top. */
 export const PantryShelf = ({
   items,
   palette = DEFAULT_PALETTE,
@@ -29,31 +35,32 @@ export const PantryShelf = ({
   palette?: StoragePalette;
 }) => (
   <group>
-    <mesh position={[0, 2.5, -DEPTH / 2 + 0.03]} receiveShadow>
-      <boxGeometry args={[WIDTH, 5, 0.06]} />
+    <mesh position={[0, 2.5, -DEPTH / 2 + 0.04]} receiveShadow>
+      <boxGeometry args={[WIDTH - 0.1, 4.9, 0.06]} />
       <Matte color={palette.accent} />
     </mesh>
-    {[-WIDTH / 2 + 0.07, WIDTH / 2 - 0.07].map((sideX) => (
-      <mesh key={sideX} position={[sideX, 2.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[0.14, 5, DEPTH]} />
-        <Matte color={palette.body} />
+    {[-WIDTH / 2 + POST_WIDTH / 2, WIDTH / 2 - POST_WIDTH / 2].map((postX) => (
+      <Soft key={postX} size={[POST_WIDTH, 5.05, DEPTH]} position={[postX, 2.52, 0]} color={palette.body} radius={0.07} />
+    ))}
+    {BOARD_HEIGHTS.map((boardY, index) => (
+      <group key={boardY}>
+        <Soft size={[WIDTH - 0.12, 0.12, DEPTH - 0.04]} position={[0, boardY, 0]} color={palette.body} radius={0.04} />
+        {index > 0 && <ShelfLip y={boardY} width={WIDTH - 0.3} frontZ={FRONT_Z} color={palette.trim} />}
+      </group>
+    ))}
+    <Soft size={[WIDTH + 0.24, 0.2, DEPTH + 0.12]} position={[0, 4.98, 0]} color={palette.body} radius={0.08} />
+    <Soft size={[WIDTH - 0.2, 0.12, 0.08]} position={[0, 4.82, FRONT_Z - 0.04]} color={palette.trim} radius={0.03} />
+    <mesh position={[0, RAIL_Y, FRONT_Z - 0.12]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <capsuleGeometry args={[0.025, WIDTH - 0.5, 4, 8]} />
+      <Brass />
+    </mesh>
+    {HOOK_XS.map((hookX) => (
+      <mesh key={hookX} position={[hookX, RAIL_Y - 0.07, FRONT_Z - 0.12]} rotation={[0, Math.PI / 2, 0]}>
+        <torusGeometry args={[0.05, 0.012, 6, 12, Math.PI]} />
+        <Brass />
       </mesh>
     ))}
-    {BOARD_HEIGHTS.map((boardY) => (
-      <mesh key={boardY} position={[0, boardY, 0]} castShadow receiveShadow>
-        <boxGeometry args={[WIDTH - 0.1, 0.12, DEPTH]} />
-        <Matte color={palette.body} />
-      </mesh>
-    ))}
-    <RoundedBox
-      args={[WIDTH + 0.2, 0.18, DEPTH + 0.06]}
-      radius={0.06}
-      smoothness={3}
-      position={[0, 4.95, 0]}
-      castShadow
-    >
-      <Matte color={palette.body} />
-    </RoundedBox>
+    <Soft size={[WIDTH - 0.1, 0.1, 0.06]} position={[0, 0.16, FRONT_Z - 0.03]} color={KIT.shadowWood} radius={0.02} shadows={false} />
     <StoredItems items={items} surfaces={SURFACES} />
   </group>
 );

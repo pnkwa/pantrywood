@@ -260,3 +260,11 @@ export const shelfBands = (sections: readonly InsideSection[], notches: number) 
       return band;
     });
 };
+
+/** A small steady tilt per item in degrees (within ±`range`), so the collage looks hand-placed but never shuffles. */
+export const tiltFor = (key: string, range = 6) => {
+  // FNV-1a: short keys like "1-1" and "1-2" still land far apart.
+  let hash = 2166136261;
+  for (const character of key) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return Math.round((((hash >>> 0) % 1000) / 1000 - 0.5) * 2 * range * 10) / 10;
+};

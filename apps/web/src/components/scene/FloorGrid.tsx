@@ -12,6 +12,8 @@ const GRID_HEIGHT = 0.035;
 
 const FITS = "#7E9A68";
 const BLOCKED = "#C8755A";
+const PICKED = "#E0752D";
+const PICKED_RIM = 0.22;
 
 /** Just off both walls: the right wall stands at z = -5, the left at x = -5. */
 const ON_WALL = -4.93;
@@ -24,9 +26,18 @@ const offWall = (along: number, height: number) =>
 
 /**
  * The cells a carried piece would land on: sage when it fits, terracotta when something is in the way.
+ * `picked`: the cells a picked piece stands on, in orange under it, so it's clear which piece the toolbar edits.
  * On a wall, `x` runs along it from the back corner, `z` is the height of its middle and `depth` its rows.
  */
-export type Footprint = { x: number; z: number; width: number; depth: number; fits: boolean; wall: WallSide | null };
+export type Footprint = {
+  x: number;
+  z: number;
+  width: number;
+  depth: number;
+  fits: boolean;
+  wall: WallSide | null;
+  picked?: boolean;
+};
 
 type FloorGridProps = {
   footprint: Footprint | null;
@@ -114,8 +125,18 @@ export const FloorGrid = ({ footprint, onFloorClick, onFloorPointerMove }: Floor
           }
           renderOrder={1}
         >
-          <planeGeometry args={[footprint.width, footprint.depth]} />
-          <meshBasicMaterial color={footprint.fits ? FITS : BLOCKED} transparent opacity={0.4} depthTest={false} depthWrite={false} />
+          {/* A picked piece covers its own cells, so its footprint reaches a little past them as a rim. */}
+          <planeGeometry
+            args={[footprint.width + (footprint.picked ? PICKED_RIM * 2 : 0), footprint.depth + (footprint.picked ? PICKED_RIM * 2 : 0)]}
+          />
+          {/* A carried footprint shows through pieces in the way; a picked one stays under its own piece. */}
+          <meshBasicMaterial
+            color={footprint.picked ? PICKED : footprint.fits ? FITS : BLOCKED}
+            transparent
+            opacity={footprint.picked ? 0.55 : 0.4}
+            depthTest={footprint.picked === true}
+            depthWrite={false}
+          />
         </mesh>
       )}
       <lineSegments geometry={lines}>

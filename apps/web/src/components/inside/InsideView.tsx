@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { ArrowLeftIcon, DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
-import type { StorageKind } from "@/components/scene/types";
+import type { StorageKind, StoragePalette } from "@/components/scene/types";
 import type { PantryLocation } from "@/lib/pantry/model";
 import { UNSORTED } from "@/lib/inside/layout";
 import { useInside, type Inside } from "@/lib/inside/use-inside";
@@ -76,12 +76,14 @@ const collisionsFor: CollisionDetection = (args) => {
 type InsideViewProps = {
   location: PantryLocation;
   kind: StorageKind;
+  /** The piece's furniture style in the room, so its inside matches; null for its own colors. */
+  palette: StoragePalette | null;
   selectedItemKey: string | null;
   onPickItem: (productId: number, itemKey: string) => void;
   onClose: () => void;
 };
 
-export const InsideView = ({ location, kind, selectedItemKey, onPickItem, onClose }: InsideViewProps) => {
+export const InsideView = ({ location, kind, palette, selectedItemKey, onPickItem, onClose }: InsideViewProps) => {
   const inside = useInside(location, kind);
   const { spec } = inside;
   const reducedMotion = useReducedMotion();
@@ -268,7 +270,8 @@ export const InsideView = ({ location, kind, selectedItemKey, onPickItem, onClos
             onSelectSection={setSelectedSectionId}
             selectedItemKey={selectedItemKey}
             onPickItem={onPickItem}
-            withVent={kind === "fridge"}
+            kind={kind}
+            palette={palette}
           />
         )}
         {tab && spec.view === "topDown" && (

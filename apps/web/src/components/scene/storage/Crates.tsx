@@ -1,9 +1,9 @@
 "use client";
 
-import { RoundedBox } from "@react-three/drei";
 import { Matte } from "../materials";
 import type { SceneItem } from "../types";
 import type { Surface } from "../items/arrange";
+import { KIT, Soft } from "../kit";
 import { StoredItems } from "./StoredItems";
 import type { StoragePalette } from "../types";
 
@@ -27,26 +27,16 @@ const Crate = ({ y, slatColor, backColor }: { y: number; slatColor: string; back
     {[-WIDTH / 2 + 0.05, WIDTH / 2 - 0.05].map((sideX) => (
       <group key={sideX}>
         {SLAT_HEIGHTS.map((slatY) => (
-          <mesh
-            key={slatY}
-            position={[sideX, slatY, 0]}
-            castShadow
-            receiveShadow
-          >
-            <boxGeometry args={[0.1, 0.28, DEPTH]} />
-            <Matte color={slatColor} />
-          </mesh>
+          <Soft key={slatY} size={[0.1, 0.28, DEPTH]} position={[sideX, slatY, 0]} color={slatColor} radius={0.04} />
         ))}
+        {/* The hand hole cut into each side, like a real produce crate. */}
+        <Soft size={[0.12, 0.1, 0.42]} position={[sideX, 0.9, 0]} color={KIT.shadowWood} radius={0.04} shadows={false} />
       </group>
     ))}
-    <mesh position={[0, 0.04, 0]} receiveShadow>
-      <boxGeometry args={[WIDTH, 0.08, DEPTH]} />
-      <Matte color={slatColor} />
-    </mesh>
-    <mesh position={[0, HEIGHT - 0.04, 0]} castShadow receiveShadow>
-      <boxGeometry args={[WIDTH, 0.08, DEPTH]} />
-      <Matte color={slatColor} />
-    </mesh>
+    <Soft size={[WIDTH, 0.08, DEPTH]} position={[0, 0.04, 0]} color={slatColor} radius={0.03} />
+    {[-DEPTH / 2 + 0.05, DEPTH / 2 - 0.05].map((railZ) => (
+      <Soft key={railZ} size={[WIDTH, 0.1, 0.1]} position={[0, HEIGHT - 0.05, railZ]} color={slatColor} radius={0.04} />
+    ))}
   </group>
 );
 
@@ -60,21 +50,12 @@ export const Crates = ({
   <group>
     <Crate y={0} slatColor={palette.body} backColor={palette.accent} />
     <Crate y={HEIGHT} slatColor={palette.trim} backColor={palette.accent} />
-    <RoundedBox
-      args={[1.1, 0.75, 1.0]}
-      radius={0.05}
-      smoothness={2}
-      position={[0.05, HEIGHT * 2 + 0.375, -0.05]}
-      rotation={[0, 0.12, 0]}
-      castShadow
-      receiveShadow
-    >
-      <Matte color="#C9A77C" />
-    </RoundedBox>
-    <mesh position={[0.08, HEIGHT * 2 + 0.4, 0.46]} rotation={[0, 0.12, 0]}>
-      <planeGeometry args={[0.55, 0.3]} />
-      <Matte color="#FFFBF3" />
-    </mesh>
+    <group position={[0.05, HEIGHT * 2 + 0.375, -0.05]} rotation={[0, 0.12, 0]}>
+      <Soft size={[1.1, 0.75, 1.0]} color="#C9A77C" radius={0.08} />
+      {/* A folded paper parcel with a twine band and a cream label. */}
+      <Soft size={[1.12, 0.06, 0.08]} position={[0, 0.1, 0]} color={KIT.ceramic} radius={0.02} shadows={false} />
+      <Soft size={[0.55, 0.3, 0.03]} position={[0.03, 0.02, 0.51]} color={KIT.ceramic} radius={0.03} shadows={false} />
+    </group>
     <StoredItems items={items} surfaces={SURFACES} />
   </group>
 );

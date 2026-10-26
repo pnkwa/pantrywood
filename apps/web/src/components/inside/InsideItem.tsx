@@ -6,6 +6,7 @@ import type { PantryItem } from "@/lib/pantry/model";
 import { formatAmount } from "@/lib/pantry/format";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { STATUS_STYLES } from "@/components/pantry/icons";
+import { tiltFor } from "@/lib/inside/layout";
 import { ItemPicture } from "./ItemPicture";
 
 const MARKED = new Set(["soon", "expired", "low"]);
@@ -75,12 +76,16 @@ export const InsideItem = ({
       onClick={onPick}
       aria-label={`${describeItem(item)}. ${position}`}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`relative flex shrink touch-none items-end justify-center rounded-[12px] outline-offset-2 transition-opacity duration-150 ease-out focus-visible:outline-3 focus-visible:outline-ring ${
-        look === "standing" ? "h-full min-w-6 max-w-[24%]" : "size-16"
-      } ${isDragging ? "opacity-30" : ""} ${selected ? "outline-3 outline-sage-deep" : ""}`}
+      // A collage: stickers stand a little taller than their shelf gap and tuck behind their neighbours.
+      className={`relative flex shrink touch-none items-end justify-center rounded-[12px] outline-offset-2 transition-opacity duration-150 ease-out hover:z-10 focus-visible:z-10 focus-visible:outline-3 focus-visible:outline-ring ${
+        look === "standing" ? "-mx-[3%] h-[112%] min-w-8 max-w-[36%]" : "-m-2 size-28"
+      } ${isDragging ? "opacity-30" : ""} ${selected ? "z-10 outline-3 outline-sage-deep" : ""}`}
     >
-      <span className="relative flex h-full max-w-full items-end">
-        <ItemPicture item={item} className="h-full w-auto max-w-full" />
+      <span
+        className="relative flex h-full max-w-full origin-bottom items-end transition-transform duration-200 ease-out"
+        style={{ transform: `rotate(${tiltFor(item.key, look === "standing" ? 5 : 14)}deg)` }}
+      >
+        <ItemPicture item={item} sticker className="h-full w-auto max-w-full" />
         <StatusBadge item={item} />
       </span>
     </button>
@@ -97,6 +102,7 @@ export const LiftedItem = ({
   <div className="pointer-events-none relative flex h-24 flex-col items-center">
     <ItemPicture
       item={item}
+      sticker
       className="h-24 w-auto -rotate-6 drop-shadow-[0_12px_8px_rgba(74,59,46,0.3)]"
     />
     <span className="absolute top-1/2 left-full ml-2 rounded-[10px] bg-foreground px-2.5 py-1 text-xs font-medium whitespace-nowrap text-background">

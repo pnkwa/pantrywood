@@ -5,7 +5,7 @@ import type { SceneStorage, StorageKind } from "./types";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { itemProductIdAt } from "./items/ItemInstances";
 import type { SceneOverlay } from "./overlay";
-import { StorageOutline } from "./StorageOutline";
+import { ToolbarAnchor } from "./ToolbarAnchor";
 import { StorageTagAnchor } from "./StorageTagAnchor";
 import { useSpringLift } from "./use-spring-lift";
 import { Counter } from "./storage/Counter";
@@ -44,31 +44,31 @@ const LIFT_HEIGHT = 0.15;
 /** How high a piece rises while it is carried in Decorate mode. */
 const CARRY_HEIGHT = 0.35;
 
-const Piece = ({
-  storage,
-  doorOpen,
-}: {
-  storage: SceneStorage;
-  doorOpen: boolean;
-}) => {
-  const palette = storage.palette ?? undefined;
-  switch (storage.kind) {
+/** The furniture model alone; the catalog's 3D thumbnails render it too. */
+export const StorageModel = ({
+  kind,
+  palette,
+  items,
+  doorOpen = false,
+}: Pick<SceneStorage, "kind" | "items"> & { palette?: SceneStorage["palette"]; doorOpen?: boolean }) => {
+  const look = palette ?? undefined;
+  switch (kind) {
     case "fridge":
-      return <Fridge doorOpen={doorOpen} palette={palette} />;
+      return <Fridge doorOpen={doorOpen} palette={look} />;
     case "counter":
-      return <Counter items={storage.items} />;
+      return <Counter items={items} />;
     case "pantryShelf":
-      return <PantryShelf items={storage.items} palette={palette} />;
+      return <PantryShelf items={items} palette={look} />;
     case "suppliesCabinet":
-      return <SuppliesCabinet items={storage.items} palette={palette} />;
+      return <SuppliesCabinet items={items} palette={look} />;
     case "makerShelf":
-      return <MakerShelf items={storage.items} />;
+      return <MakerShelf items={items} />;
     case "crates":
-      return <Crates items={storage.items} palette={palette} />;
+      return <Crates items={items} palette={look} />;
     case "riceBin":
-      return <RiceBarrel palette={palette} />;
+      return <RiceBarrel palette={look} />;
     case "basket":
-      return <WickerBasket items={storage.items} palette={palette} />;
+      return <WickerBasket items={items} palette={look} />;
   }
 };
 
@@ -150,13 +150,8 @@ export const Storage = ({
         <boxGeometry args={[hitWidth, hitHeight, hitDepth]} />
       </mesh>
         <group ref={liftRef}>
-          <Piece storage={storage} doorOpen={doorOpen} />
-          <StorageOutline
-            outlineKey={`storage:${storage.locationId}`}
-            box={HIT_BOXES[storage.kind]}
-            highlight={doorOpen ? "none" : highlight}
-            overlay={overlay}
-          />
+          <StorageModel kind={storage.kind} palette={storage.palette} items={storage.items} doorOpen={doorOpen} />
+          <ToolbarAnchor box={HIT_BOXES[storage.kind]} highlight={doorOpen ? "none" : highlight} overlay={overlay} />
           <StorageTagAnchor
             locationId={storage.locationId}
             height={TAG_HEIGHT[storage.kind]}

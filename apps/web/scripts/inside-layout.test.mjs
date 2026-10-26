@@ -117,3 +117,10 @@ test("moving one item keeps every other item where it was shown", () => {
     assert.equal(where(after), where(before), key);
   }
 });
+
+test("each item keeps the same small tilt, within range", async () => {
+  const { tiltFor } = await import("../src/lib/inside/layout.ts");
+  assert.equal(tiltFor("3-12"), tiltFor("3-12"));
+  for (const key of ["1-1", "1-2", "7-40", "freezer-9"]) assert.ok(Math.abs(tiltFor(key)) <= 6);
+  assert.notEqual(tiltFor("1-1"), tiltFor("1-2"));
+});

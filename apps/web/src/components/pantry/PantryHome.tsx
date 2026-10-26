@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { PANEL_SPRING } from "@/lib/motion";
@@ -10,6 +11,12 @@ import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
 import { BoardPanel } from "@/components/board/BoardPanel";
 import { BuyDialog } from "@/components/decorate/BuyDialog";
+
+// Three.js stays out of the first page load; the studio is only needed once Decorate opens.
+const ThumbnailStudio = dynamic(
+  () => import("@/components/scene/ThumbnailStudio").then((studio) => studio.ThumbnailStudio),
+  { ssr: false },
+);
 import { useDecorate } from "@/lib/room/use-decorate";
 import { useRoom } from "@/lib/room/use-room";
 import { useHardwareScanner } from "@/lib/scan/hardware-scanner";
@@ -79,7 +86,8 @@ export const PantryHome = () => {
       } else if (ui.decorating) {
         if (ui.decorPiece) ui.selectDecorPiece(null);
         else ui.setDecorating(false);
-      } else if (ui.view === "room") clearSelection();
+      } else if (ui.decorPiece) ui.selectDecorPiece(null);
+      else if (ui.view === "room") clearSelection();
       else closeInside();
     };
     window.addEventListener("keydown", handleEscape);
@@ -180,6 +188,7 @@ export const PantryHome = () => {
       </BottomSheet>
 
       {(decorating || boardOpen) && <BuyDialog />}
+      {decorating && <ThumbnailStudio />}
 
       <MobileNav
         current={view !== "room" && insideLocationId === fridge?.locationId ? "fridge" : "room"}

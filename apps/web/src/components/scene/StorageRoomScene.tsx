@@ -15,7 +15,7 @@ import { Storage } from "./Storage";
 import { TagDeclutter } from "./TagDeclutter";
 import type { FloorSurface, SceneDecor, SceneStorage, WallSurface } from "./types";
 
-const Lights = ({ shadowMapSize }: { shadowMapSize: number }) => (
+export const Lights = ({ shadowMapSize }: { shadowMapSize: number }) => (
   <>
     <hemisphereLight args={["#FFF3DE", "#D9BC93", 2.3]} />
     <ambientLight intensity={0.35} color="#FFF8EC" />
@@ -164,10 +164,10 @@ export const StorageRoomScene = ({
           storage={storage}
           overlay={overlay}
           highlight={
-            editing
-              ? selectedPieceKey === `storage:${storage.locationId}`
-                ? "editing"
-                : storage.locationId === hoveredLocationId && !carrying
+            selectedPieceKey === `storage:${storage.locationId}`
+              ? "editing"
+              : editing
+                ? storage.locationId === hoveredLocationId && !carrying
                   ? "hover"
                   : "none"
               : highlightFor(storage.locationId, hoveredLocationId, selectedLocationId)
@@ -193,7 +193,8 @@ export const StorageRoomScene = ({
         onOpenBoard={onOpenBoard}
         carriedKey={carriedKey}
       />
-      {editing && (
+      {/* A quick edit outside Decorate shows the grid only while a piece is picked or in hand. */}
+      {(editing || carrying || selectedPieceKey !== null) && (
         <FloorGrid footprint={footprint} onFloorClick={onFloorClick} onFloorPointerMove={onFloorPointerMove} />
       )}
       <ContactShadows

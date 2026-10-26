@@ -9,6 +9,8 @@ import { isRemovable, sectionsInTab, shelfBands, type InsideTab } from "@/lib/in
 import { SHELF_TYPE_NAMES, type Inside } from "@/lib/inside/use-inside";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { StorageKind, StoragePalette } from "@/components/scene/types";
+import { boardColor, frameSize, PieceFrame } from "./PieceFrame";
 import { SectionItems } from "./SectionItems";
 
 const RAILS_TOP = 0.09;
@@ -18,8 +20,9 @@ const RAILS_BOTTOM = 0.05;
 const percent = (fraction: number) => `${fraction * 100}%`;
 
 /** What the shelf itself looks like under the items. */
-const ShelfPlank = ({ type }: { type: SectionType }) => {
-  if (type === "board") return <div className="h-3 rounded-[3px] bg-[#C9A77C] shadow-[0_2px_0_#A88A60]" />;
+const ShelfPlank = ({ type, board }: { type: SectionType; board: string }) => {
+  if (type === "board")
+    return <div className="h-3.5 rounded-[5px]" style={{ background: board, boxShadow: `0 3px 0 color-mix(in srgb, ${board} 75%, #4A3B2E)` }} />;
   if (type === "glass") return <div className="h-2 rounded-full border border-white bg-white/50 shadow-[0_2px_4px_rgba(74,59,46,0.12)]" />;
   if (type === "drawer" || type === "doorBin") return <div className="h-1.5 rounded-full bg-[#DCD6CA]" />;
   return (
@@ -129,7 +132,9 @@ type FrontViewProps = {
   onSelectSection: (sectionId: string) => void;
   selectedItemKey: string | null;
   onPickItem: (productId: number, itemKey: string) => void;
-  withVent: boolean;
+  kind: StorageKind;
+  /** The piece's furniture style in the room, so its inside matches. */
+  palette: StoragePalette | null;
 };
 
 export const FrontView = ({
@@ -143,8 +148,11 @@ export const FrontView = ({
   onSelectSection,
   selectedItemKey,
   onPickItem,
-  withVent,
+  kind,
+  palette,
 }: FrontViewProps) => {
+  const withVent = kind === "fridge";
+  const board = boardColor(kind, palette);
   const reducedMotion = useReducedMotion();
   const sections = sectionsInTab(inside.layout, tab.id);
   const notched = sections.filter((section) => section.notch !== null);
@@ -157,17 +165,17 @@ export const FrontView = ({
 
   return (
     <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
-      <div className="relative aspect-[9/8] w-[min(100cqw,112.5cqh)] @max-md:aspect-[3/4] @max-md:w-[min(100cqw,75cqh)]">
-        <div className="absolute inset-0 rounded-[34px] bg-[#F3EADB] p-[2.8%] shadow-paper dark:bg-[#4A4238]">
-          <div className="relative h-full rounded-[22px] bg-[linear-gradient(180deg,#FDFBF7,#F1ECE2)] shadow-[inset_0_0_0_12px_#ECE7DC]">
+      <div className="relative" style={frameSize(kind)}>
+        <PieceFrame kind={kind} palette={palette}>
             {withVent && (
               <div aria-hidden className="absolute top-[2.5%] left-1/2 h-[3.5%] w-[20%] -translate-x-1/2 rounded-[7px] bg-[#E6E1D6] bg-[radial-gradient(#CFC8BA_1.2px,transparent_1.6px)] bg-[length:10px_8px]" />
             )}
             <div className="absolute inset-x-0" style={{ top: percent(RAILS_TOP), bottom: percent(railsBottom) }}>
               {Array.from({ length: tab.notches }, (_, notch) => (
                 <div key={notch} aria-hidden style={{ top: percent(lineAt(notch)) }} className="absolute inset-x-[1.2%] flex -translate-y-1/2 justify-between">
-                  <span className="h-1.5 w-[6%] rounded-full bg-[#E2DCCF]" />
-                  <span className="h-1.5 w-[6%] rounded-full bg-[#E2DCCF]" />
+                  {/* Pale on the fridge's white walls, a soft dark nick on wood and paint. */}
+                  <span className={`h-1.5 w-[6%] rounded-full ${withVent ? "bg-[#E2DCCF]" : "bg-[#4A3B2E]/20"}`} />
+                  <span className={`h-1.5 w-[6%] rounded-full ${withVent ? "bg-[#E2DCCF]" : "bg-[#4A3B2E]/20"}`} />
                 </div>
               ))}
               {editing &&
@@ -195,10 +203,10 @@ export const FrontView = ({
                       targeted={targetSectionId === section.id}
                       selectedItemKey={selectedItemKey}
                       onPickItem={onPickItem}
-                      className="flex min-h-0 flex-1 items-end justify-center gap-[2%] px-[2%] pt-[6%]"
+                      className="flex min-h-0 flex-1 items-end justify-center px-[5%] pt-[4%]"
                     />
                     <FrontLip type={section.type} />
-                    <ShelfPlank type={section.type} />
+                    <ShelfPlank type={section.type} board={board} />
                     {isSelected && (
                       <div aria-hidden className="pointer-events-none absolute -inset-x-[3%] -bottom-2 h-[calc(100%+8px)] rounded-[12px] border-[2.5px] border-dashed border-[#C8901F] bg-honey/5" />
                     )}
@@ -219,15 +227,14 @@ export const FrontView = ({
                       targeted={targetSectionId === section.id}
                       selectedItemKey={selectedItemKey}
                       onPickItem={onPickItem}
-                      className="flex h-full items-end justify-center gap-[3%] px-[4%] pt-[10%] pb-[8%]"
+                      className="flex h-full items-end justify-center px-[7%] pt-[8%] pb-[8%]"
                     />
                     <span aria-hidden className="absolute bottom-[6%] left-1/2 h-1.5 w-[18%] -translate-x-1/2 rounded-full bg-[#DCD6CA]" />
                   </div>
                 ))}
               </div>
             )}
-          </div>
-        </div>
+        </PieceFrame>
         {editing && selected && selectedBand && (
           <div
             className="absolute left-1/2 z-10 -translate-x-1/2"

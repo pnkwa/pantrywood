@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import {
   BasketIcon,
   HourglassIcon,
   type Icon,
   LeafIcon,
 } from "@phosphor-icons/react";
-import { highlightFor, type Highlight } from "@/components/scene/interaction";
 import { registerIn, type SceneOverlay } from "@/components/scene/overlay";
 import type { SceneStorage, StorageTag } from "@/components/scene/types";
 
@@ -90,78 +88,17 @@ const TagCard = ({ tag, selected }: { tag: StorageTag; selected: boolean }) => {
   );
 };
 
-const STROKES: Record<Exclude<Highlight, "none">, string> = {
-  hover: "#FFFBF3",
-  selected: "#5E7550",
-  editing: "#C8901F",
-};
-
-type OutlineProps = {
-  outlineKey: string;
-  highlight: Highlight;
-  overlay: SceneOverlay;
-};
-
-/** Cream on hover, sage when selected, dashed honey for the piece being decorated; the scene writes its points. */
-const Outline = ({ outlineKey, highlight, overlay }: OutlineProps) => {
-  // Keeps the last look while fading out, so a selected outline doesn't flash cream.
-  const [shown, setShown] = useState<Exclude<Highlight, "none">>("hover");
-  if (highlight !== "none" && shown !== highlight) setShown(highlight);
-  return (
-    <g
-      ref={registerIn(overlay.outlines, outlineKey)}
-      className={`transition-opacity duration-150 ease-out ${highlight === "none" ? "opacity-0" : "opacity-100"}`}
-    >
-      <polygon fill="none" stroke="rgba(74, 59, 46, 0.18)" strokeWidth={6} strokeLinejoin="round" />
-      <polygon
-        fill={shown === "editing" ? "rgba(226, 178, 92, 0.12)" : "none"}
-        stroke={STROKES[shown]}
-        strokeWidth={3.5}
-        strokeLinejoin="round"
-        strokeDasharray={shown === "editing" ? "8 6" : undefined}
-      />
-    </g>
-  );
-};
-
 type SceneOverlayLayerProps = {
   overlay: SceneOverlay;
   storages: readonly SceneStorage[];
-  decorKeys: readonly string[];
-  hoveredLocationId: number | null;
   selectedLocationId: number | null;
-  openDoorLocationId: number | null;
-  /** Decorate mode: only the picked piece is outlined, and storage tags step aside. */
+  /** Decorate mode: storage tags step aside. */
   editing: boolean;
-  selectedPieceKey: string | null;
 };
 
-const outlineFor = (
-  key: string,
-  locationId: number | null,
-  props: SceneOverlayLayerProps,
-): Highlight => {
-  if (props.editing) {
-    if (key === props.selectedPieceKey) return "editing";
-    return locationId !== null && locationId === props.hoveredLocationId ? "hover" : "none";
-  }
-  if (locationId === null || locationId === props.openDoorLocationId) return "none";
-  return highlightFor(locationId, props.hoveredLocationId, props.selectedLocationId);
-};
-
-export const SceneOverlayLayer = (props: SceneOverlayLayerProps) => {
-  const { overlay, storages, decorKeys, selectedLocationId, editing } = props;
+export const SceneOverlayLayer = ({ overlay, storages, selectedLocationId, editing }: SceneOverlayLayerProps) => {
   return (
     <div aria-hidden className="@container pointer-events-none absolute inset-0 z-10 overflow-hidden">
-      <svg className="absolute inset-0 size-full overflow-visible">
-        {storages.map((storage) => {
-          const key = `storage:${storage.locationId}`;
-          return <Outline key={key} outlineKey={key} overlay={overlay} highlight={outlineFor(key, storage.locationId, props)} />;
-        })}
-        {decorKeys.map((key) => (
-          <Outline key={key} outlineKey={key} overlay={overlay} highlight={outlineFor(key, null, props)} />
-        ))}
-      </svg>
       {storages.map((storage) => (
         <div
           key={storage.locationId}

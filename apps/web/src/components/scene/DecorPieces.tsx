@@ -8,7 +8,7 @@ import { ToyCat } from "./ToyCat";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { Matte } from "./materials";
 import type { SceneOverlay } from "./overlay";
-import { StorageOutline } from "./StorageOutline";
+import { ToolbarAnchor } from "./ToolbarAnchor";
 import { useSpringLift } from "./use-spring-lift";
 import type { DecorShape, SceneDecor } from "./types";
 
@@ -48,7 +48,8 @@ const boxFor = (shape: DecorShape, [width, depth]: [number, number]): [number, n
   }
 };
 
-const Shape = ({ decor, still }: { decor: SceneDecor; still: boolean }) => {
+/** The decor model alone; the catalog's 3D thumbnails render it too. */
+export const Shape = ({ decor, still }: { decor: SceneDecor; still: boolean }) => {
   const [main, second] = decor.colors;
   const [width, depth] = decor.size;
   switch (decor.shape) {
@@ -225,7 +226,7 @@ export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSel
   <group>
     {decor.map((piece) => {
       const box = boxFor(piece.shape, piece.size);
-      const highlight: Highlight = editing && piece.id === selectedKey ? "editing" : "none";
+      const highlight: Highlight = piece.id === selectedKey ? "editing" : "none";
       const handleClick = (event: ThreeEvent<MouseEvent>) => {
         if (event.delta > CLICK_DRAG_TOLERANCE) return;
         if (!editing && piece.board) {
@@ -251,7 +252,7 @@ export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSel
           <Springy carried={piece.id === carriedKey}>
             <Shape decor={piece} still={still} />
           </Springy>
-          <StorageOutline outlineKey={piece.id} box={box} highlight={highlight} overlay={overlay} />
+          <ToolbarAnchor box={box} highlight={highlight} overlay={overlay} />
         </group>
       );
     })}

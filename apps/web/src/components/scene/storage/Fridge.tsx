@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { Line, RoundedBox } from "@react-three/drei";
+import { Line } from "@react-three/drei";
 import type { Group } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { Matte } from "../materials";
+import { BarHandle, Brass, KIT } from "../kit";
 import type { StoragePalette } from "../types";
 
 const WIDTH = 2.2;
@@ -157,24 +158,17 @@ const DoorFront = ({ seam, handle }: { seam: string; handle: string }) => (
       <planeGeometry args={[1.4, 0.05]} />
       <Matte color={seam} />
     </mesh>
-    <RoundedBox
-      args={[0.14, 0.7, 0.12]}
-      radius={0.06}
-      smoothness={3}
-      position={[0.68, 3.85, 0.05]}
-      castShadow
-    >
+    {/* Brass bar pulls, one for the freezer and one for the main door. */}
+    <BarHandle position={[0.72, 3.85, 0]} length={0.6} />
+    <BarHandle position={[0.72, 2.35, 0]} length={1.0} />
+    <mesh position={[0, 4.35, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+      <cylinderGeometry args={[0.1, 0.1, 0.03, 20]} />
+      <Brass />
+    </mesh>
+    <mesh position={[0, 0.5, 0.005]}>
+      <planeGeometry args={[1.2, 0.22]} />
       <Matte color={handle} />
-    </RoundedBox>
-    <RoundedBox
-      args={[0.14, 1.1, 0.12]}
-      radius={0.06}
-      smoothness={3}
-      position={[0.68, 2.35, 0.05]}
-      castShadow
-    >
-      <Matte color={handle} />
-    </RoundedBox>
+    </mesh>
     <group position={[-0.3, 2.55, 0.01]} rotation={[0, 0, 0.1]}>
       <mesh>
         <planeGeometry args={[0.6, 0.7]} />
@@ -242,12 +236,14 @@ export const Fridge = ({
 
   return (
     <group>
-      {[-0.8, 0.8].map((footX) => (
-        <mesh key={footX} position={[footX, 0.05, 0.4]}>
-          <boxGeometry args={[0.3, 0.1, 0.3]} />
-          <Matte color="#7A6654" />
-        </mesh>
-      ))}
+      {[-0.75, 0.75].flatMap((footX) =>
+        [-0.5, 0.5].map((footZ) => (
+          <mesh key={`${footX}${footZ}`} position={[footX, 0.06, footZ]}>
+            <cylinderGeometry args={[0.09, 0.07, 0.12, 12]} />
+            <Matte color={KIT.shadowWood} />
+          </mesh>
+        )),
+      )}
       <mesh
         geometry={bodyGeometry}
         position={[0, CENTER_Y, 0]}

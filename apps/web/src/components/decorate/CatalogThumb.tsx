@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { FloorSurface, WallSurface } from "@/components/scene/types";
 import { AccessoryArt } from "@/components/board/PieceArt";
+import { useModelThumbnail } from "@/components/scene/thumbnail-store";
 import type { CatalogItem } from "@/data/catalog";
 
 // Small isometric sketches from docs/mockups/Thumb.dc.html, colored from each item's own palette.
@@ -261,11 +262,27 @@ export const CatalogThumb = ({ item }: { item: CatalogItem }) => (
         style={item.category === "wallpaper" ? wallSwatch(item.material) : floorSwatch(item.material)}
         className="block h-13.5 w-16.5 rounded-[10px] border-[1.5px] border-border"
       />
+    ) : item.category === "storage" || (item.category === "decor" && item.model.shape !== "pegboard") ? (
+      <ModelThumb item={item} />
     ) : (
-      <svg width="80" height="64" viewBox="0 0 80 64">
-        <ellipse cx="40" cy="58" rx="24" ry="4" fill="#4A3B2E" opacity=".1" />
-        {sketchFor(item)}
-      </svg>
+      <Sketch item={item} />
     )}
   </span>
 );
+
+const Sketch = ({ item }: { item: CatalogItem }) => (
+  <svg width="80" height="64" viewBox="0 0 80 64">
+    <ellipse cx="40" cy="58" rx="24" ry="4" fill="#4A3B2E" opacity=".1" />
+    {sketchFor(item)}
+  </svg>
+);
+
+/** The real 3D model, drawn once by ThumbnailStudio; the sketch shows until the picture is ready. */
+const ModelThumb = ({ item }: { item: CatalogItem }) => {
+  const url = useModelThumbnail(item.id);
+  if (!url) return <Sketch item={item} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing to optimize
+    <img src={url} alt="" draggable={false} className="size-full object-contain animate-in fade-in duration-200" />
+  );
+};

@@ -57,7 +57,7 @@ export const TopDownView = ({ inside, tab, editing, keysFor, targetSectionId, se
         targeted={targetSectionId === section.id}
         selectedItemKey={selectedItemKey}
         onPickItem={onPickItem}
-        className="flex min-h-16 flex-1 flex-wrap content-start gap-2 overflow-y-auto p-1"
+        className="flex min-h-16 flex-1 flex-wrap content-center justify-center overflow-y-auto p-3"
       />
       {editing && isRemovable(section, inside.layout) && (
         <button
@@ -74,7 +74,12 @@ export const TopDownView = ({ inside, tab, editing, keysFor, targetSectionId, se
 
   return (
     <div className="flex min-h-0 flex-1 items-stretch justify-center p-1">
-      <div className={`flex w-full max-w-3xl flex-col gap-3 rounded-[28px] border-[3px] p-3 shadow-paper ${FRAME_LOOKS[inside.spec.editWord] ?? ""}`}>
+      {/* The basket is round like the one in the room; crates and the freezer are boxy trays. */}
+      <div
+        className={`flex w-full max-w-3xl flex-col gap-3 border-[3px] shadow-paper ${
+          inside.spec.editWord === "bags" ? "aspect-[6/5] max-h-full w-auto rounded-[50%] border-[6px] p-[9%]" : "rounded-[28px] p-3"
+        } ${FRAME_LOOKS[inside.spec.editWord] ?? ""}`}
+      >
         {row.length > 0 && <div className={`flex min-h-0 gap-3 ${big.length > 0 ? "flex-[0_1_45%]" : "flex-1"}`}>{row.map(part)}</div>}
         {big.map(part)}
       </div>
