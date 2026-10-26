@@ -1,3 +1,4 @@
+# Dependencies and build output
 node_modules/
 .turbo/
 .next/
@@ -7,9 +8,15 @@ coverage/
 *.tsbuildinfo
 next-env.d.ts
 
+# Environment
 .env*
 !.env.example
 
+# OS and logs
 .DS_Store
 npm-debug.log*
 pnpm-debug.log*
+
+# Agent skills (npx skills)
+.agents/
+skills-lock.json
