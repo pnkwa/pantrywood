@@ -71,6 +71,10 @@ type StorageRoomSceneProps = {
   onOpenBoard: () => void;
   /** How urgent each storage tag is; when tags overlap, the less urgent ones shrink to a dot. */
   tagRanks: ReadonlyMap<number, number>;
+  /** The piece being carried in Decorate mode ("storage:<id>" or "decor:<id>"). */
+  carriedKey: string | null;
+  /** Pixels the Decorate build tray covers; the room fits above it. */
+  bottomInset: number;
 };
 
 /** Renders on demand rather than every frame, to stay light on phones. */
@@ -96,12 +100,14 @@ export const StorageRoomScene = ({
   onSelectPiece,
   onFloorClick,
   carrying,
+  bottomInset,
   footprint,
   onPiecePointerDown,
   onFloorPointerMove,
   onCarryEnd,
   onOpenBoard,
   tagRanks,
+  carriedKey,
   onPointerDrift,
 }: StorageRoomSceneProps) => {
   const pointerDown = useRef({ x: 0, y: 0 });
@@ -126,6 +132,8 @@ export const StorageRoomScene = ({
       flat
       dpr={onTouchDevice ? [1, 1.5] : [1, 2]}
       gl={{ antialias: true, alpha: true }}
+      // Layout animations scale the room with transforms; measure the real size, not the scaled one.
+      resize={{ offsetSize: true }}
       aria-label={label}
       role="img"
       className="touch-none"
@@ -145,6 +153,7 @@ export const StorageRoomScene = ({
         focus={focus}
         onFocusSettled={onFocusSettled}
         panLocked={carrying}
+        bottomInset={bottomInset}
       />
       <Lights shadowMapSize={onTouchDevice ? 1024 : 2048} />
       <ShadowFreezer />
@@ -168,6 +177,7 @@ export const StorageRoomScene = ({
           onSelect={editing ? (locationId) => onSelectPiece(`storage:${locationId}`) : onSelectStorage}
           onSelectItem={onSelectItem}
           itemsPickable={!editing}
+          carried={carriedKey === `storage:${storage.locationId}`}
           onPointerDown={(locationId) => onPiecePointerDown(`storage:${locationId}`)}
         />
       ))}
@@ -181,6 +191,7 @@ export const StorageRoomScene = ({
         onSelect={onSelectPiece}
         onPointerDown={onPiecePointerDown}
         onOpenBoard={onOpenBoard}
+        carriedKey={carriedKey}
       />
       {editing && (
         <FloorGrid footprint={footprint} onFloorClick={onFloorClick} onFloorPointerMove={onFloorPointerMove} />

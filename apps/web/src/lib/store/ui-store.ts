@@ -51,8 +51,9 @@ type UiState = {
   closeBoard: () => void;
   selectBoardPiece: (id: string | null) => void;
   /** A catalog item waiting for the Buy dialog; `confirm` spends the leaves and uses it. */
-  purchase: { item: CatalogItem; confirm: () => void } | null;
-  askToBuy: (item: CatalogItem, confirm: () => void) => void;
+  /** `addingAs`: buying a storage piece as a new Grocy location with this name. */
+  purchase: { item: CatalogItem; confirm: () => void; addingAs?: string } | null;
+  askToBuy: (item: CatalogItem, confirm: () => void, addingAs?: string) => void;
   closePurchase: () => void;
   selectStorage: (locationId: number) => void;
   selectItem: (locationId: number, productId: number, itemKey?: string) => void;
@@ -104,7 +105,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   selectDecorPiece: (key) => set({ decorPiece: key, moving: false }),
   setMoving: (moving) => set({ moving }),
   purchase: null,
-  askToBuy: (item, confirm) => set({ purchase: { item, confirm } }),
+  askToBuy: (item, confirm, addingAs) => set({ purchase: { item, confirm, addingAs } }),
   closePurchase: () => set({ purchase: null }),
   selectStorage: (locationId) =>
     set({ selection: { type: "storage", locationId } }),

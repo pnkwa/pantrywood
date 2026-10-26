@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { MathUtils, type Group } from "three";
-import { useReducedMotion } from "@/lib/use-reduced-motion";
+import type { ThreeEvent } from "@react-three/fiber";
 import type { SceneStorage, StorageKind } from "./types";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { itemProductIdAt } from "./items/ItemInstances";
 import type { SceneOverlay } from "./overlay";
 import { StorageOutline } from "./StorageOutline";
 import { StorageTagAnchor } from "./StorageTagAnchor";
+import { useSpringLift } from "./use-spring-lift";
 import { Counter } from "./storage/Counter";
 import { Crates } from "./storage/Crates";
 import { Fridge } from "./storage/Fridge";
@@ -43,7 +41,8 @@ const HIT_BOXES: Record<StorageKind, [number, number, number, number]> = {
 };
 
 const LIFT_HEIGHT = 0.15;
-const LIFT_SPEED = 14;
+/** How high a piece rises while it is carried in Decorate mode. */
+const CARRY_HEIGHT = 0.35;
 
 const Piece = ({
   storage,
@@ -73,30 +72,6 @@ const Piece = ({
   }
 };
 
-const useLift = (lifted: boolean) => {
-  const groupRef = useRef<Group>(null);
-  const reducedMotion = useReducedMotion();
-  const invalidate = useThree((state) => state.invalidate);
-
-  useEffect(() => invalidate(), [lifted, invalidate]);
-
-  useFrame((_, delta) => {
-    const group = groupRef.current;
-    if (!group) return;
-    const target = lifted && !reducedMotion ? LIFT_HEIGHT : 0;
-    if (group.position.y === target) return;
-    group.position.y = MathUtils.damp(
-      group.position.y,
-      target,
-      LIFT_SPEED,
-      delta,
-    );
-    if (Math.abs(group.position.y - target) < 0.001) group.position.y = target;
-    invalidate();
-  });
-
-  return groupRef;
-};
 
 type StorageProps = {
   storage: SceneStorage;
@@ -108,6 +83,8 @@ type StorageProps = {
   onSelectItem: (locationId: number, productId: number) => void;
   /** Off while decorating: a click then picks the piece, never an item inside it. */
   itemsPickable: boolean;
+  /** Picked up in Decorate mode: it rides higher, then drops back with a bounce. */
+  carried: boolean;
   /** Pressing a piece: picks it up in Decorate mode, starts a long press otherwise. */
   onPointerDown: (locationId: number) => void;
 };
@@ -121,9 +98,10 @@ export const Storage = ({
   onSelect,
   onSelectItem,
   itemsPickable,
+  carried,
   onPointerDown,
 }: StorageProps) => {
-  const liftRef = useLift(highlight !== "none");
+  const liftRef = useSpringLift(carried ? CARRY_HEIGHT : highlight !== "none" ? LIFT_HEIGHT : 0);
 
   const handlePointerOver = (event: ThreeEvent<PointerEvent>) => {
     event.stopPropagation();

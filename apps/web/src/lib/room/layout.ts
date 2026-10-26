@@ -53,30 +53,46 @@ export type PlacedLocation = Pick<
   "locationId" | "kind" | "position" | "rotationY"
 >;
 
-/** Each fixed slot is used once; extra pieces become baskets until the free spots run out. */
+/** Where a piece with no free slot starts; the room then moves it to the nearest free spot. */
+const ROOM_MIDDLE: Slot = { position: [0, 0, 0], rotationY: 0 };
+
+/**
+ * The first piece of each kind takes its slot. More of the same kind keep their kind (two fridges
+ * stay fridges) and start in that slot too; the room moves them to a free spot. The wall-hung maker
+ * shelf has one spot, so extra ones become baskets.
+ */
 export const placeLocations = (
   locations: readonly PlaceableLocation[],
 ): PlacedLocation[] => {
   const usedKinds = new Set<StorageKind>();
   const freeBasketSlots = [...BASKET_SLOTS];
-  const placed: PlacedLocation[] = [];
-
-  for (const location of locations) {
+  return locations.map((location) => {
     let kind = storageKindFor(location);
-    let slot: Slot | undefined =
-      kind === "basket" || usedKinds.has(kind) ? undefined : SLOTS[kind];
-    if (!slot) {
-      kind = "basket";
-      slot = freeBasketSlots.shift();
-    }
-    if (!slot) continue;
+    if (kind === "makerShelf" && usedKinds.has(kind)) kind = "basket";
+    const slot = kind === "basket" ? (freeBasketSlots.shift() ?? ROOM_MIDDLE) : SLOTS[kind];
     usedKinds.add(kind);
-    placed.push({
-      locationId: location.id,
-      kind,
-      position: slot.position,
-      rotationY: slot.rotationY,
-    });
-  }
-  return placed;
+    return { locationId: location.id, kind, position: slot.position, rotationY: slot.rotationY };
+  });
+};
+
+/** Names a new location so `storageKindFor` reads it back as the same kind. */
+const NEW_STORAGE_NAMES: Record<Exclude<StorageKind, "makerShelf">, string> = {
+  fridge: "Fridge",
+  pantryShelf: "Pantry shelf",
+  counter: "Counter",
+  suppliesCabinet: "Supplies cabinet",
+  crates: "Snack crates",
+  riceBin: "Rice bin",
+  basket: "Basket",
+};
+
+export const canAddStorage = (kind: StorageKind): kind is Exclude<StorageKind, "makerShelf"> => kind !== "makerShelf";
+
+/** "Pantry shelf 2", or the next number no location uses yet. */
+export const newStorageName = (kind: Exclude<StorageKind, "makerShelf">, takenNames: readonly string[]) => {
+  const base = NEW_STORAGE_NAMES[kind];
+  const taken = new Set(takenNames.map((name) => name.toLowerCase()));
+  let number = 2;
+  while (taken.has(`${base} ${number}`.toLowerCase())) number++;
+  return `${base} ${number}`;
 };

@@ -35,6 +35,7 @@ import { createSceneOverlay, registerIn } from "@/components/scene/overlay";
 import type { SceneDecor, SceneStorage } from "@/components/scene/types";
 import { SceneOverlayLayer } from "./SceneOverlayLayer";
 import { StorageListView } from "./StorageListView";
+import { BuildTray } from "@/components/decorate/BuildTray";
 import { ConfirmDialog } from "@/components/decorate/ConfirmDialog";
 import { DecorateBar, PieceToolbar } from "@/components/decorate/DecorateControls";
 import { catalogItem } from "@/data/catalog";
@@ -194,6 +195,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
     view === "inside" || (view === "entering" && (!openStorage || listView));
 
   const piece = decorPiece ? pieceInfo(room.context, decorPiece) : undefined;
+  const [trayHeight, setTrayHeight] = useState(0);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     // Decorate hotkeys work from the toolbar too: arrows nudge, R rotates, Delete puts away.
@@ -354,7 +356,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       aria-label={listView ? "Storage list" : "3D storage room"}
       tabIndex={listView ? undefined : 0}
       onKeyDown={listView ? undefined : handleKeyDown}
-      className={`relative flex-1 overflow-hidden ${insideVisible ? "min-h-[calc(100dvh-200px)]" : "min-h-[420px]"} rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[560px]`}
+      className={`relative flex-1 overflow-hidden ${insideVisible ? "min-h-[calc(100dvh-200px)]" : "min-h-[420px]"} rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[480px]`}
     >
       <AnimatePresence initial={false}>
         {listView ? (
@@ -390,12 +392,14 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               onSelectPiece={(key) => !moving && selectDecorPiece(key)}
               onFloorClick={handleFloorClick}
               carrying={activeCarry?.dragging ?? false}
+              bottomInset={decorating ? trayHeight : 0}
               footprint={footprint}
               onPiecePointerDown={handlePiecePointerDown}
               onFloorPointerMove={handleFloorPointerMove}
               onCarryEnd={handleCarryEnd}
               onPointerDrift={cancelLongPress}
               onOpenBoard={openBoard}
+              carriedKey={activeCarry?.key ?? null}
               tagRanks={
                 new Map(
                   storages.map((storage) => [
@@ -431,7 +435,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             </ControlButton>
           </div>
 
-          <div className="absolute bottom-4 left-4 z-30 hidden grid-cols-3 grid-rows-3 rounded-lg border-[1.5px] border-border bg-card/90 p-1 shadow-paper sm:grid">
+          <div className={`absolute bottom-4 left-4 z-30 hidden grid-cols-3 grid-rows-3 rounded-lg border-[1.5px] border-border bg-card/90 p-1 shadow-paper transition-opacity duration-200 ease-out sm:grid ${decorating ? "invisible opacity-0" : ""}`}>
             {PAN_BUTTONS.map((button) => {
               const ButtonIcon = button.icon;
               return (
@@ -459,7 +463,6 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
           canClear={storages.length + room.decor.length > 0}
           onClear={() => setConfirm({ kind: "clear" })}
           onDone={() => setDecorating(false)}
-          onOpenCatalog={() => useUiStore.getState().setSheetOpen(true)}
         />
         </motion.div>
       ) : (
@@ -521,6 +524,20 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {decorating && (
+          <BuildTray
+            key="build-tray"
+            room={room.context}
+            decorate={decorate}
+            selectedPieceKey={decorPiece}
+            storages={storages}
+            storedAway={room.storedAway}
+            onHeightChange={setTrayHeight}
+          />
+        )}
+      </AnimatePresence>
+
       <ConfirmDialog
         open={confirm?.kind === "putAway"}
         title={`Put away the ${confirmStorage?.tag.name ?? "storage"}?`}
@@ -551,7 +568,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             },
             {
               icon: PackageIcon,
-              text: "Everything waits in the box in the catalog's My things, still yours and free to place again.",
+              text: "Everything waits in your Inventory, still yours and free to place again.",
             },
             { icon: ListBulletsIcon, text: `Grocy doesn't change: all ${totalItems} items stay in your list and search.` },
             { icon: ArrowArcLeftIcon, text: "Changed your mind? Undo brings everything back." },
@@ -571,17 +588,15 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
         href="/scan"
         transitionTypes={OPEN_SCAN}
         aria-label="Scan a barcode"
-        className="absolute right-5 bottom-5 z-30 hidden h-15 items-center gap-2.5 rounded-full bg-terracotta pr-5.5 pl-4.5 text-base font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37,0_14px_28px_-10px_rgba(154,79,55,.7)] transition-[transform,background-color] duration-150 ease-out hover:bg-terracotta/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:flex"
+        className={`absolute right-5 bottom-5 z-30 hidden h-15 items-center gap-2.5 rounded-full bg-terracotta transition-[transform,background-color,opacity] ${decorating ? "invisible opacity-0" : ""} pr-5.5 pl-4.5 text-base font-semibold text-accent-foreground shadow-[0_3px_0_#9A4F37,0_14px_28px_-10px_rgba(154,79,55,.7)] transition-[transform,background-color] duration-150 ease-out hover:bg-terracotta/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:flex`}
       >
         <BarcodeIcon size={24} weight="duotone" aria-hidden />
         Scan
       </Link>
 
-      {!listView && (
+      {!listView && !decorating && (
       <p className="pointer-events-none absolute right-36 bottom-6 z-30 hidden rounded-full bg-card/80 px-3 py-1.5 text-[13px] text-muted-foreground xl:block">
-        {decorating
-          ? "Drag a piece to move it · R rotates · W swaps walls · Delete puts away"
-          : "Drag to look around · scroll to zoom · tap storage to peek inside · hold a piece to move it"}
+        Drag to look around · scroll to zoom · tap storage to peek inside · hold a piece to move it
       </p>
       )}
 

@@ -59,6 +59,7 @@ const FIT_MARGIN_Y = 1.08;
 
 // Screen directions on the floor for this isometric angle.
 const SCREEN_UP_ON_FLOOR = new Vector3(-1, 0, -1).normalize();
+const SCREEN_DOWN_ON_FLOOR = SCREEN_UP_ON_FLOOR.clone().negate();
 const SCREEN_RIGHT_ON_FLOOR = new Vector3(1, 0, -1).normalize();
 const PAN_DIRECTIONS: Record<PanDirection, Vector3> = {
   up: SCREEN_UP_ON_FLOOR,
@@ -73,24 +74,22 @@ const ROOM_CORNERS = [-5.8, 5.8].flatMap((cornerX) =>
   ),
 );
 
-const fitZoom = (
-  camera: OrthographicCameraImpl,
-  width: number,
-  height: number,
-) => {
-  camera.updateMatrixWorld();
-  let halfWidth = 0;
-  let halfHeight = 0;
-  for (const corner of ROOM_CORNERS) {
-    const inView = corner.clone().applyMatrix4(camera.matrixWorldInverse);
-    halfWidth = Math.max(halfWidth, Math.abs(inView.x));
-    halfHeight = Math.max(halfHeight, Math.abs(inView.y));
-  }
-  return Math.min(
-    width / (halfWidth * 2 * FIT_MARGIN_X),
-    height / (halfHeight * 2 * FIT_MARGIN_Y),
+// The room's extent on screen around HOME_TARGET, in world units (the camera never rotates).
+const VIEW_DIRECTION = CAMERA_OFFSET.clone().normalize().negate();
+const SCREEN_UP = new Vector3(0, 1, 0).addScaledVector(VIEW_DIRECTION, -VIEW_DIRECTION.y).normalize();
+const SCREEN_RIGHT = new Vector3().crossVectors(VIEW_DIRECTION, SCREEN_UP).normalize();
+const cornerUps = ROOM_CORNERS.map((corner) => corner.clone().sub(HOME_TARGET).dot(SCREEN_UP));
+const ROOM_HALF_WIDTH = Math.max(...ROOM_CORNERS.map((corner) => Math.abs(corner.clone().sub(HOME_TARGET).dot(SCREEN_RIGHT))));
+const ROOM_HALF_HEIGHT = Math.max(...cornerUps.map(Math.abs));
+const ROOM_TOP = Math.max(...cornerUps);
+const ROOM_BOTTOM = Math.min(...cornerUps);
+
+/** Pixels per world unit that fit the whole room; with a bottom panel, it fits the space above it. */
+const fitZoom = (width: number, height: number, inset: number) =>
+  Math.min(
+    width / (ROOM_HALF_WIDTH * 2 * FIT_MARGIN_X),
+    inset > 0 ? (height - inset) / ((ROOM_TOP - ROOM_BOTTOM) * FIT_MARGIN_Y) : height / (ROOM_HALF_HEIGHT * 2 * FIT_MARGIN_Y),
   );
-};
 
 const clampToRoom = (target: Vector3) =>
   new Vector3(
@@ -121,9 +120,19 @@ type CameraRigProps = {
   onFocusSettled?: () => void;
   /** While a piece is dragged, the drag moves the piece instead of the camera. */
   panLocked?: boolean;
+  /** Pixels a panel covers at the bottom; the room fits and centers in the space above it. */
+  bottomInset?: number;
 };
 
-export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: CameraRigProps) => {
+/** Where the camera looks so the room's middle sits in the middle of the space above a bottom panel. */
+const homeFor = (inset: number, zoom: number) => {
+  if (inset === 0) return HOME_TARGET.clone();
+  const raisePixels = inset / 2 - ((ROOM_TOP + ROOM_BOTTOM) / 2) * zoom;
+  // A step toward the camera on the floor shows up on screen as that step times sin(elevation).
+  return HOME_TARGET.clone().addScaledVector(SCREEN_DOWN_ON_FLOOR, raisePixels / (zoom * Math.sin(ELEVATION)));
+};
+
+export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false, bottomInset = 0 }: CameraRigProps) => {
   const cameraRef = useRef<OrthographicCameraImpl>(null);
   // drei rebuilds the controls when the default camera changes, so they're only reached through props or this ref.
   const controlsRef = useRef<MapControlsImpl>(null);
@@ -135,26 +144,10 @@ export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: Cam
   const baseZoomRef = useRef(1);
   const goalRef = useRef<DampedGoal | null>(null);
   const glideRef = useRef<TimedGlide | null>(null);
-
-  useLayoutEffect(() => {
-    const camera = cameraRef.current;
-    if (!camera) return;
-    const target = controlsRef.current?.target ?? HOME_TARGET;
-    const previousBaseZoom = baseZoomRef.current;
-    camera.position.copy(target).add(CAMERA_OFFSET);
-    camera.lookAt(target);
-    const fittedZoom = fitZoom(camera, size.width, size.height);
-    baseZoomRef.current = fittedZoom;
-    setBaseZoom(fittedZoom);
-    camera.zoom = MathUtils.clamp(
-      (camera.zoom / previousBaseZoom) * fittedZoom,
-      fittedZoom * MIN_ZOOM_FACTOR,
-      fittedZoom * MAX_ZOOM_FACTOR,
-    );
-    camera.updateProjectionMatrix();
-    controlsRef.current?.update();
-    invalidate();
-  }, [size.width, size.height, invalidate]);
+  // A panel taller than this leaves too little room to fit into, so the room stays put under it.
+  const inset = bottomInset <= size.height * 0.55 ? bottomInset : 0;
+  const insetRef = useRef(inset);
+  const homeRef = useRef(HOME_TARGET.clone());
 
   const startGlide = useCallback(
     (toTarget: Vector3, toZoom: number, onDone?: () => void) => {
@@ -175,6 +168,39 @@ export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: Cam
     [invalidate],
   );
 
+  useLayoutEffect(() => {
+    const camera = cameraRef.current;
+    if (!camera) return;
+    const target = controlsRef.current?.target ?? HOME_TARGET;
+    const previousBaseZoom = baseZoomRef.current;
+    camera.position.copy(target).add(CAMERA_OFFSET);
+    camera.lookAt(target);
+    const fittedZoom = fitZoom(size.width, size.height, inset);
+    baseZoomRef.current = fittedZoom;
+    setBaseZoom(fittedZoom);
+    const previousHome = homeRef.current;
+    homeRef.current = homeFor(inset, fittedZoom);
+    const glide = glideRef.current;
+    const keptZoom = MathUtils.clamp(
+      ((glide?.toZoom ?? camera.zoom) / previousBaseZoom) * fittedZoom,
+      fittedZoom * MIN_ZOOM_FACTOR,
+      fittedZoom * MAX_ZOOM_FACTOR,
+    );
+    // A view resting on or gliding to home follows home when the canvas resizes, even mid-glide.
+    const headingHome = (glide?.toTarget ?? target).distanceTo(previousHome) < 0.01;
+    if (inset !== insetRef.current || (headingHome && (glide !== null || !previousHome.equals(homeRef.current)))) {
+      // The panel opened or closed: glide the room into the space that's left.
+      const panelChanged = inset !== insetRef.current;
+      insetRef.current = inset;
+      startGlide(homeRef.current.clone(), panelChanged ? fittedZoom : keptZoom);
+      return;
+    }
+    camera.zoom = keptZoom;
+    camera.updateProjectionMatrix();
+    controlsRef.current?.update();
+    invalidate();
+  }, [size.width, size.height, inset, invalidate, startGlide]);
+
   const [focusX, focusY, focusZ] = focus?.target ?? [];
   const focusZoomFactor = focus?.zoomFactor;
   const wasFocused = useRef(false);
@@ -193,7 +219,7 @@ export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: Cam
       );
     } else if (wasFocused.current) {
       wasFocused.current = false;
-      startGlide(HOME_TARGET.clone(), baseZoomRef.current);
+      startGlide(homeRef.current.clone(), baseZoomRef.current);
     }
   }, [focusX, focusY, focusZ, focusZoomFactor, startGlide, onFocusSettled]);
 
@@ -235,7 +261,7 @@ export const CameraRig = ({ ref, focus, onFocusSettled, panLocked = false }: Cam
     return {
       zoomIn: () => glideTo(currentZoom() * ZOOM_STEP, null),
       zoomOut: () => glideTo(currentZoom() / ZOOM_STEP, null),
-      reset: () => glideTo(baseZoomRef.current, HOME_TARGET.clone()),
+      reset: () => glideTo(baseZoomRef.current, homeRef.current.clone()),
       panBy: (direction) => {
         const zoomScale = currentZoom() / baseZoomRef.current;
         const step = PAN_DIRECTIONS[direction]

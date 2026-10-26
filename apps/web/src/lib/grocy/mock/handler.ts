@@ -1,6 +1,7 @@
 import "server-only";
 import { z } from "zod";
 import {
+  LocationSchema,
   NEVER_EXPIRES_DATE,
   ProductBarcodeSchema,
   ProductSchema,
@@ -434,6 +435,17 @@ const handleCreateObject = (entity: string, body: JsonBody) => {
   const fields = ObjectBodySchema.safeParse(body);
   if (!fields.success) return error(400, "Body must be an object");
   const current = getDatabase();
+  if (entity === "locations") {
+    const parsed = LocationSchema.safeParse({
+      is_freezer: 0,
+      ...fields.data,
+      id: nextId(current.locations),
+      row_created_timestamp: new Date().toISOString(),
+    });
+    if (!parsed.success) return error(400, z.prettifyError(parsed.error));
+    current.locations.push(parsed.data);
+    return json({ created_object_id: parsed.data.id });
+  }
   if (entity === "products") {
     const parsed = ProductSchema.safeParse({
       ...PRODUCT_DEFAULTS,

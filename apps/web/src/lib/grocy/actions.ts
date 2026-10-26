@@ -183,6 +183,22 @@ const createProduct = async (product: NewProduct) => {
   return productId;
 };
 
+/** A new storage spot from Decorate. Resolves to the new location id once the room has refetched. */
+export const useCreateLocation = () => {
+  const refresh = useRefreshGrocy();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { created_object_id: locationId } = await grocyPostFor(
+        "objects/locations",
+        { name, description: "Added in Pantrywood", is_freezer: 0 },
+        CreatedSchema,
+      );
+      return locationId;
+    },
+    onSettled: refresh,
+  });
+};
+
 export const useCreateProduct = () => {
   const refresh = useRefreshGrocy();
   return useMutation({ mutationFn: createProduct, onSettled: refresh });

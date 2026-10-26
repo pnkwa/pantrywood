@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import type { Pantry, PantryItem } from "@/lib/pantry/model";
 import { formatAmount } from "@/lib/pantry/format";
+import { useUiStore } from "@/lib/store/ui-store";
 import { QUICK_FADE } from "@/lib/motion";
 import { NAV_FORWARD } from "@/lib/page-transitions";
 import { StatusChip } from "./StatusChip";
@@ -29,6 +30,7 @@ type TopBarProps = {
 export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const decorating = useUiStore((state) => state.decorating);
   const trimmed = query.trim().toLowerCase();
 
   const results = useMemo(() => {
@@ -50,7 +52,7 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
       const typing =
         event.target instanceof HTMLInputElement ||
         event.target instanceof HTMLTextAreaElement;
-      if (event.key === "/" && !typing) {
+      if (event.key === "/" && !typing && !useUiStore.getState().decorating) {
         event.preventDefault();
         inputRef.current?.focus();
       }
@@ -76,7 +78,13 @@ export const TopBar = ({ pantry, onPickItem }: TopBarProps) => {
         </span>
       </div>
 
-      <div className="relative order-last w-full lg:order-none lg:w-auto lg:flex-1">
+      {/* Decorate hides search: it jumps to items, not furniture. Desktop keeps its space so the bar doesn't shift. */}
+      <div
+        inert={decorating}
+        className={`relative order-last w-full transition-[opacity,visibility] duration-200 ease-out lg:order-none lg:w-auto lg:flex-1 ${
+          decorating ? "invisible opacity-0 max-lg:hidden" : ""
+        }`}
+      >
         <label className="flex h-11 items-center gap-2.5 rounded-full border-[1.5px] border-border bg-card px-4 lg:bg-muted focus-within:outline-3 focus-within:outline-offset-2 focus-within:outline-ring">
           <MagnifyingGlassIcon
             size={18}

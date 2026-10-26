@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
+import { PANEL_SPRING } from "@/lib/motion";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { OPEN_SCAN } from "@/lib/page-transitions";
 import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
 import { BoardPanel } from "@/components/board/BoardPanel";
 import { BuyDialog } from "@/components/decorate/BuyDialog";
-import { CatalogPanel } from "@/components/decorate/CatalogPanel";
 import { useDecorate } from "@/lib/room/use-decorate";
 import { useRoom } from "@/lib/room/use-room";
 import { useHardwareScanner } from "@/lib/scan/hardware-scanner";
@@ -36,10 +38,13 @@ export const PantryHome = () => {
   const room = useRoom(pantry);
   // Put-away storage is out of the room but still a Grocy location, so panels and lists keep it.
   const storages = [...room.storages, ...room.storedAway];
-  const decorate = useDecorate(room.context);
+  const decorate = useDecorate(
+    room.context,
+    pantry?.locations.map((location) => location.name) ?? [],
+  );
   const decorating = useUiStore((state) => state.decorating);
-  const decorPiece = useUiStore((state) => state.decorPiece);
   const boardOpen = useUiStore((state) => state.boardOpen);
+  const reducedMotion = useReducedMotion();
   const sheetOpen = useUiStore((state) => state.sheetOpen);
 
   const selection = useUiStore((state) => state.selection);
@@ -89,8 +94,29 @@ export const PantryHome = () => {
     <>
       <div className="mx-auto flex w-full max-w-[1392px] flex-1 flex-col gap-4 px-4 pt-4 pb-28 lg:gap-5 lg:px-6 lg:pt-5 lg:pb-8">
         <TopBar pantry={pantry} onPickItem={selectItem} />
-        <StatCards stats={pantry?.stats ?? null} />
-        <div className="flex flex-1 flex-col gap-5 lg:h-[min(720px,calc(100dvh-240px))] lg:min-h-[560px] lg:flex-none lg:flex-row">
+        {/* Decorate is about the room, so the stock numbers step aside and the room takes their space. */}
+        <AnimatePresence initial={false} mode="popLayout">
+          {!decorating && (
+            <motion.div
+              key="stats"
+              initial={{ opacity: 0, y: reducedMotion ? 0 : -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : -12, transition: { duration: 0.15 } }}
+              transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
+            >
+              <StatCards stats={pantry?.stats ?? null} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.div
+          layout
+          transition={reducedMotion ? { duration: 0 } : PANEL_SPRING}
+          className={`flex flex-1 flex-col gap-5 lg:min-h-[480px] lg:flex-none lg:flex-row ${
+            decorating ? "lg:h-[min(828px,calc(100dvh-172px))]" : "lg:h-[min(720px,calc(100dvh-280px))]"
+          }`}
+        >
+          {/* Decorate gives the room the full width; the layout animation glides it there with transforms. */}
+          <motion.div layout transition={reducedMotion ? { duration: 0 } : PANEL_SPRING} className="flex min-w-0 flex-1 flex-col">
           <RoomView
             pantry={pantry}
             storages={room.storages}
@@ -104,19 +130,19 @@ export const PantryHome = () => {
             }
             onSelectStorage={handleSelectStorage}
           />
-          <aside
-            aria-label={decorating ? "Catalog" : boardOpen ? "Pegboard" : `${selectedName} details`}
-            className="relative hidden min-h-0 w-[380px] shrink-0 flex-col rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
+          </motion.div>
+          <AnimatePresence initial={false}>
+          {!decorating && (
+          <motion.aside
+            key="panel"
+            initial={{ opacity: 0, x: reducedMotion ? 0 : 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: reducedMotion ? 0 : 24, transition: { duration: 0.15 } }}
+            transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
+            aria-label={boardOpen ? "Pegboard" : `${selectedName} details`}
+            className="relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
-            {decorating ? (
-              <CatalogPanel
-                room={room.context}
-                decorate={decorate}
-                selectedPieceKey={decorPiece}
-                storages={room.storages}
-                storedAway={room.storedAway}
-              />
-            ) : boardOpen ? (
+            {boardOpen ? (
               <BoardPanel pantry={pantry} decorate={decorate} />
             ) : (
               pantry && (
@@ -127,30 +153,21 @@ export const PantryHome = () => {
                 />
               )
             )}
-          </aside>
-        </div>
+          </motion.aside>
+          )}
+          </AnimatePresence>
+        </motion.div>
       </div>
 
       <BottomSheet
-        open={decorating || boardOpen ? sheetOpen : Boolean(pantry && selection) && !doorShowsStorage}
-        label={decorating ? "Catalog" : boardOpen ? "Pegboard" : `${selectedName} details`}
-        onClose={
-          decorating || boardOpen
-              ? () => useUiStore.getState().setSheetOpen(false)
-              : clearSelection
-        }
-        size={decorating || boardOpen ? "short" : "tall"}
+        // Decorate keeps its catalog in the room's build tray, so the sheet stays shut.
+        open={decorating ? false : boardOpen ? sheetOpen : Boolean(pantry && selection) && !doorShowsStorage}
+        label={boardOpen ? "Pegboard" : `${selectedName} details`}
+        onClose={boardOpen ? () => useUiStore.getState().setSheetOpen(false) : clearSelection}
+        size={boardOpen ? "short" : "tall"}
       >
-        {boardOpen && !decorating ? (
+        {boardOpen ? (
           <BoardPanel pantry={pantry} decorate={decorate} />
-        ) : decorating ? (
-          <CatalogPanel
-                room={room.context}
-                decorate={decorate}
-                selectedPieceKey={decorPiece}
-                storages={room.storages}
-                storedAway={room.storedAway}
-              />
         ) : (
           pantry && (
             <InspectPanelContent

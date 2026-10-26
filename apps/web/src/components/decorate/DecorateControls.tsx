@@ -16,7 +16,6 @@ import {
   CheckIcon,
   type Icon,
   PaletteIcon,
-  StorefrontIcon,
 } from "@phosphor-icons/react";
 import type { CatalogItem } from "@/data/catalog";
 import type { GridCell } from "@/lib/room/grid";
@@ -31,20 +30,10 @@ type DecorateBarProps = {
   canClear: boolean;
   onClear: () => void;
   onDone: () => void;
-  /** Phones and tablets: opens the catalog sheet, which stays closed so the room stays in view. */
-  onOpenCatalog: () => void;
 };
 
-export const DecorateBar = ({ canUndo, onUndo, canClear, onClear, onDone, onOpenCatalog }: DecorateBarProps) => (
+export const DecorateBar = ({ canUndo, onUndo, canClear, onClear, onDone }: DecorateBarProps) => (
   <div className="absolute inset-x-4 top-4 z-30 flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200 motion-reduce:slide-in-from-top-0">
-    <button
-      type="button"
-      onClick={onOpenCatalog}
-      className={`${PILL_BUTTON} border-[1.5px] border-border bg-card shadow-paper hover:bg-muted/40 lg:hidden`}
-    >
-      <StorefrontIcon size={18} weight="duotone" aria-hidden />
-      Catalog
-    </button>
     <span className="flex min-h-11 flex-col justify-center rounded-full border-[1.5px] border-border bg-card px-4 leading-tight shadow-paper max-sm:hidden">
       <span className="text-[11px] font-semibold text-status-soon-foreground">Decorate mode</span>
       <span className="text-sm font-semibold">Storage room</span>

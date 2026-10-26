@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { GinghamWindow, OvalRug, Pegboard, PictureFrames, VeggieBasket } from "./Decor";
@@ -9,6 +9,7 @@ import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { Matte } from "./materials";
 import type { SceneOverlay } from "./overlay";
 import { StorageOutline } from "./StorageOutline";
+import { useSpringLift } from "./use-spring-lift";
 import type { DecorShape, SceneDecor } from "./types";
 
 const BARK = "#7A6654";
@@ -203,9 +204,20 @@ type DecorPiecesProps = {
   onPointerDown: (key: string) => void;
   /** Tapping the pegboard outside Decorate mode opens the board view. */
   onOpenBoard: () => void;
+  /** The piece being carried in Decorate mode rides higher, then drops back with a bounce. */
+  carriedKey: string | null;
 };
 
-export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSelect, onPointerDown, onOpenBoard }: DecorPiecesProps) => {
+/** How high a carried piece rises off the floor or wall. */
+const CARRY_HEIGHT = 0.35;
+
+/** Pops a piece in when it is placed, lifts it while carried, and lands it with a small bounce. */
+const Springy = ({ carried, children }: { carried: boolean; children: ReactNode }) => {
+  const groupRef = useSpringLift(carried ? CARRY_HEIGHT : 0, true);
+  return <group ref={groupRef}>{children}</group>;
+};
+
+export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSelect, onPointerDown, onOpenBoard, carriedKey }: DecorPiecesProps) => {
   // On-demand rendering: placing, moving or putting away a piece must redraw the room.
   const invalidate = useThree((state) => state.invalidate);
   useEffect(() => invalidate(), [decor, invalidate]);
@@ -236,7 +248,9 @@ export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSel
           <mesh position={[0, box[3], 0]} visible={false}>
             <boxGeometry args={[box[0], box[1], box[2]]} />
           </mesh>
-          <Shape decor={piece} still={still} />
+          <Springy carried={piece.id === carriedKey}>
+            <Shape decor={piece} still={still} />
+          </Springy>
           <StorageOutline outlineKey={piece.id} box={box} highlight={highlight} overlay={overlay} />
         </group>
       );

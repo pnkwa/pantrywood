@@ -23,6 +23,7 @@ import {
   type Rect,
   type Size,
 } from "./grid";
+import { ownAll } from "./inventory";
 import type { PlacedLocation } from "./layout";
 
 // Decorate rules over the saved room layout. Storage pieces are bound to Grocy locations;
@@ -48,20 +49,56 @@ const toRotation = (turns: number): Rotation => {
   return normalized === 1 ? 1 : normalized === 2 ? 2 : normalized === 3 ? 3 : 0;
 };
 
-/** Each Grocy location's piece: the saved placement, or where the room put it before any decorating. */
-export const storagePlacements = (layout: RoomLayout, placed: readonly PlacedLocation[]): StoragePlacement[] =>
-  placed.map((location) => {
+const defaultPlacement = (location: PlacedLocation): StoragePlacement => {
+  const rotation = toRotation(location.rotationY / QUARTER_TURN);
+  const size = rotatedSize(storageFootprint(location.kind), rotation);
+  return {
+    locationId: location.locationId,
+    itemId: STARTER_STORAGE[location.kind] ?? null,
+    cell: cellNear(location.position[0], location.position[2], size),
+    rotation,
+  };
+};
+
+/**
+ * Each Grocy location's piece: the saved placement, or where the room put it before any decorating.
+ * Saved pieces go down first; a piece that would overlap one already down (a second shelf starting
+ * in the first one's slot) moves to the first free spot, or into the box when the room is full.
+ */
+export const storagePlacements = (layout: RoomLayout, placed: readonly PlacedLocation[]): StoragePlacement[] => {
+  const savedFor = (location: PlacedLocation) => {
     const saved = layout.storage.find((placement) => placement.locationId === location.locationId);
-    if (saved) return saved;
-    const rotation = toRotation(location.rotationY / QUARTER_TURN);
-    const size = rotatedSize(storageFootprint(location.kind), rotation);
-    return {
-      locationId: location.locationId,
-      itemId: STARTER_STORAGE[location.kind] ?? null,
-      cell: cellNear(location.position[0], location.position[2], size),
-      rotation,
-    };
+    // A style for another model (say, a basket that is now read as a second shelf) gets the kind's starter look.
+    if (saved && storageItemKind(saved.itemId) !== location.kind) return { ...saved, itemId: STARTER_STORAGE[location.kind] ?? null };
+    return saved;
+  };
+  const taken: Rect[] = layout.decor.flatMap((placement) => {
+    const item = decorItem(placement.itemId);
+    return item?.layer === "floor" ? [rectFor(placement.cell, item.footprint, placement.rotation)] : [];
   });
+  const resolve = (location: PlacedLocation, placement: StoragePlacement): StoragePlacement => {
+    if (placement.stored || !isOnFloor(location.kind)) return placement;
+    const size = rotatedSize(storageSize(placement, location.kind), placement.rotation);
+    const cell = canPlace(rectFor(placement.cell, size, 0), taken) ? placement.cell : firstFreeCell(size, taken);
+    if (!cell) return { ...placement, stored: true };
+    taken.push(rectFor(cell, size, 0));
+    return { ...placement, cell };
+  };
+  const resolved = new Map<number, StoragePlacement>();
+  for (const location of placed) {
+    const saved = savedFor(location);
+    if (saved) resolved.set(location.locationId, resolve(location, saved));
+  }
+  for (const location of placed) {
+    if (!resolved.has(location.locationId)) resolved.set(location.locationId, resolve(location, defaultPlacement(location)));
+  }
+  return placed.flatMap((location) => resolved.get(location.locationId) ?? []);
+};
+
+const storageItemKind = (itemId: string | null) => {
+  const item = catalogItem(itemId);
+  return item?.category === "storage" ? item.model.kind : undefined;
+};
 
 export const storageSize = (placement: StoragePlacement, kind: StorageKind): Size =>
   catalogItem(placement.itemId)?.footprint ?? storageFootprint(kind);
@@ -120,7 +157,11 @@ const findPiece = (room: RoomContext, key: PieceKey) =>
 /** Writes every storage placement into the layout, so a change to one piece also saves the defaults. */
 const withStorage = (room: RoomContext, update: (placement: StoragePlacement) => StoragePlacement): RoomLayout => ({
   ...room.layout,
-  storage: room.storage.map(update),
+  storage: [
+    ...room.storage.map(update),
+    // A location that was just added may not be in the room yet; keep its saved spot.
+    ...room.layout.storage.filter((saved) => !room.storage.some((placement) => placement.locationId === saved.locationId)),
+  ],
 });
 
 const withDecor = (room: RoomContext, update: (placement: DecorPlacement) => DecorPlacement): RoomLayout => ({
@@ -205,6 +246,17 @@ export const placeStorageBack = (room: RoomContext, locationId: number): RoomLay
   );
 };
 
+/** A new storage location's piece in the first free floor spot. null when the room is full. */
+export const placeNewStorage = (room: RoomContext, locationId: number, item: StorageCatalogItem): RoomLayout | null => {
+  const others = piecesOf(room.layout, room.storage, room.kinds)
+    .filter((piece) => piece.layer === "floor")
+    .map((piece) => piece.rect);
+  const cell = firstFreeCell(item.footprint, others);
+  return cell
+    ? { ...room.layout, storage: [...withStorage(room, (placement) => placement).storage, { locationId, itemId: item.id, cell, rotation: 0 }] }
+    : null;
+};
+
 /** An empty room: every piece put away. Wallpaper and floor stay. */
 export const clearRoom = (room: RoomContext): RoomLayout => ({
   ...withStorage(room, (placement) => ({ ...placement, stored: true })),
@@ -253,8 +305,9 @@ export const whereIs = (room: RoomContext, placement: DecorPlacement | undefined
   return wallOf(placement) === "left" ? "leftWall" : "rightWall";
 };
 
+/** Decor can be bought again for another copy; everything else is owned once. */
 export const buy = (layout: RoomLayout, item: CatalogItem): RoomLayout | null =>
-  layout.owned.includes(item.id) || layout.leaves < item.price
+  (item.category !== "decor" && layout.owned.includes(item.id)) || layout.leaves < item.price
     ? null
     : { ...layout, leaves: layout.leaves - item.price, owned: [...layout.owned, item.id] };
 
@@ -270,7 +323,7 @@ export const applyTheme = (room: RoomContext, theme: RoomTheme): RoomLayout => {
     ...themed,
     wallpaper: theme.wallpaper,
     floor: theme.floor,
-    owned: [...new Set([...room.layout.owned, ...themeItems])],
+    owned: ownAll(room.layout.owned, themeItems),
   };
 };
 
