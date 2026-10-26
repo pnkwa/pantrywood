@@ -157,7 +157,7 @@ export const FrontView = ({
 
   return (
     <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
-      <div className="relative aspect-[9/8]" style={{ width: "min(100cqw, 112.5cqh)" }}>
+      <div className="relative aspect-[9/8] w-[min(100cqw,112.5cqh)] @max-md:aspect-[3/4] @max-md:w-[min(100cqw,75cqh)]">
         <div className="absolute inset-0 rounded-[34px] bg-[#F3EADB] p-[2.8%] shadow-paper dark:bg-[#4A4238]">
           <div className="relative h-full rounded-[22px] bg-[linear-gradient(180deg,#FDFBF7,#F1ECE2)] shadow-[inset_0_0_0_12px_#ECE7DC]">
             {withVent && (

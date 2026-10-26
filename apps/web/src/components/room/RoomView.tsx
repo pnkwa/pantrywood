@@ -348,7 +348,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       aria-label={listView ? "Storage list" : "3D storage room"}
       tabIndex={listView ? undefined : 0}
       onKeyDown={listView ? undefined : handleKeyDown}
-      className="relative min-h-[420px] flex-1 overflow-hidden rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[560px]"
+      className={`relative flex-1 overflow-hidden ${insideVisible ? "min-h-[calc(100dvh-200px)]" : "min-h-[420px]"} rounded-xl border-[1.5px] border-border bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-mid)_60%,var(--scene-sky-edge)_100%)] shadow-paper focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:min-h-[560px]`}
     >
       <AnimatePresence initial={false}>
         {listView ? (

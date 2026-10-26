@@ -195,7 +195,7 @@ export const InspectPanelContent = ({
           onPickItem={(productId, itemKey) =>
             selectItem(location.id, productId, itemKey)
           }
-          onOpenInside={() => openInside(location.id)}
+          onOpenInside={view !== "room" && insideLocationId === location.id ? undefined : () => openInside(location.id)}
           onAddLowToShoppingList={() =>
             stockAction.mutate(
               {

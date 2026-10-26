@@ -20,7 +20,7 @@ const StatusBadge = ({ item }: { item: PantryItem }) => {
     <span
       aria-hidden
       title={style.label}
-      className={`absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full border-2 border-card ${style.className}`}
+      className={`absolute -right-1.5 bottom-0 flex size-5 items-center justify-center rounded-full border-2 border-card ${style.className}`}
     >
       <StatusIcon size={11} weight="bold" />
     </span>
@@ -79,8 +79,10 @@ export const InsideItem = ({
         look === "standing" ? "h-full min-w-6 max-w-[24%]" : "size-16"
       } ${isDragging ? "opacity-30" : ""} ${selected ? "outline-3 outline-sage-deep" : ""}`}
     >
-      <ItemPicture item={item} className="h-full w-auto max-w-full" />
-      <StatusBadge item={item} />
+      <span className="relative flex h-full max-w-full items-end">
+        <ItemPicture item={item} className="h-full w-auto max-w-full" />
+        <StatusBadge item={item} />
+      </span>
     </button>
   );
 };

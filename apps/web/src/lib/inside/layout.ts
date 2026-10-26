@@ -123,24 +123,31 @@ export const sectionsInTab = (layout: InsideLayout, tabId: string): InsideSectio
 
 export type ArrangedItem = { key: string; zone: Zone };
 
-/** Item keys per section id (plus UNSORTED), in slot order. Unplaced items go to the first part of a tab in their zone. */
+/** Item keys per section id (plus UNSORTED), in slot order. Unplaced items spread over the emptiest parts of the first tab in their zone. */
 export const arrange = (spec: InsideSpec, layout: InsideLayout, items: readonly ArrangedItem[]): Map<string, string[]> => {
   const zoneOf = new Map(spec.tabs.map((candidate) => [candidate.id, candidate.zone]));
   const sectionById = new Map(layout.sections.map((section) => [section.id, section]));
   const arranged = new Map<string, { key: string; order: number }[]>([[UNSORTED, []]]);
   for (const section of layout.sections) arranged.set(section.id, []);
+  // The emptiest part, top first on a tie, so a new fridge doesn't stack everything on one shelf.
   const homeFor = (zone: Zone) => {
     const home = spec.tabs.find((candidate) => candidate.zone === zone) ?? spec.tabs[0];
-    if (!home) return UNSORTED;
-    return home.fallback ?? sectionsInTab(layout, home.id)[0]?.id ?? UNSORTED;
+    const parts = home ? sectionsInTab(layout, home.id) : [];
+    const countOf = (sectionId: string) => arranged.get(sectionId)?.length ?? 0;
+    return parts.reduce<string | null>(
+      (emptiest, section) => (emptiest === null || countOf(section.id) < countOf(emptiest) ? section.id : emptiest),
+      null,
+    ) ?? UNSORTED;
   };
+  const unplaced: { item: ArrangedItem; index: number }[] = [];
   items.forEach((item, index) => {
     const slot = layout.slots[item.key];
     const section = slot ? sectionById.get(slot.section) : undefined;
-    const fits = section !== undefined && zoneOf.get(section.tab) === item.zone;
-    const target = slot?.section === UNSORTED ? UNSORTED : fits ? section.id : homeFor(item.zone);
-    arranged.get(target)?.push({ key: item.key, order: slot && (fits || slot.section === UNSORTED) ? slot.order : 1000 + index });
+    if (slot?.section === UNSORTED) arranged.get(UNSORTED)?.push({ key: item.key, order: slot.order });
+    else if (section && zoneOf.get(section.tab) === item.zone) arranged.get(section.id)?.push({ key: item.key, order: slot?.order ?? 0 });
+    else unplaced.push({ item, index });
   });
+  for (const { item, index } of unplaced) arranged.get(homeFor(item.zone))?.push({ key: item.key, order: 1000 + index });
   return new Map(
     [...arranged].map(([sectionId, entries]) => [
       sectionId,
@@ -149,7 +156,14 @@ export const arrange = (spec: InsideSpec, layout: InsideLayout, items: readonly 
   );
 };
 
-/** Puts an item at `index` in a section; every item in the sections it left and joined gets its new order saved. */
+/** Saves where everything stands now, so items that were only spread out by default stay put after a change. */
+const pinAll = (arranged: ReadonlyMap<string, readonly string[]>) => {
+  const slots: InsideLayout["slots"] = {};
+  for (const [section, keys] of arranged) keys.forEach((key, order) => (slots[key] = { section, order }));
+  return slots;
+};
+
+/** Puts an item at `index` in a section and saves every item's spot. */
 export const placeItem = (
   layout: InsideLayout,
   arranged: ReadonlyMap<string, readonly string[]>,
@@ -161,14 +175,7 @@ export const placeItem = (
   const target = next.get(sectionId) ?? [];
   target.splice(Math.max(0, Math.min(index, target.length)), 0, key);
   next.set(sectionId, target);
-  const slots = { ...layout.slots };
-  for (const [id, keys] of next) {
-    if (id !== sectionId && !arranged.get(id)?.includes(key)) continue;
-    keys.forEach((itemKey, order) => {
-      slots[itemKey] = { section: id, order };
-    });
-  }
-  return { ...layout, slots };
+  return { ...layout, slots: { ...layout.slots, ...pinAll(next) } };
 };
 
 /** The notch a shelf moves to, or null when it's off the rails or another shelf sits there. */
@@ -224,7 +231,7 @@ export const removeSection = (
   if (!section || !isRemovable(section, layout)) return layout;
   const fallback = spec.tabs.find((candidate) => candidate.id === section.tab)?.fallback ?? UNSORTED;
   const landing = [...(arranged.get(fallback) ?? [])];
-  const slots = { ...layout.slots };
+  const slots = { ...layout.slots, ...pinAll(arranged) };
   for (const key of arranged.get(sectionId) ?? []) {
     landing.push(key);
     slots[key] = { section: fallback, order: landing.length - 1 };

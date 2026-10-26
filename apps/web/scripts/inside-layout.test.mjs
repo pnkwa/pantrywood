@@ -19,9 +19,10 @@ const milk = { key: "1-1", zone: "main" };
 const eggs = { key: "1-2", zone: "main" };
 const dumplings = { key: "7-12", zone: "freezer" };
 
-test("unplaced items stand on the top shelf of a tab in their zone", () => {
+test("unplaced items spread over the emptiest parts of a tab in their zone, top first", () => {
   const arranged = arrange(fridge, defaultLayout(fridge), [milk, eggs, dumplings]);
-  assert.deepEqual(arranged.get("main-1"), ["1-1", "1-2"]);
+  assert.deepEqual(arranged.get("main-1"), ["1-1"]);
+  assert.deepEqual(arranged.get("main-2"), ["1-2"]);
   assert.deepEqual(arranged.get("freezer-1"), ["7-12"]);
 });
 
@@ -104,4 +105,15 @@ test("the default icon comes from the name first, then the freezer, the group an
   assert.equal(iconFor(item({ name: "Kimchi", groupName: "Sauces & condiments" })), "squeezeSauce");
   assert.equal(iconFor(item({ name: "Mystery", unitName: "bottle" })), "water");
   assert.equal(iconFor(item({ name: "Mystery" })), "paperBag");
+});
+
+test("moving one item keeps every other item where it was shown", () => {
+  const items = [milk, eggs, { key: "1-3", zone: "main" }, { key: "1-4", zone: "main" }];
+  const layout = defaultLayout(fridge);
+  const before = arrange(fridge, layout, items);
+  const after = arrange(fridge, placeItem(layout, before, "1-1", "main-crisper-1", 0), items);
+  for (const key of ["1-2", "1-3", "1-4"]) {
+    const where = (arranged) => [...arranged].find(([, keys]) => keys.includes(key))?.[0];
+    assert.equal(where(after), where(before), key);
+  }
 });

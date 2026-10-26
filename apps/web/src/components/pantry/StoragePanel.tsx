@@ -71,7 +71,8 @@ type StoragePanelProps = {
   busy: boolean;
   onClose: () => void;
   onPickItem: (productId: number, itemKey: string) => void;
-  onOpenInside: () => void;
+  /** Absent while this piece is already open. */
+  onOpenInside?: () => void;
   onAddLowToShoppingList: () => void;
 };
 
@@ -163,6 +164,7 @@ export const StoragePanel = ({
       </ul>
 
       <FadeIn order={2} className="flex flex-wrap gap-2.5">
+        {onOpenInside && (
         <button
           type="button"
           onClick={onOpenInside}
@@ -170,6 +172,7 @@ export const StoragePanel = ({
         >
           {storageKind === "fridge" ? "Open fridge door" : "Look inside"}
         </button>
+        )}
         {location.counts.low > 0 && (
           <button
             type="button"

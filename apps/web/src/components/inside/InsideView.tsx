@@ -167,7 +167,8 @@ export const InsideView = ({ location, kind, selectedItemKey, onPickItem, onClos
       const keys = keysFor(sectionId);
       const from = keys.indexOf(key);
       const overIndex = keys.indexOf(String(over.id));
-      const to = overIndex === -1 ? from : overIndex;
+      // A move to another part already put the item at its slot (the one the tag showed); only a reorder moves it again.
+      const to = overIndex === -1 || sectionId !== inside.sectionOf(key) ? from : overIndex;
       inside.place(key, sectionId, arrayMove([...keys], from, to).indexOf(key));
     }
     reset();
@@ -283,7 +284,7 @@ export const InsideView = ({ location, kind, selectedItemKey, onPickItem, onClos
         )}
         {spec.view === "riceBin" && <RiceBinView inside={inside} onPickItem={onPickItem} />}
 
-        {(unsorted.length > 0 || targetSectionId === UNSORTED) && (
+        {spec.view !== "riceBin" && (unsorted.length > 0 || targetSectionId === UNSORTED) && (
           <Unsorted inside={inside} keys={unsorted} targeted={targetSectionId === UNSORTED} selectedItemKey={selectedItemKey} onPickItem={onPickItem} />
         )}
 

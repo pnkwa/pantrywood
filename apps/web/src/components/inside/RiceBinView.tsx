@@ -10,9 +10,11 @@ import { ItemPicture } from "./ItemPicture";
 
 const DEFAULT_CAPACITY = 5;
 
-/** A single item with a fill level: dragging the gauge counts what's left in Grocy; a scanned sack refills it. */
+/** One item at a time with a fill level: dragging the gauge counts what's left in Grocy; a scanned sack refills it. */
 export const RiceBinView = ({ inside, onPickItem }: { inside: Inside; onPickItem: (productId: number, itemKey: string) => void }) => {
-  const [item] = inside.itemsByKey.values();
+  const items = [...inside.itemsByKey.values()];
+  const [chosenKey, setChosenKey] = useState<string | null>(null);
+  const item = items.find((candidate) => candidate.key === chosenKey) ?? items[0];
   if (!item) {
     return (
       <p className="m-auto max-w-xs rounded-md border-[1.5px] border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
@@ -20,7 +22,29 @@ export const RiceBinView = ({ inside, onPickItem }: { inside: Inside; onPickItem
       </p>
     );
   }
-  return <RiceGauge key={item.key} inside={inside} item={item} onPickItem={onPickItem} />;
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      {items.length > 1 && (
+        <div role="tablist" aria-label="What's in the bin" className="flex flex-wrap justify-center gap-2">
+          {items.map((candidate) => (
+            <button
+              key={candidate.key}
+              type="button"
+              role="tab"
+              aria-selected={candidate.key === item.key}
+              onClick={() => setChosenKey(candidate.key)}
+              className={`h-11 rounded-full border-[1.5px] px-4 text-sm font-semibold transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                candidate.key === item.key ? "border-sage-deep bg-card" : "border-border bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {candidate.name}
+            </button>
+          ))}
+        </div>
+      )}
+      <RiceGauge key={item.key} inside={inside} item={item} onPickItem={onPickItem} />
+    </div>
+  );
 };
 
 const RiceGauge = ({ inside, item, onPickItem }: { inside: Inside; item: PantryItem; onPickItem: (productId: number, itemKey: string) => void }) => {

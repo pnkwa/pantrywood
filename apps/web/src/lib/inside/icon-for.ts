@@ -29,6 +29,9 @@ const BY_NAME: [RegExp, ItemIconName][] = [
   [/pasta|spaghetti|noodle|บะหมี่|เส้น/, "pasta"],
   [/tea|coffee|ชา|กาแฟ/, "tea"],
   [/tissue|towel|toilet|ทิชชู่|กระดาษ/, "tissueBox"],
+  [/shampoo|body wash|soap|lotion|แชมพู|สบู่|ยาสระ/, "milkBottle"],
+  [/toothpaste|ยาสีฟัน/, "squeezeSauce"],
+  [/detergent|ผงซักฟอก/, "pasta"],
   [/rice|ข้าวสาร|ข้าวหอม|ข้าวเหนียว/, "riceSack"],
   [/snack|chip|cracker|cookie|seaweed|ขนม|สาหร่าย|ข้าวเกรียบ/, "snackBag"],
 ];
@@ -41,7 +44,10 @@ const BY_GROUP: [RegExp, ItemIconName][] = [
   [/sauce|season|condiment/, "squeezeSauce"],
   [/snack|sweet/, "snackBag"],
   [/grain|rice|bread|bakery/, "paperBag"],
-  [/bath|personal|clean|laundry/, "tissueBox"],
+  [/bath|personal|beauty/, "milkBottle"],
+  [/clean/, "water"],
+  [/laundry/, "pasta"],
+  [/paper/, "tissueBox"],
   [/drink|beverage/, "water"],
 ];
 
