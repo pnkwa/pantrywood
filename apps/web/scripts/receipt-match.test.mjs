@@ -52,3 +52,17 @@ test("a near spelling is a best guess", () => {
   const match = matchReceiptLine("Jasmin rise", null, products, nothingRemembered);
   assert.deepEqual([match.productId, match.how], [3, "guess"]);
 });
+
+test("a name that's only a small flavour word in the line doesn't match it by name", () => {
+  const withShrimp = [...products, { id: 6, name: "Shrimp", thaiName: "กุ้ง" }];
+  const match = matchReceiptLine("มาม่า ต้มยำกุ้ง", null, withShrimp, nothingRemembered);
+  assert.notEqual(match.productId, 6);
+  assert.notEqual(match.how, "name");
+});
+
+test("the head word of a Thai line still matches, ahead of a flavour word later in it", () => {
+  const withNoodles = [...products, { id: 6, name: "Shrimp", thaiName: "กุ้ง" }, { id: 7, name: "Instant noodles", thaiName: "มาม่า" }];
+  const match = matchReceiptLine("มาม่า ต้มยำกุ้ง", null, withNoodles, nothingRemembered);
+  assert.equal(match.productId, 7);
+  assert.equal(match.how, "name");
+});

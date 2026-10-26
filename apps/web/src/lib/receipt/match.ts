@@ -16,6 +16,18 @@ const GUESS_THRESHOLD = 0.35;
 const CANDIDATE_THRESHOLD = 0.2;
 const CANDIDATE_COUNT = 3;
 const MIN_NAME_LENGTH = 2;
+// A product name found inside a longer line must cover this much of it, unless the line starts with it.
+const MIN_COVERAGE = 0.5;
+
+/**
+ * Whether a product name stands for the whole line, not just a word in it: "มาม่า ต้มยำกุ้ง" (tom yum shrimp
+ * noodles) contains "กุ้ง" (shrimp) but isn't shrimp. Thai puts the head noun first and the flavour after, so
+ * a name the line starts with, or one covering most of it, counts; a printed word inside a longer product
+ * name ("ทิชชู่" in "กระดาษทิชชู่") always does.
+ */
+const namesTheLine = (name: string, text: string) =>
+  name.includes(text) ||
+  (text.includes(name) && (text.startsWith(name) || name.length / text.length >= MIN_COVERAGE));
 
 // Pack sizes and counts ("1L", "5kg", "6 ม้วน", "x2") say nothing about which product it is.
 const SIZE_PATTERN =
@@ -79,7 +91,15 @@ export const matchReceiptLine = (
       id: product.id,
       score: Math.max(
         0,
-        ...namesOf(product).flatMap((name) => texts.map((text) => similarity(name, text))),
+        // A name that's only a small word in the line ("กุ้ง" in a tom yum noodle line) shares all its letter
+        // pairs with it, which would make it a confident guess; it stays a suggestion instead.
+        ...namesOf(product).flatMap((name) =>
+          texts.map((text) =>
+            text.includes(name) && !namesTheLine(name, text)
+              ? Math.min(similarity(name, text), CANDIDATE_THRESHOLD)
+              : similarity(name, text),
+          ),
+        ),
       ),
     }))
     .sort((first, second) => second.score - first.score);
@@ -94,11 +114,11 @@ export const matchReceiptLine = (
     return { productId: rememberedId, how: "remembered", candidateIds: candidatesBesides(rememberedId) };
   }
 
-  // The longest contained name wins, so "ข้าวหอมมะลิ" beats a product called just "ข้าว".
+  // The longest name for the line wins, so "ข้าวหอมมะลิ" beats a product called just "ข้าว".
   const byName = products
     .flatMap((product) =>
       namesOf(product)
-        .filter((name) => texts.some((text) => text.includes(name) || name.includes(text)))
+        .filter((name) => texts.some((text) => namesTheLine(name, text)))
         .map((name) => ({ id: product.id, length: name.length })),
     )
     .sort((first, second) => second.length - first.length)[0];
