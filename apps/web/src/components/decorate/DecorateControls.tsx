@@ -16,6 +16,7 @@ import {
   CheckIcon,
   type Icon,
   PaletteIcon,
+  StorefrontIcon,
 } from "@phosphor-icons/react";
 import type { CatalogItem } from "@/data/catalog";
 import type { GridCell } from "@/lib/room/grid";
@@ -30,11 +31,21 @@ type DecorateBarProps = {
   canClear: boolean;
   onClear: () => void;
   onDone: () => void;
+  /** Phones and tablets: opens the catalog sheet, which stays closed so the room stays in view. */
+  onOpenCatalog: () => void;
 };
 
-export const DecorateBar = ({ canUndo, onUndo, canClear, onClear, onDone }: DecorateBarProps) => (
+export const DecorateBar = ({ canUndo, onUndo, canClear, onClear, onDone, onOpenCatalog }: DecorateBarProps) => (
   <div className="absolute inset-x-4 top-4 z-30 flex items-center gap-2 animate-in fade-in slide-in-from-top-1 duration-200 motion-reduce:slide-in-from-top-0">
-    <span className="flex min-h-11 flex-col justify-center rounded-full border-[1.5px] border-border bg-card px-4 leading-tight shadow-paper">
+    <button
+      type="button"
+      onClick={onOpenCatalog}
+      className={`${PILL_BUTTON} border-[1.5px] border-border bg-card shadow-paper hover:bg-muted/40 lg:hidden`}
+    >
+      <StorefrontIcon size={18} weight="duotone" aria-hidden />
+      Catalog
+    </button>
+    <span className="flex min-h-11 flex-col justify-center rounded-full border-[1.5px] border-border bg-card px-4 leading-tight shadow-paper max-sm:hidden">
       <span className="text-[11px] font-semibold text-status-soon-foreground">Decorate mode</span>
       <span className="text-sm font-semibold">Storage room</span>
     </span>
@@ -106,6 +117,8 @@ type PieceToolbarProps = {
   onToggleMove: () => void;
   onNudge: (delta: GridCell) => void;
   onPutAway: () => void;
+  /** The scene writes this element's position each frame so the toolbar follows the piece. */
+  anchorRef: (element: HTMLDivElement | null) => void;
 };
 
 export const PieceToolbar = ({
@@ -123,18 +136,20 @@ export const PieceToolbar = ({
   onToggleMove,
   onNudge,
   onPutAway,
+  anchorRef,
 }: PieceToolbarProps) => {
   const [swapOpen, setSwapOpen] = useState(false);
   return (
+    <div ref={anchorRef} className="invisible absolute top-0 left-0 z-30 w-max max-w-[calc(100%-1rem)]">
     <div
       role="toolbar"
       aria-label={`Selected: ${name}`}
-      className="absolute top-20 left-1/2 z-30 flex w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200 motion-reduce:zoom-in-100"
+      className="flex flex-col items-center gap-1.5 animate-in fade-in zoom-in-95 duration-200 motion-reduce:zoom-in-100"
     >
       <div className="flex items-center gap-0.5 rounded-full border-[1.5px] border-[#C8901F] bg-card p-1 shadow-paper">
-        <span className="flex max-w-24 flex-col px-3 leading-tight sm:max-w-40">
+        <span className="flex max-w-32 flex-col px-3 leading-tight sm:max-w-44">
           {moving && <span className="text-[11px] font-semibold text-status-soon-foreground">Moving · tap the floor</span>}
-          <span className="truncate text-[13px] font-semibold">{name}</span>
+          <span className="line-clamp-2 text-[13px] font-semibold">{name}</span>
         </span>
         {moving ? (
           <>
@@ -214,6 +229,7 @@ export const PieceToolbar = ({
           </>
         )}
       </div>
+    </div>
     </div>
   );
 };

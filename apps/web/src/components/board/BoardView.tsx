@@ -47,7 +47,7 @@ export const BoardView = () => {
   const selectedId = useUiStore((state) => state.boardPiece);
   const selectPiece = useUiStore((state) => state.selectBoardPiece);
   const closeBoard = useUiStore((state) => state.closeBoard);
-  const setBoardSheet = useUiStore((state) => state.setBoardSheet);
+  const setSheetOpen = useUiStore((state) => state.setSheetOpen);
   const look = boardLookFor(useRoomStore((state) => state.layout.pegboard));
   const receipts = useReceiptMemories();
   const receiptById = new Map((receipts.data ?? []).map((receipt) => [receipt.id, receipt]));
@@ -96,7 +96,7 @@ export const BoardView = () => {
     setDraft(null);
     selectPiece(current.id);
     // A tap opens the piece to edit; a drag only moves it, so the sheet stays out of the way on phones.
-    if (!current.changed) setBoardSheet(true);
+    if (!current.changed) setSheetOpen(true);
   };
 
   const handleKey = (event: KeyboardEvent<HTMLElement>, piece: BoardPiece) => {
@@ -109,7 +109,7 @@ export const BoardView = () => {
     } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       selectPiece(piece.id);
-      setBoardSheet(true);
+      setSheetOpen(true);
     }
   };
 
@@ -132,7 +132,7 @@ export const BoardView = () => {
           type="button"
           onClick={() => {
             selectPiece(null);
-            setBoardSheet(true);
+            setSheetOpen(true);
           }}
           className="ml-auto flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-sage-deep px-4 text-sm font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring lg:hidden"
         >

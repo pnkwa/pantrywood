@@ -10,7 +10,9 @@ import type { SceneOverlay } from "./overlay";
 import { DecorPieces } from "./DecorPieces";
 import { FloorGrid, type Footprint } from "./FloorGrid";
 import { Room } from "./Room";
+import { ShadowFreezer } from "./ShadowFreezer";
 import { Storage } from "./Storage";
+import { TagDeclutter } from "./TagDeclutter";
 import type { FloorSurface, SceneDecor, SceneStorage, WallSurface } from "./types";
 
 const Lights = ({ shadowMapSize }: { shadowMapSize: number }) => (
@@ -67,6 +69,8 @@ type StorageRoomSceneProps = {
   /** The pointer moved far enough to be a drag, which cancels a long press. */
   onPointerDrift: () => void;
   onOpenBoard: () => void;
+  /** How urgent each storage tag is; when tags overlap, the less urgent ones shrink to a dot. */
+  tagRanks: ReadonlyMap<number, number>;
 };
 
 /** Renders on demand rather than every frame, to stay light on phones. */
@@ -97,6 +101,7 @@ export const StorageRoomScene = ({
   onFloorPointerMove,
   onCarryEnd,
   onOpenBoard,
+  tagRanks,
   onPointerDrift,
 }: StorageRoomSceneProps) => {
   const pointerDown = useRef({ x: 0, y: 0 });
@@ -117,7 +122,7 @@ export const StorageRoomScene = ({
   return (
     <Canvas
       frameloop="demand"
-      shadows
+      shadows="percentage"
       flat
       dpr={onTouchDevice ? [1, 1.5] : [1, 2]}
       gl={{ antialias: true, alpha: true }}
@@ -142,6 +147,7 @@ export const StorageRoomScene = ({
         panLocked={carrying}
       />
       <Lights shadowMapSize={onTouchDevice ? 1024 : 2048} />
+      <ShadowFreezer />
       <Room wall={wall} floor={floor} />
       {storages.map((storage) => (
         <Storage
@@ -165,6 +171,7 @@ export const StorageRoomScene = ({
           onPointerDown={(locationId) => onPiecePointerDown(`storage:${locationId}`)}
         />
       ))}
+      <TagDeclutter overlay={overlay} ranks={tagRanks} />
       <DecorPieces
         decor={decor}
         overlay={overlay}

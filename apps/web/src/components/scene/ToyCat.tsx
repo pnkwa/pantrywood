@@ -123,8 +123,8 @@ export const ToyCat = ({ pattern, colors: [body, accent], still }: ToyCatProps) 
   );
 
   return (
-    // Turned so its face looks out at the room's camera.
-    <group rotation={[0, -0.75, 0]}>
+    // Turned so its face looks out at the room's camera; breathing doesn't redraw the room's shadows.
+    <group rotation={[0, -0.75, 0]} userData={{ shadowStill: true }}>
       <group ref={bodyRef}>
         <mesh geometry={BODY} castShadow receiveShadow>
           <Matte color={body} />

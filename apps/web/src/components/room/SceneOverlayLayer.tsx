@@ -66,19 +66,29 @@ const Status = ({ status, index }: { status: TagStatus; index: number }) => {
   );
 };
 
-const TagCard = ({ tag, selected }: { tag: StorageTag; selected: boolean }) => (
-  <div
-    className={`${selected ? "border-sage-deep" : "border-border"} flex -translate-x-1/2 -translate-y-full items-center gap-1.5 whitespace-nowrap rounded-sm border-[1.5px] bg-card px-2.5 py-1 text-[13px] text-foreground shadow-paper transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:slide-in-from-bottom-0 motion-reduce:duration-150 @max-[640px]:gap-1 @max-[640px]:px-2 @max-[640px]:py-0.5 @max-[640px]:text-xs`}
-  >
-    <span className="font-semibold">{tag.name}</span>
-    <span className="tabular text-muted-foreground @max-[640px]:hidden">
-      · {tag.itemCount} {tag.itemCount === 1 ? "item" : "items"}
-    </span>
-    {statusesFor(tag).map((status, index) => (
-      <Status key={status.key} status={status} index={index} />
-    ))}
-  </div>
-);
+/** The full tag, or, when it would cover a more urgent one (`data-crowded`), just its top status as a dot. */
+const TagCard = ({ tag, selected }: { tag: StorageTag; selected: boolean }) => {
+  const [top] = statusesFor(tag);
+  const TopIcon = top?.icon;
+  return (
+    <div
+      className={`${selected ? "border-sage-deep" : "border-border"} flex -translate-x-1/2 -translate-y-full items-center gap-1.5 whitespace-nowrap rounded-sm border-[1.5px] bg-card px-2.5 py-1 text-[13px] text-foreground shadow-paper transition-colors animate-in fade-in slide-in-from-bottom-2 duration-300 group-data-crowded:rounded-full group-data-crowded:p-1 motion-reduce:slide-in-from-bottom-0 motion-reduce:duration-150 @max-[640px]:gap-1 @max-[640px]:px-2 @max-[640px]:py-0.5 @max-[640px]:text-xs`}
+    >
+      <span className="contents group-data-crowded:hidden">
+        <span className="font-semibold">{tag.name}</span>
+        <span className="tabular text-muted-foreground @max-[640px]:hidden">
+          · {tag.itemCount} {tag.itemCount === 1 ? "item" : "items"}
+        </span>
+        {statusesFor(tag).map((status, index) => (
+          <Status key={status.key} status={status} index={index} />
+        ))}
+      </span>
+      <span className={`hidden size-4 items-center justify-center group-data-crowded:flex animate-in fade-in zoom-in-75 duration-200 motion-reduce:zoom-in-100 ${top?.className ?? "text-muted-foreground"}`}>
+        {TopIcon ? <TopIcon size={14} weight="duotone" aria-hidden /> : <span className="size-2 rounded-full bg-current" />}
+      </span>
+    </div>
+  );
+};
 
 const STROKES: Record<Exclude<Highlight, "none">, string> = {
   hover: "#FFFBF3",
@@ -156,7 +166,7 @@ export const SceneOverlayLayer = (props: SceneOverlayLayerProps) => {
         <div
           key={storage.locationId}
           ref={registerIn(overlay.tags, storage.locationId)}
-          className={`invisible absolute top-0 left-0 transition-opacity duration-200 ease-out ${editing ? "opacity-0" : "opacity-100"}`}
+          className={`group invisible absolute top-0 left-0 transition-opacity duration-200 ease-out ${editing ? "opacity-0" : "opacity-100"}`}
         >
           <TagCard tag={storage.tag} selected={storage.locationId === selectedLocationId} />
         </div>

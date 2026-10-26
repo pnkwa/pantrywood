@@ -124,14 +124,28 @@ export const CatalogPanel = ({ room, decorate, selectedPieceKey, storages, store
 };
 
 const Shop = ({ room, decorate, selectedPieceKey }: Pick<CatalogPanelProps, "room" | "decorate" | "selectedPieceKey">) => {
-  const [category, setCategory] = useState<CatalogCategory>("decor");
+  const pickedStorage = selectedPieceKey?.startsWith("storage:") ? selectedPieceKey : null;
+  const [category, setCategory] = useState<CatalogCategory>(pickedStorage ? "storage" : "decor");
   const [style, setStyle] = useState<CatalogStyle | null>(null);
-  const items = CATALOG.filter((item) => item.category === category && (style === null || item.style === style));
-  const selectedItemId = selectedPieceKey?.startsWith("storage:")
-    ? room.storage.find((placement) => storageKey(placement.locationId) === selectedPieceKey)?.itemId
+  // Picking a storage piece in the room opens its new looks here, like the mockup.
+  const [followedKey, setFollowedKey] = useState(selectedPieceKey);
+  if (selectedPieceKey !== followedKey) {
+    setFollowedKey(selectedPieceKey);
+    if (pickedStorage) {
+      setCategory("storage");
+      setStyle(null);
+    }
+  }
+  const showingSwaps = category === "storage" && pickedStorage !== null;
+  const items = (showingSwaps ? decorate.swapOptions(pickedStorage) : CATALOG).filter(
+    (item) => item.category === category && (style === null || item.style === style),
+  );
+  const selectedItemId = pickedStorage
+    ? room.storage.find((placement) => storageKey(placement.locationId) === pickedStorage)?.itemId
     : null;
-  const hint =
-    category === "storage"
+  const hint = showingSwaps
+    ? "New looks for the piece you picked · it keeps its Grocy location and stock."
+    : category === "storage"
       ? "Pick a storage piece in the room first, then a new look for it."
       : category === "decor"
         ? "Tap to buy, then set it down where you like."
@@ -165,7 +179,11 @@ const Shop = ({ room, decorate, selectedPieceKey }: Pick<CatalogPanelProps, "roo
         </ul>
       </section>
 
-      <div role="tablist" aria-label="Catalog category" className="grid shrink-0 grid-cols-3 gap-1 rounded-[18px] bg-muted/60 p-1">
+      <div
+        role="tablist"
+        aria-label="Catalog category"
+        className="grid shrink-0 grid-cols-3 gap-1 rounded-[18px] bg-muted/60 p-1 max-lg:-mx-1 max-lg:flex max-lg:overflow-x-auto max-lg:rounded-full"
+      >
         {CATEGORIES.map((option) => {
           const CategoryIcon = option.icon;
           const selected = option.value === category;
@@ -176,7 +194,7 @@ const Shop = ({ room, decorate, selectedPieceKey }: Pick<CatalogPanelProps, "roo
               role="tab"
               aria-selected={selected}
               onClick={() => setCategory(option.value)}
-              className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-[11px] leading-tight transition-colors duration-150 ease-out ${
+              className={`flex min-h-12 min-w-0 flex-col items-center justify-center gap-0.5 rounded-[14px] px-1 text-[11px] leading-tight transition-colors duration-150 ease-out max-lg:min-h-11 max-lg:shrink-0 max-lg:flex-row max-lg:gap-1.5 max-lg:rounded-full max-lg:px-3.5 max-lg:text-xs ${
                 selected ? "bg-card font-semibold shadow-[0_2px_6px_rgba(74,59,46,.12)]" : "font-medium text-muted-foreground hover:text-foreground"
               }`}
             >

@@ -6,6 +6,7 @@ import { Toasts } from "@/components/pantry/Toasts";
 import { NAV_BACK, NAV_FORWARD } from "@/lib/page-transitions";
 import { useReceiptMemories } from "@/lib/receipt/store";
 import { ReceiptPolaroid } from "./ReceiptPolaroid";
+import { ReceiptSketch } from "./ReceiptScanner";
 
 export const ReceiptMemories = () => {
   const memories = useReceiptMemories();
@@ -22,10 +23,12 @@ export const ReceiptMemories = () => {
         >
           <ArrowLeftIcon size={18} weight="bold" aria-hidden />
         </Link>
-        <h1 className="text-2xl">Receipts</h1>
-        <span className="text-sm text-muted-foreground">
-          {receipts.length} {receipts.length === 1 ? "slip" : "slips"} kept
-        </span>
+        <div className="flex min-w-0 flex-col leading-tight">
+          <h1 className="text-2xl">Receipts</h1>
+          <span className="text-sm text-muted-foreground">
+            {receipts.length} {receipts.length === 1 ? "slip" : "slips"} kept
+          </span>
+        </div>
         <Link
           href="/scan/receipt"
           transitionTypes={NAV_FORWARD}
@@ -37,10 +40,13 @@ export const ReceiptMemories = () => {
       </header>
 
       {memories.isSuccess && receipts.length === 0 && (
-        <p className="mx-auto mt-16 max-w-sm text-center text-muted-foreground">
-          No receipts yet. Scan one after your next shop and it will be pinned
-          here as a little memory.
-        </p>
+        <div className="mx-auto mt-10 flex max-w-sm flex-col items-center gap-3 rounded-xl border-2 border-dashed border-border px-6 py-8 text-center animate-in fade-in duration-300">
+          <ReceiptSketch className="h-32 opacity-80" />
+          <h2 className="text-lg">No receipts yet</h2>
+          <p className="text-sm text-muted-foreground">
+            Scan one after your next shop and it will be pinned here as a little memory.
+          </p>
+        </div>
       )}
 
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-x-6 gap-y-8 px-2 pt-2">

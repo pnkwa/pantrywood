@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Vector3, type Group } from "three";
 import type { Highlight } from "./interaction";
+
+const TOOLBAR_GAP = 14;
 import type { SceneOverlay } from "./overlay";
 
 type ScreenPoint = { x: number; y: number };
@@ -66,13 +68,16 @@ export const StorageOutline = ({ outlineKey, box, highlight, overlay }: StorageO
     );
   }, [box]);
 
+  // One scratch vector for the per-frame projection, so a highlighted outline makes no garbage.
+  const [point] = useState(() => new Vector3());
+
   useFrame(() => {
     const group = groupRef.current;
     const outline = overlay.outlines.get(outlineKey);
     if (!group || !outline || highlight === "none") return;
     group.updateWorldMatrix(true, false);
     const projected = corners.map((corner) => {
-      const point = corner.clone().applyMatrix4(group.matrixWorld).project(camera);
+      point.copy(corner).applyMatrix4(group.matrixWorld).project(camera);
       return {
         x: ((point.x + 1) / 2) * size.width,
         y: ((1 - point.y) / 2) * size.height,
@@ -82,6 +87,20 @@ export const StorageOutline = ({ outlineKey, box, highlight, overlay }: StorageO
       .map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`)
       .join(" ");
     for (const polygon of outline.children) polygon.setAttribute("points", points);
+
+    // Decorate's toolbar sits just under the picked piece, or above it when that would leave the room.
+    const toolbar = highlight === "editing" ? overlay.anchors.get("toolbar") : undefined;
+    if (toolbar) {
+      const xs = projected.map((corner) => corner.x);
+      const ys = projected.map((corner) => corner.y);
+      const centerX = (Math.min(...xs) + Math.max(...xs)) / 2;
+      const left = Math.min(Math.max(8, centerX - toolbar.offsetWidth / 2), size.width - toolbar.offsetWidth - 8);
+      const below = Math.max(...ys) + TOOLBAR_GAP;
+      const top =
+        below + toolbar.offsetHeight <= size.height - 8 ? below : Math.max(8, Math.min(...ys) - toolbar.offsetHeight - TOOLBAR_GAP);
+      toolbar.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0)`;
+      toolbar.style.visibility = "visible";
+    }
   });
 
   return <group ref={groupRef} />;

@@ -66,11 +66,11 @@ const SKETCH_LINES = [
   { y: 140, width: 80, price: "189.00" },
 ];
 
-const ReceiptSketch = () => (
+export const ReceiptSketch = ({ className = "h-52 lg:h-64" }: { className?: string }) => (
   <svg
     viewBox="0 0 220 250"
     aria-hidden
-    className="h-52 w-auto drop-shadow-[0_12px_18px_rgba(74,59,46,.18)] lg:h-64"
+    className={`w-auto drop-shadow-[0_12px_18px_rgba(74,59,46,.18)] ${className}`}
   >
     <g transform="rotate(-3 110 125)">
       <path

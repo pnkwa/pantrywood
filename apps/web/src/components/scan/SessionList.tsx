@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
+import { BarcodeIcon } from "@phosphor-icons/react";
 import { useStockAction } from "@/lib/grocy";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useScanStore } from "@/lib/store/scan-store";
@@ -23,9 +24,15 @@ export const SessionList = () => {
   if (session.length === 0) {
     return (
       <div className="min-h-0 flex-1">
-        <p className="rounded-md border-[1.5px] border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-          Nothing scanned yet. Point the camera at a barcode, or just scan with your USB scanner.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-md border-2 border-dashed border-border px-4 py-6 text-center">
+          <span aria-hidden className="flex size-12 items-center justify-center rounded-full bg-status-fresh text-status-fresh-foreground">
+            <BarcodeIcon size={24} weight="duotone" />
+          </span>
+          <p className="text-sm font-semibold">Nothing scanned yet</p>
+          <p className="text-sm text-muted-foreground">
+            Point the camera at a barcode, or just scan with your USB scanner.
+          </p>
+        </div>
       </div>
     );
   }

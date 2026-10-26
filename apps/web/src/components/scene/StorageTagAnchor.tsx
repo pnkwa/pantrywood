@@ -28,6 +28,8 @@ export const StorageTagAnchor = ({ locationId, height, overlay }: StorageTagAnch
     const x = ((projected.x + 1) / 2) * size.width;
     const y = ((1 - projected.y) / 2) * size.height;
     tag.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+    tag.dataset.x = x.toFixed(1);
+    tag.dataset.y = y.toFixed(1);
     tag.style.zIndex = String(Math.round(((1 - projected.z) / 2) * TAG_DEPTH_LAYERS));
     tag.style.visibility = "visible";
   });

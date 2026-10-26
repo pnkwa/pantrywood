@@ -106,7 +106,7 @@ export const StoragePanel = ({
         </span>
         <FadeIn className="min-w-0 flex-1">
           <p className="text-xs font-semibold tracking-[0.08em] text-sage-deep uppercase">
-            Storage · Storage room
+            In the storage room
           </p>
           <h2 className="mt-0.5 text-[28px] leading-tight">{location.name}</h2>
           <p className="mt-1 text-sm text-muted-foreground">

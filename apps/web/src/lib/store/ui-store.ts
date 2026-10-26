@@ -44,9 +44,9 @@ type UiState = {
   /** The pegboard's board view, and the piece picked on it for the side panel. */
   boardOpen: boolean;
   boardPiece: string | null;
-  /** Phones and tablets: the board's panel is a bottom sheet, open only when asked for so the board stays visible. */
-  boardSheet: boolean;
-  setBoardSheet: (open: boolean) => void;
+  /** Phones and tablets: the board's and Decorate's panel is a bottom sheet, open only when asked for so the room or board stays visible. */
+  sheetOpen: boolean;
+  setSheetOpen: (open: boolean) => void;
   openBoard: () => void;
   closeBoard: () => void;
   selectBoardPiece: (id: string | null) => void;
@@ -91,14 +91,15 @@ export const useUiStore = create<UiState>()((set, get) => ({
       view: "room",
       hoveredLocationId: null,
       boardOpen: false,
+      sheetOpen: false,
     }),
   boardOpen: false,
   boardPiece: null,
-  boardSheet: false,
-  setBoardSheet: (open) => set({ boardSheet: open }),
+  sheetOpen: false,
+  setSheetOpen: (open) => set({ sheetOpen: open }),
   openBoard: () =>
-    set({ boardOpen: true, boardPiece: null, boardSheet: false, selection: null, view: "room", hoveredLocationId: null }),
-  closeBoard: () => set({ boardOpen: false, boardPiece: null, boardSheet: false }),
+    set({ boardOpen: true, boardPiece: null, sheetOpen: false, selection: null, view: "room", hoveredLocationId: null }),
+  closeBoard: () => set({ boardOpen: false, boardPiece: null, sheetOpen: false }),
   selectBoardPiece: (id) => set({ boardPiece: id }),
   selectDecorPiece: (key) => set({ decorPiece: key, moving: false }),
   setMoving: (moving) => set({ moving }),

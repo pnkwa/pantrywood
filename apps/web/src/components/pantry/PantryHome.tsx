@@ -40,7 +40,7 @@ export const PantryHome = () => {
   const decorating = useUiStore((state) => state.decorating);
   const decorPiece = useUiStore((state) => state.decorPiece);
   const boardOpen = useUiStore((state) => state.boardOpen);
-  const boardSheet = useUiStore((state) => state.boardSheet);
+  const sheetOpen = useUiStore((state) => state.sheetOpen);
 
   const selection = useUiStore((state) => state.selection);
   const view = useUiStore((state) => state.view);
@@ -132,13 +132,11 @@ export const PantryHome = () => {
       </div>
 
       <BottomSheet
-        open={decorating || (boardOpen ? boardSheet : Boolean(pantry && selection) && !doorShowsStorage)}
+        open={decorating || boardOpen ? sheetOpen : Boolean(pantry && selection) && !doorShowsStorage}
         label={decorating ? "Catalog" : boardOpen ? "Pegboard" : `${selectedName} details`}
         onClose={
-          decorating
-            ? () => useUiStore.getState().setDecorating(false)
-            : boardOpen
-              ? () => useUiStore.getState().setBoardSheet(false)
+          decorating || boardOpen
+              ? () => useUiStore.getState().setSheetOpen(false)
               : clearSelection
         }
         size={decorating || boardOpen ? "short" : "tall"}

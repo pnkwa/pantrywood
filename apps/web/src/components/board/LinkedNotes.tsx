@@ -33,7 +33,7 @@ export const LinkedNotes = ({ productId }: { productId: number }) => {
               onClick={() => {
                 openBoard();
                 selectBoardPiece(note.id);
-                useUiStore.getState().setBoardSheet(true);
+                useUiStore.getState().setSheetOpen(true);
               }}
               className="flex min-h-11 w-full items-center gap-2 rounded-[12px] border-[1.5px] border-border bg-[#FFF1C9] px-3 text-left text-sm transition-colors duration-150 ease-out hover:bg-[#FBEBC8] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring dark:bg-card"
             >

@@ -31,7 +31,7 @@ import {
   ListBulletsIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
-import { createSceneOverlay } from "@/components/scene/overlay";
+import { createSceneOverlay, registerIn } from "@/components/scene/overlay";
 import type { SceneDecor, SceneStorage } from "@/components/scene/types";
 import { SceneOverlayLayer } from "./SceneOverlayLayer";
 import { StorageListView } from "./StorageListView";
@@ -39,6 +39,7 @@ import { ConfirmDialog } from "@/components/decorate/ConfirmDialog";
 import { DecorateBar, PieceToolbar } from "@/components/decorate/DecorateControls";
 import { catalogItem } from "@/data/catalog";
 import { pieceInfo } from "@/lib/room/decorate";
+import { tagRank } from "@/lib/room/declutter";
 import { storageKindFor } from "@/lib/room/layout";
 import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from "@/lib/room/grid";
 import { wallPose, type Room } from "@/lib/room/use-room";
@@ -65,9 +66,9 @@ const VIEW_FADE = {
   transition: { duration: 0.2, ease: "easeOut" },
 } satisfies MotionProps;
 
-const VIEW_OPTIONS: { label: string; list: boolean; icon: Icon }[] = [
-  { label: "3D room", list: false, icon: CubeIcon },
-  { label: "List", list: true, icon: ListBulletsIcon },
+const VIEW_OPTIONS: { label: string; short: string; list: boolean; icon: Icon }[] = [
+  { label: "3D room", short: "3D", list: false, icon: CubeIcon },
+  { label: "List", short: "List", list: true, icon: ListBulletsIcon },
 ];
 
 const INSIDE_ZOOM = 2.6;
@@ -340,6 +341,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       onToggleMove={() => setMoving(!moving)}
       onNudge={([deltaX, deltaZ]) => decorate.moveTo(decorPiece, [piece.cell[0] + deltaX, piece.cell[1] + deltaZ])}
       onPutAway={() => requestPutAway(decorPiece)}
+      anchorRef={registerIn(overlay.anchors, "toolbar")}
     />
   );
 
@@ -394,6 +396,17 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               onCarryEnd={handleCarryEnd}
               onPointerDrift={cancelLongPress}
               onOpenBoard={openBoard}
+              tagRanks={
+                new Map(
+                  storages.map((storage) => [
+                    storage.locationId,
+                    // The piece you're pointing at or have picked always keeps its full tag.
+                    storage.locationId === hoveredLocationId || storage.locationId === selection?.locationId
+                      ? Number.MAX_SAFE_INTEGER
+                      : tagRank(storage.tag),
+                  ]),
+                )
+              }
             />
           </div>
           <SceneOverlayLayer
@@ -446,6 +459,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
           canClear={storages.length + room.decor.length > 0}
           onClear={() => setConfirm({ kind: "clear" })}
           onDone={() => setDecorating(false)}
+          onOpenCatalog={() => useUiStore.getState().setSheetOpen(true)}
         />
         </motion.div>
       ) : (
@@ -453,7 +467,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
         <div
           role="radiogroup"
           aria-label="Room view"
-          className="flex gap-1 rounded-full border-[1.5px] border-border bg-card p-1 shadow-paper"
+          className="flex gap-1 rounded-full border-[1.5px] border-border bg-card p-1 shadow-paper max-lg:rounded-[18px]"
         >
           {VIEW_OPTIONS.map((option) => {
             const OptionIcon = option.icon;
@@ -465,12 +479,13 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
                 role="radio"
                 aria-checked={selected}
                 onClick={() => setListView(option.list)}
-                className={`flex h-11 items-center justify-center gap-1.5 rounded-full text-sm transition-colors max-lg:w-11 lg:px-3.5 duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                className={`flex h-11 items-center justify-center gap-1.5 rounded-full text-sm transition-colors max-lg:h-auto max-lg:min-h-12 max-lg:min-w-12 max-lg:flex-col max-lg:gap-0.5 max-lg:rounded-[14px] max-lg:px-2 max-lg:py-1 max-lg:text-[11px] lg:px-3.5 duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                   selected ? "bg-sage-deep font-semibold text-primary-foreground" : "font-medium text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <OptionIcon size={18} weight="duotone" aria-hidden />
-                <span className="max-lg:sr-only">{option.label}</span>
+                <span className="lg:hidden">{option.short}</span>
+                <span className="max-lg:hidden">{option.label}</span>
               </button>
             );
           })}
@@ -479,19 +494,20 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             <button
               type="button"
               onClick={() => setDecorating(true)}
-              className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 max-lg:w-11 lg:px-4"
+              className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 max-lg:h-auto max-lg:min-h-12 max-lg:min-w-12 max-lg:flex-col max-lg:gap-0.5 max-lg:rounded-[14px] max-lg:px-2 max-lg:py-1 max-lg:text-[11px] lg:px-4"
             >
               <PaintBrushIcon size={18} weight="duotone" aria-hidden />
-              <span className="max-lg:sr-only">Decorate</span>
+              <span>Decorate</span>
             </button>
           )}
           <button
             type="button"
             onClick={openBoard}
-            className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:w-11 lg:px-4"
+            className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:h-auto max-lg:min-h-12 max-lg:min-w-12 max-lg:flex-col max-lg:gap-0.5 max-lg:rounded-[14px] max-lg:px-2 max-lg:py-1 max-lg:text-[11px] lg:px-4"
           >
             <PushPinIcon size={18} weight="duotone" aria-hidden />
-            <span className="max-lg:sr-only">Open board</span>
+            <span className="lg:hidden">Board</span>
+            <span className="max-lg:hidden">Open board</span>
           </button>
         </motion.div>
       )}

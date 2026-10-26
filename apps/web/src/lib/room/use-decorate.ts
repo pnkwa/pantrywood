@@ -157,6 +157,7 @@ export const useDecorate = (room: RoomContext) => {
           // Like picking it up from the catalog: it follows the pointer until it's set down.
           selectDecorPiece(decorKey(placementId));
           setMoving(true);
+          useUiStore.getState().setSheetOpen(false);
         } else {
           if (owned !== layout) change(owned);
           showToast("No free spot for it right now. Move something first", "error");
