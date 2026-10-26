@@ -10,9 +10,9 @@ import {
 } from "@phosphor-icons/react";
 
 type MobileNavProps = {
-  onFridgeDoor: (() => void) | null;
+  onFridge: (() => void) | null;
   onRoom: () => void;
-  current: "room" | "fridgeDoor";
+  current: "room" | "fridge";
 };
 
 const navButtonClass = (active: boolean) =>
@@ -23,7 +23,7 @@ const navButtonClass = (active: boolean) =>
   }`;
 
 export const MobileNav = ({
-  onFridgeDoor,
+  onFridge,
   onRoom,
   current,
 }: MobileNavProps) => (
@@ -56,15 +56,15 @@ export const MobileNav = ({
       <ReceiptIcon size={22} weight="duotone" aria-hidden />
       Receipts
     </Link>
-    {onFridgeDoor && (
+    {onFridge && (
       <button
         type="button"
-        onClick={onFridgeDoor}
-        aria-current={current === "fridgeDoor" ? "page" : undefined}
-        className={navButtonClass(current === "fridgeDoor")}
+        onClick={onFridge}
+        aria-current={current === "fridge" ? "page" : undefined}
+        className={navButtonClass(current === "fridge")}
       >
         <DoorIcon size={22} weight="duotone" aria-hidden />
-        Fridge door
+        Fridge
       </button>
     )}
   </nav>

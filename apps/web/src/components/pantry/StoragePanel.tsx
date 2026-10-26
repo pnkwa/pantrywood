@@ -71,7 +71,7 @@ type StoragePanelProps = {
   busy: boolean;
   onClose: () => void;
   onPickItem: (productId: number, itemKey: string) => void;
-  onOpenFridgeDoor: () => void;
+  onOpenInside: () => void;
   onAddLowToShoppingList: () => void;
 };
 
@@ -81,7 +81,7 @@ export const StoragePanel = ({
   busy,
   onClose,
   onPickItem,
-  onOpenFridgeDoor,
+  onOpenInside,
   onAddLowToShoppingList,
 }: StoragePanelProps) => {
   const [filter, setFilter] = useState<Filter>("all");
@@ -163,15 +163,13 @@ export const StoragePanel = ({
       </ul>
 
       <FadeIn order={2} className="flex flex-wrap gap-2.5">
-        {storageKind === "fridge" && (
-          <button
-            type="button"
-            onClick={onOpenFridgeDoor}
-            className="h-12 flex-1 rounded-full bg-sage-deep px-5 text-[15px] font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
-            Open fridge door
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onOpenInside}
+          className="h-12 flex-1 rounded-full bg-sage-deep px-5 text-[15px] font-semibold text-primary-foreground shadow-[0_3px_0_#3F5236] transition-[transform,background-color] duration-150 ease-out hover:bg-sage-deep/85 active:translate-y-px focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          {storageKind === "fridge" ? "Open fridge door" : "Look inside"}
+        </button>
         {location.counts.low > 0 && (
           <button
             type="button"

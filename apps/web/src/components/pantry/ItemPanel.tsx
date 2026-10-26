@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   ArrowLeftIcon,
@@ -11,6 +11,7 @@ import {
   PlusIcon,
   ShoppingCartSimpleIcon,
 } from "@phosphor-icons/react";
+import { ItemPictureField } from "@/components/inside/ItemPictureField";
 import { useStockAction, type StockAction } from "@/lib/grocy";
 import type { PantryItem } from "@/lib/pantry/model";
 import { formatAmount, formatDate, formatDaysLeft } from "@/lib/pantry/format";
@@ -28,6 +29,8 @@ type ItemPanelProps = {
   item: PantryItem;
   locationName: string;
   destinations: Destination[];
+  /** Where it stands inside the open storage piece, with a way to move it there. */
+  spot?: ReactNode;
   onBack: () => void;
   onClose: () => void;
 };
@@ -76,6 +79,7 @@ export const ItemPanel = ({
   item,
   locationName,
   destinations,
+  spot,
   onBack,
   onClose,
 }: ItemPanelProps) => {
@@ -95,7 +99,7 @@ export const ItemPanel = ({
   const consumeLabel = isFood ? "Eat one" : "Use one";
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="-mx-1 flex h-full flex-col gap-4 overflow-y-auto px-1">
       <FadeIn className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -152,6 +156,11 @@ export const ItemPanel = ({
           </Fact>
         )}
       </dl>
+      </FadeIn>
+
+      <FadeIn order={2} className="flex flex-col gap-3">
+        {spot}
+        <ItemPictureField item={item} />
       </FadeIn>
 
       <FadeIn order={3} className="mt-auto grid grid-cols-2 gap-2.5">

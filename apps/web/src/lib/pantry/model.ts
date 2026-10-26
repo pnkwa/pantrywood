@@ -31,6 +31,8 @@ export type PantryItem = {
   inFreezer: boolean;
   name: string;
   thaiName: string | null;
+  /** The product picture saved in Grocy, if any. */
+  pictureFileName: string | null;
   kind: ProductKind;
   groupName: string;
   unitName: string;
@@ -215,6 +217,7 @@ export const buildPantry = ({
       inFreezer: freezerIds.has(locationId),
       name: product.name,
       thaiName: product.userfields?.[THAI_NAME_USERFIELD] ?? null,
+      pictureFileName: product.picture_file_name ?? null,
       kind,
       groupName: groupById.get(product.product_group_id ?? -1)?.name ?? "",
       unitName: unit?.name ?? "",

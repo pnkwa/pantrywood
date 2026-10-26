@@ -15,6 +15,9 @@ test("every Grocy call Pantrywood makes goes through", () => {
     ["POST", "stock/shoppinglist/add-product"],
     ["PUT", "objects/product_barcodes/9"],
     ["PUT", "userfields/products/4"],
+    ["PUT", "objects/products/4"],
+    ["PUT", "files/productpictures/cGFudHJ5d29vZC5wbmc="],
+    ["GET", "files/productpictures/cGFudHJ5d29vZC5wbmc="],
     ["DELETE", "objects/products/4"],
   ]) {
     assert.ok(isAllowedGrocyPath(method, path), `${method} ${path}`);
@@ -27,7 +30,8 @@ test("the rest of the Grocy API stays closed", () => {
     ["GET", "objects/api_keys"],
     ["GET", "system/config"],
     ["POST", "objects/locations"],
-    ["PUT", "objects/products/1"],
+    ["PUT", "objects/locations/1"],
+    ["DELETE", "files/productpictures/cGFudHJ5d29vZC5wbmc="],
     ["DELETE", "objects/locations/1"],
     ["DELETE", "objects/products/1/extra"],
     ["PATCH", "objects/products/1"],

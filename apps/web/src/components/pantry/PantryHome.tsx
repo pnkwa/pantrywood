@@ -44,19 +44,19 @@ export const PantryHome = () => {
   const selectStorage = useUiStore((state) => state.selectStorage);
   const selectItem = useUiStore((state) => state.selectItem);
   const clearSelection = useUiStore((state) => state.clearSelection);
-  const openFridgeDoor = useUiStore((state) => state.openFridgeDoor);
-  const closeFridgeDoor = useUiStore((state) => state.closeFridgeDoor);
+  const insideLocationId = useUiStore((state) => state.insideLocationId);
+  const openInside = useUiStore((state) => state.openInside);
+  const closeInside = useUiStore((state) => state.closeInside);
 
   const fridge = storages.find((storage) => storage.kind === "fridge");
-  // On phones the open door already shows the fridge; the sheet comes back when a note is tapped.
+  // On phones the inside view already shows the piece; the sheet comes back when an item is tapped.
   const doorShowsStorage = view !== "room" && selection?.type === "storage";
 
-  // A second tap on the selected fridge opens its door.
+  // A second tap on the selected piece opens it.
   const handleSelectStorage = (locationId: number) => {
-    const tappedFridge = fridge?.locationId === locationId;
     const alreadySelected =
       selection?.type === "storage" && selection.locationId === locationId;
-    if (tappedFridge && alreadySelected) openFridgeDoor(locationId);
+    if (alreadySelected) openInside(locationId);
     else selectStorage(locationId);
   };
 
@@ -69,11 +69,11 @@ export const PantryHome = () => {
         if (ui.decorPiece) ui.selectDecorPiece(null);
         else ui.setDecorating(false);
       } else if (ui.view === "room") clearSelection();
-      else closeFridgeDoor();
+      else closeInside();
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
-  }, [clearSelection, closeFridgeDoor]);
+  }, [clearSelection, closeInside]);
 
   const selectedName =
     pantry?.locations.find((location) => location.id === selection?.locationId)
@@ -151,9 +151,9 @@ export const PantryHome = () => {
       {decorating && <BuyDialog />}
 
       <MobileNav
-        current={view === "room" ? "room" : "fridgeDoor"}
-        onRoom={closeFridgeDoor}
-        onFridgeDoor={fridge ? () => openFridgeDoor(fridge.locationId) : null}
+        current={view !== "room" && insideLocationId === fridge?.locationId ? "fridge" : "room"}
+        onRoom={closeInside}
+        onFridge={fridge ? () => openInside(fridge.locationId) : null}
       />
       <Toasts />
     </>

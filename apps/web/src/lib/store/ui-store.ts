@@ -13,8 +13,8 @@ export type Selection =
     }
   | null;
 
-/** "enteringDoor": the camera is gliding to the fridge before the 2D door shows. */
-export type RoomView = "room" | "enteringDoor" | "fridgeDoor";
+/** "entering": the camera is gliding to a storage piece before its inside view shows. */
+export type RoomView = "room" | "entering" | "inside";
 
 export type Toast = {
   id: number;
@@ -26,7 +26,8 @@ type UiState = {
   selection: Selection;
   hoveredLocationId: number | null;
   view: RoomView;
-  fridgeLocationId: number | null;
+  /** The storage piece that is open (or opening), by Grocy location id. */
+  insideLocationId: number | null;
   flyingItemKey: string | null;
   toasts: Toast[];
   /** 2D fallback for the 3D room (slow phones, or a plain list is simply easier). */
@@ -49,9 +50,9 @@ type UiState = {
   clearSelection: () => void;
   clearFlyingItem: () => void;
   setHoveredLocation: (locationId: number | null) => void;
-  openFridgeDoor: (locationId: number) => void;
-  showFridgeDoor: () => void;
-  closeFridgeDoor: () => void;
+  openInside: (locationId: number) => void;
+  showInside: () => void;
+  closeInside: () => void;
   showToast: (message: string, tone?: Toast["tone"]) => void;
   dismissToast: (id: number) => void;
 };
@@ -63,7 +64,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   selection: null,
   hoveredLocationId: null,
   view: "room",
-  fridgeLocationId: null,
+  insideLocationId: null,
   flyingItemKey: null,
   toasts: [],
   listView: false,
@@ -88,17 +89,17 @@ export const useUiStore = create<UiState>()((set, get) => ({
   clearSelection: () => set({ selection: null }),
   clearFlyingItem: () => set({ flyingItemKey: null }),
   setHoveredLocation: (locationId) => set({ hoveredLocationId: locationId }),
-  openFridgeDoor: (locationId) =>
+  openInside: (locationId) =>
     set({
-      view: "enteringDoor",
-      fridgeLocationId: locationId,
+      view: "entering",
+      insideLocationId: locationId,
       selection: { type: "storage", locationId },
       hoveredLocationId: null,
     }),
-  showFridgeDoor: () => {
-    if (get().view === "enteringDoor") set({ view: "fridgeDoor" });
+  showInside: () => {
+    if (get().view === "entering") set({ view: "inside" });
   },
-  closeFridgeDoor: () => set({ view: "room" }),
+  closeInside: () => set({ view: "room" }),
   showToast: (message, tone = "info") => {
     const id = nextToastId++;
     set((state) => ({ toasts: [...state.toasts, { id, message, tone }] }));

@@ -9,13 +9,15 @@ import {
 } from "motion/react";
 import type { SceneStorage, StorageKind } from "@/components/scene/types";
 import { useStockAction } from "@/lib/grocy";
-import { findItem, type Pantry } from "@/lib/pantry/model";
+import { findItem, type Pantry, type PantryLocation } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
 import { PANEL_SPRING } from "@/lib/motion";
 import { FadeIn } from "./FadeIn";
 import { PANEL_PUSH_DISTANCE, type PanelDirection } from "./PanelDirection";
 import { STORAGE_ICONS } from "./icons";
 import { ItemPanel } from "./ItemPanel";
+import { ItemSpot } from "@/components/inside/ItemSpot";
+import { storageKindFor } from "@/lib/room/layout";
 import { StoragePanel } from "./StoragePanel";
 
 type InspectPanelProps = {
@@ -26,10 +28,10 @@ type InspectPanelProps = {
 
 const kindFor = (
   storages: readonly SceneStorage[],
-  locationId: number,
+  location: PantryLocation,
 ): StorageKind =>
-  storages.find((storage) => storage.locationId === locationId)?.kind ??
-  "basket";
+  storages.find((storage) => storage.locationId === location.id)?.kind ??
+  storageKindFor(location);
 
 // AnimatePresence's popLayout needs the ref to lift the leaving panel out of the flow.
 /**
@@ -96,7 +98,7 @@ const StorageList = ({
       <FadeIn order={1} className="flex min-h-0 flex-col">
       <ul className="flex flex-col gap-2 overflow-y-auto">
         {pantry.locations.map((location) => {
-          const StorageIcon = STORAGE_ICONS[kindFor(storages, location.id)];
+          const StorageIcon = STORAGE_ICONS[kindFor(storages, location)];
           return (
             <li key={location.id}>
               <button
@@ -130,7 +132,9 @@ export const InspectPanelContent = ({
   const selectStorage = useUiStore((state) => state.selectStorage);
   const selectItem = useUiStore((state) => state.selectItem);
   const clearSelection = useUiStore((state) => state.clearSelection);
-  const openFridgeDoor = useUiStore((state) => state.openFridgeDoor);
+  const openInside = useUiStore((state) => state.openInside);
+  const view = useUiStore((state) => state.view);
+  const insideLocationId = useUiStore((state) => state.insideLocationId);
   const showToast = useUiStore((state) => state.showToast);
   const stockAction = useStockAction();
   const [navigation, setNavigation] = useState<{
@@ -168,6 +172,11 @@ export const InspectPanelContent = ({
             destinations={pantry.places
               .filter((place) => place.id !== item.locationId)
               .map((place) => ({ id: place.id, name: place.name }))}
+            spot={
+              view !== "room" && insideLocationId === location.id ? (
+                <ItemSpot item={item} location={location} kind={kindFor(storages, location)} />
+              ) : undefined
+            }
             onBack={() => selectStorage(location.id)}
             onClose={clearSelection}
           />
@@ -180,13 +189,13 @@ export const InspectPanelContent = ({
       node: (
         <StoragePanel
           location={location}
-          storageKind={kindFor(storages, location.id)}
+          storageKind={kindFor(storages, location)}
           busy={stockAction.isPending}
           onClose={clearSelection}
           onPickItem={(productId, itemKey) =>
             selectItem(location.id, productId, itemKey)
           }
-          onOpenFridgeDoor={() => openFridgeDoor(location.id)}
+          onOpenInside={() => openInside(location.id)}
           onAddLowToShoppingList={() =>
             stockAction.mutate(
               {

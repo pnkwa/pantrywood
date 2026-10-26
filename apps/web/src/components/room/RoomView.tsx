@@ -38,11 +38,12 @@ import { ConfirmDialog } from "@/components/decorate/ConfirmDialog";
 import { DecorateBar, PieceToolbar } from "@/components/decorate/DecorateControls";
 import { catalogItem } from "@/data/catalog";
 import { pieceInfo } from "@/lib/room/decorate";
+import { storageKindFor } from "@/lib/room/layout";
 import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from "@/lib/room/grid";
 import { wallPose, type Room } from "@/lib/room/use-room";
 import type { WallSide } from "@pantrywood/shared";
 import type { useDecorate } from "@/lib/room/use-decorate";
-import { FridgeDoor } from "@/components/pantry/FridgeDoor";
+import { InsideView } from "@/components/inside/InsideView";
 import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
@@ -67,9 +68,9 @@ const VIEW_OPTIONS: { label: string; list: boolean; icon: Icon }[] = [
   { label: "List", list: true, icon: ListBulletsIcon },
 ];
 
-const FRIDGE_DOOR_ZOOM = 2.6;
-const FRIDGE_FRONT_OFFSET = 0.9;
-const FRIDGE_DOOR_HEIGHT = 2.4;
+const INSIDE_ZOOM = 2.6;
+const FRONT_OFFSET = 0.9;
+const FOCUS_HEIGHT = 2.4;
 const DOOR_HOLD_MILLISECONDS = 250;
 const LONG_PRESS_MILLISECONDS = 450;
 
@@ -125,11 +126,11 @@ const frontOf = (storage: SceneStorage): CameraFocus => {
   const [x, , z] = storage.position;
   return {
     target: [
-      x + Math.sin(storage.rotationY) * FRIDGE_FRONT_OFFSET,
-      FRIDGE_DOOR_HEIGHT,
-      z + Math.cos(storage.rotationY) * FRIDGE_FRONT_OFFSET,
+      x + Math.sin(storage.rotationY) * FRONT_OFFSET,
+      FOCUS_HEIGHT,
+      z + Math.cos(storage.rotationY) * FRONT_OFFSET,
     ],
-    zoomFactor: FRIDGE_DOOR_ZOOM,
+    zoomFactor: INSIDE_ZOOM,
   };
 };
 
@@ -149,12 +150,12 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const selection = useUiStore((state) => state.selection);
   const hoveredLocationId = useUiStore((state) => state.hoveredLocationId);
   const view = useUiStore((state) => state.view);
-  const fridgeLocationId = useUiStore((state) => state.fridgeLocationId);
+  const insideLocationId = useUiStore((state) => state.insideLocationId);
   const selectItem = useUiStore((state) => state.selectItem);
   const clearSelection = useUiStore((state) => state.clearSelection);
   const setHoveredLocation = useUiStore((state) => state.setHoveredLocation);
-  const showFridgeDoor = useUiStore((state) => state.showFridgeDoor);
-  const closeFridgeDoor = useUiStore((state) => state.closeFridgeDoor);
+  const showInside = useUiStore((state) => state.showInside);
+  const closeInside = useUiStore((state) => state.closeInside);
   const listView = useUiStore((state) => state.listView);
   const decorating = useUiStore((state) => state.decorating);
   const decorPiece = useUiStore((state) => state.decorPiece);
@@ -164,25 +165,28 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const setMoving = useUiStore((state) => state.setMoving);
   const setListView = useUiStore((state) => state.setListView);
 
-  const fridgeStorage = storages.find((storage) => storage.locationId === fridgeLocationId);
-  const fridgeLocation = pantry?.locations.find((location) => location.id === fridgeLocationId);
+  const openStorage = storages.find((storage) => storage.locationId === insideLocationId);
+  const openLocation = pantry?.locations.find((location) => location.id === insideLocationId);
+  const openKind =
+    [...storages, ...room.storedAway].find((storage) => storage.locationId === insideLocationId)?.kind ??
+    (openLocation ? storageKindFor(openLocation) : undefined);
   const focus = useMemo(
-    () => (view !== "room" && fridgeStorage ? frontOf(fridgeStorage) : null),
-    [view, fridgeStorage],
+    () => (view !== "room" && openStorage ? frontOf(openStorage) : null),
+    [view, openStorage],
   );
   const reducedMotion = useReducedMotion();
-  // Lets the open fridge be seen for a moment before the 2D door fades in.
+  // Lets the opened piece be seen for a moment before the inside view fades in.
   const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handleFocusSettled = useCallback(() => {
     clearTimeout(holdTimer.current);
     holdTimer.current = setTimeout(
-      showFridgeDoor,
+      showInside,
       reducedMotion ? 0 : DOOR_HOLD_MILLISECONDS,
     );
-  }, [reducedMotion, showFridgeDoor]);
-  // Without a 3D fridge to glide to (list view, or no fridge piece), the door view shows straight away.
-  const doorVisible =
-    view === "fridgeDoor" || (view === "enteringDoor" && (!fridgeStorage || listView));
+  }, [reducedMotion, showInside]);
+  // Without a 3D piece to glide to (list view, or put away), the inside view shows straight away.
+  const insideVisible =
+    view === "inside" || (view === "entering" && (!openStorage || listView));
 
   const piece = decorPiece ? pieceInfo(room.context, decorPiece) : undefined;
 
@@ -365,7 +369,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               label={description}
               hoveredLocationId={hoveredLocationId}
               selectedLocationId={selection?.locationId ?? null}
-              openDoorLocationId={view === "room" ? null : fridgeLocationId}
+              openDoorLocationId={view === "room" ? null : insideLocationId}
               focus={focus}
               onFocusSettled={handleFocusSettled}
               onHoverChange={setHoveredLocation}
@@ -392,7 +396,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             storages={storages}
             hoveredLocationId={hoveredLocationId}
             selectedLocationId={selection?.locationId ?? null}
-            openDoorLocationId={view === "room" ? null : fridgeLocationId}
+            openDoorLocationId={view === "room" ? null : insideLocationId}
             decorKeys={room.decor.map((piece) => piece.id)}
             editing={decorating}
             selectedPieceKey={decorPiece}
@@ -572,21 +576,21 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       )}
 
       <AnimatePresence>
-        {doorVisible && fridgeLocation && (
+        {insideVisible && openLocation && openKind && (
           <motion.div
-            key="fridge-door"
+            key={`inside-${openLocation.id}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute inset-0 z-40"
+            className="absolute inset-0 z-40 bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-edge)_100%)]"
           >
-            <FridgeDoor
-              location={fridgeLocation}
-              onPickItem={(productId, itemKey) =>
-                selectItem(fridgeLocation.id, productId, itemKey)
-              }
-              onClose={closeFridgeDoor}
+            <InsideView
+              location={openLocation}
+              kind={openKind}
+              selectedItemKey={selection?.type === "item" ? (selection.itemKey ?? `${selection.locationId}-${selection.productId}`) : null}
+              onPickItem={(productId, itemKey) => selectItem(openLocation.id, productId, itemKey)}
+              onClose={closeInside}
             />
           </motion.div>
         )}

@@ -478,6 +478,13 @@ const handleUpdateObject = (entity: string, id: number, body: JsonBody) => {
   const fields = ObjectBodySchema.safeParse(body);
   if (!fields.success) return error(400, "Body must be an object");
   const current = getDatabase();
+  if (entity === "products") {
+    const index = current.products.findIndex((row) => row.id === id);
+    const parsed = ProductSchema.safeParse({ ...current.products[index], ...fields.data, id });
+    if (index === -1 || !parsed.success) return error(400, "Object does not exist");
+    current.products[index] = parsed.data;
+    return new Response(null, { status: 204 });
+  }
   if (entity !== "product_barcodes") {
     return error(404, `Editing ${entity} is not available in mock mode yet.`);
   }
@@ -614,10 +621,23 @@ const readBody = async (request: Request): Promise<JsonBody> => {
   }
 };
 
+// Uploaded product pictures, by Grocy's base64 file name.
+const productPictures = new Map<string, Blob>();
+
 export const handleMockRequest = async (
   request: Request,
   path: string[],
 ): Promise<Response> => {
+  if (path[0] === "files" && path[1] === "productpictures" && path[2]) {
+    if (request.method === "PUT") {
+      productPictures.set(path[2], new Blob([await request.arrayBuffer()], { type: "image/png" }));
+      return new Response(null, { status: 204 });
+    }
+    const picture = productPictures.get(path[2]);
+    return picture
+      ? new Response(picture, { headers: { "content-type": picture.type, "cache-control": "no-store" } })
+      : error(404, "No such picture");
+  }
   if (request.method === "GET") return handleGet(path);
   if (request.method === "POST")
     return handlePost(path, await readBody(request));

@@ -80,6 +80,16 @@ export const grocyDelete = async (path: string): Promise<void> => {
   await sendToGrocy("DELETE", path);
 };
 
+/** Raw file upload, e.g. a product picture: Grocy wants the bytes as the body. */
+export const grocyUpload = async (path: string, file: Blob): Promise<void> => {
+  const response = await fetch(proxyUrl(path), {
+    method: "PUT",
+    headers: { "content-type": "application/octet-stream" },
+    body: file,
+  });
+  if (!response.ok) await throwGrocyError(response);
+};
+
 export const grocyPostFor = async <T>(
   path: string,
   body: GrocyBody,
