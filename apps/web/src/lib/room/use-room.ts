@@ -8,6 +8,9 @@ import { rectFor, wallCenterY, worldCenter } from "./grid";
 import { sceneItemsFor } from "./items";
 import { placeLocations } from "./layout";
 import { useRoomStore } from "./room-store";
+import { BOARD_COLS, BOARD_ROWS } from "@/lib/board/board";
+import { useBoardStore } from "@/lib/board/board-store";
+import { boardLookFor, planesFor } from "@/lib/board/look";
 
 const RUG_HEIGHT = 0.012;
 /** Wall pieces hang just off the wall: the right wall stands at z = -5, the left at x = -5. */
@@ -46,6 +49,7 @@ export type Room = {
 
 export const useRoom = (pantry: Pantry | null): Room => {
   const layout = useRoomStore((state) => state.layout);
+  const boardPieces = useBoardStore((state) => state.board.pieces);
   return useMemo(() => {
     const locations = pantry?.locations ?? [];
     const placed = placeLocations(
@@ -97,6 +101,16 @@ export const useRoom = (pantry: Pantry | null): Room => {
             ? wallPose(wallOf(placement), x, wallCenterY(rect))
             : { position: [x, item.layer === "rug" ? RUG_HEIGHT : 0, z], rotationY: rotationY(placement.rotation) }),
           size: item.footprint,
+          ...(item.model.shape === "pegboard"
+            ? {
+                board: {
+                  ...boardLookFor(layout.pegboard),
+                  columns: BOARD_COLS,
+                  rows: BOARD_ROWS,
+                  planes: planesFor(boardPieces),
+                },
+              }
+            : {}),
         },
       ];
     });
@@ -112,5 +126,5 @@ export const useRoom = (pantry: Pantry | null): Room => {
       floor: floorFor(layout.floor),
       context: { layout, storage, kinds },
     };
-  }, [pantry, layout]);
+  }, [pantry, layout, boardPieces]);
 };

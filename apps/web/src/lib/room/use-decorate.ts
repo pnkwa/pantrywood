@@ -1,5 +1,6 @@
 import type { RoomLayout, WallSide } from "@pantrywood/shared";
-import type { CatalogItem, RoomTheme } from "@/data/catalog";
+import type { AccessoryCatalogItem, CatalogItem, RoomTheme } from "@/data/catalog";
+import { useBoardStore } from "@/lib/board/board-store";
 import { CATALOG, catalogItem } from "@/data/catalog";
 import { useUiStore } from "@/lib/store/ui-store";
 import {
@@ -22,6 +23,19 @@ import {
 } from "./decorate";
 import type { GridCell } from "./grid";
 import { useRoomStore } from "./room-store";
+
+/** Each accessory hangs once: if it's already on the board, it's picked instead of copied. */
+export const hangAccessory = (item: AccessoryCatalogItem) => {
+  const { board, add } = useBoardStore.getState();
+  const { selectBoardPiece, showToast } = useUiStore.getState();
+  const hanging = board.pieces.find((piece) => piece.kind === "accessory" && piece.itemId === item.id);
+  if (hanging) return selectBoardPiece(hanging.id);
+  const id = crypto.randomUUID();
+  const [w, h] = item.model.size;
+  add({ id, kind: "accessory", itemId: item.id, w, h });
+  selectBoardPiece(id);
+  showToast(`${item.name} is on the pegboard`);
+};
 
 const isPieceKey = (key: string): key is PieceKey => key.startsWith("storage:") || key.startsWith("decor:");
 
@@ -101,6 +115,17 @@ export const useDecorate = (room: RoomContext) => {
     },
     /** A catalog card: buy if needed, then use it (wallpaper, floor, a new decor piece, or a swap). */
     chooseItem: (item: CatalogItem, selectedKey: string | null) => {
+      if (item.category === "pegboard") {
+        withOwned(item, (owned) => {
+          if (item.kind === "board") {
+            change({ ...owned, pegboard: item.id });
+            return;
+          }
+          if (owned !== layout) change(owned);
+          hangAccessory(item);
+        });
+        return;
+      }
       if (item.category === "storage") {
         const kind = selectedKey ? pieceKind(selectedKey) : undefined;
         const locationId = selectedKey ? locationOf(selectedKey) : null;

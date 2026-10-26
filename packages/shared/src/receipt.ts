@@ -34,6 +34,8 @@ export const ReceiptMemorySchema = z.object({
   /** Downscaled JPEG data URL; null when storage was too full to keep it. */
   image: z.string().nullable(),
   savedAt: z.string(),
+  /** What it added to stock, so its slip on the pegboard can link to the items. Absent on older receipts. */
+  added: z.array(z.object({ productId: z.number(), name: z.string(), amount: z.number() })).optional(),
 });
 
 export type ReceiptMemory = z.infer<typeof ReceiptMemorySchema>;

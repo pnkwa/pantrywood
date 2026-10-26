@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
-import { GinghamWindow, OvalRug, PictureFrames, VeggieBasket } from "./Decor";
+import { GinghamWindow, OvalRug, Pegboard, PictureFrames, VeggieBasket } from "./Decor";
 import { ToyCat } from "./ToyCat";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
 import { Matte } from "./materials";
@@ -42,6 +42,8 @@ const boxFor = (shape: DecorShape, [width, depth]: [number, number]): [number, n
       return [0.8, 0.9, 0.8, 0.42];
     case "veggieBasket":
       return [1, 0.8, 1, 0.35];
+    case "pegboard":
+      return [3.2, 2.4, 0.15, 0];
   }
 };
 
@@ -184,6 +186,8 @@ const Shape = ({ decor, still }: { decor: SceneDecor; still: boolean }) => {
       return <ToyCat pattern="plain" colors={decor.colors} still={still} />;
     case "veggieBasket":
       return <VeggieBasket />;
+    case "pegboard":
+      return decor.board ? <Pegboard board={decor.board} /> : null;
   }
 };
 
@@ -197,9 +201,11 @@ type DecorPiecesProps = {
   selectedKey: string | null;
   onSelect: (key: string) => void;
   onPointerDown: (key: string) => void;
+  /** Tapping the pegboard outside Decorate mode opens the board view. */
+  onOpenBoard: () => void;
 };
 
-export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSelect, onPointerDown }: DecorPiecesProps) => {
+export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSelect, onPointerDown, onOpenBoard }: DecorPiecesProps) => {
   // On-demand rendering: placing, moving or putting away a piece must redraw the room.
   const invalidate = useThree((state) => state.invalidate);
   useEffect(() => invalidate(), [decor, invalidate]);
@@ -209,7 +215,13 @@ export const DecorPieces = ({ decor, overlay, editing, still, selectedKey, onSel
       const box = boxFor(piece.shape, piece.size);
       const highlight: Highlight = editing && piece.id === selectedKey ? "editing" : "none";
       const handleClick = (event: ThreeEvent<MouseEvent>) => {
-        if (!editing || event.delta > CLICK_DRAG_TOLERANCE) return;
+        if (event.delta > CLICK_DRAG_TOLERANCE) return;
+        if (!editing && piece.board) {
+          event.stopPropagation();
+          onOpenBoard();
+          return;
+        }
+        if (!editing) return;
         event.stopPropagation();
         onSelect(piece.id);
       };

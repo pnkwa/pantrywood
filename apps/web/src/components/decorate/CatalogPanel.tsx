@@ -9,6 +9,7 @@ import {
   LampIcon,
   LeafIcon,
   PaintRollerIcon,
+  PushPinIcon,
   SquaresFourIcon,
   StorefrontIcon,
 } from "@phosphor-icons/react";
@@ -38,6 +39,7 @@ const CATEGORIES: { value: CatalogCategory; label: string; icon: Icon }[] = [
   { value: "wallpaper", label: "Wallpaper", icon: PaintRollerIcon },
   { value: "floor", label: "Floor", icon: SquaresFourIcon },
   { value: "shelfItem", label: "Shelf items", icon: JarIcon },
+  { value: "pegboard", label: "Pegboard", icon: PushPinIcon },
 ];
 
 export const STYLE_CHIPS: Record<CatalogStyle, { label: string; className: string }> = {
@@ -163,7 +165,7 @@ const Shop = ({ room, decorate, selectedPieceKey }: Pick<CatalogPanelProps, "roo
         </ul>
       </section>
 
-      <div role="tablist" aria-label="Catalog category" className="grid shrink-0 grid-cols-5 gap-1 rounded-[18px] bg-muted/60 p-1">
+      <div role="tablist" aria-label="Catalog category" className="grid shrink-0 grid-cols-3 gap-1 rounded-[18px] bg-muted/60 p-1">
         {CATEGORIES.map((option) => {
           const CategoryIcon = option.icon;
           const selected = option.value === category;

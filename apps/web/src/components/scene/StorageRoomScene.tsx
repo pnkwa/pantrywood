@@ -66,6 +66,7 @@ type StorageRoomSceneProps = {
   onCarryEnd: (drop: boolean, tapped: boolean) => void;
   /** The pointer moved far enough to be a drag, which cancels a long press. */
   onPointerDrift: () => void;
+  onOpenBoard: () => void;
 };
 
 /** Renders on demand rather than every frame, to stay light on phones. */
@@ -95,6 +96,7 @@ export const StorageRoomScene = ({
   onPiecePointerDown,
   onFloorPointerMove,
   onCarryEnd,
+  onOpenBoard,
   onPointerDrift,
 }: StorageRoomSceneProps) => {
   const pointerDown = useRef({ x: 0, y: 0 });
@@ -171,6 +173,7 @@ export const StorageRoomScene = ({
         selectedKey={selectedPieceKey}
         onSelect={onSelectPiece}
         onPointerDown={onPiecePointerDown}
+        onOpenBoard={onOpenBoard}
       />
       {editing && (
         <FloorGrid footprint={footprint} onFloorClick={onFloorClick} onFloorPointerMove={onFloorPointerMove} />

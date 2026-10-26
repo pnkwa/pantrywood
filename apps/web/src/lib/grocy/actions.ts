@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { StockLogEntrySchema, THAI_NAME_USERFIELD } from "@pantrywood/shared";
 import { grocyDelete, grocyPost, grocyPostFor, grocyPut } from "./client";
+import { useBoardStore } from "@/lib/board/board-store";
 import { rewardLeaves } from "@/lib/room/leaf-rewards";
 import { grocyKeys } from "./queries";
 
@@ -123,6 +124,8 @@ export const useStockAction = () => {
     mutationFn: async (action: StockAction) => {
       const result = await runStockAction(action);
       rewardLeaves(action, result);
+      // shortcut: undoing a restock doesn't untick the notes it ticked; track it per transaction if that matters.
+      if (action.type === "add") useBoardStore.getState().restocked(action.productId);
       return result.transactionId;
     },
     onSettled: refresh,

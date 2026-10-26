@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { RoundedBox } from "@react-three/drei";
 import { Matte } from "./materials";
-import { ginghamTexture } from "./textures";
+import { ginghamTexture, pegboardTexture } from "./textures";
+import type { SceneDecor } from "./types";
 
 // The room's starting decor, each drawn around its own origin so Decorate can place it.
 
@@ -135,6 +136,45 @@ const VEGGIES: Veggie[] = [
   { position: [0.14, 0.5, 0.05], radius: 0.15, color: "#E2B25C" },
   { position: [0, 0.46, -0.15], radius: 0.13, color: "#8FA67A" },
 ];
+
+const BOARD_WIDTH = 3;
+const BOARD_HEIGHT = 2.25;
+const BOARD_DEPTH = 0.06;
+const FRAME = 0.08;
+
+/** The pegboard on the wall, with each piece on it as a small flat card. */
+export const Pegboard = ({ board }: { board: NonNullable<SceneDecor["board"]> }) => {
+  const holes = useMemo(
+    () => pegboardTexture(board.board, board.hole, [board.columns, board.rows]),
+    [board.board, board.hole, board.columns, board.rows],
+  );
+  useEffect(() => () => holes.dispose(), [holes]);
+  return (
+    <group position={[0, 0, BOARD_DEPTH / 2]}>
+      <RoundedBox args={[BOARD_WIDTH + FRAME * 2, BOARD_HEIGHT + FRAME * 2, BOARD_DEPTH]} radius={0.03} smoothness={2} castShadow>
+        <Matte color={board.frame} />
+      </RoundedBox>
+      <mesh position={[0, 0, BOARD_DEPTH / 2 + 0.002]}>
+        <planeGeometry args={[BOARD_WIDTH, BOARD_HEIGHT]} />
+        <meshStandardMaterial map={holes} roughness={1} />
+      </mesh>
+      {board.planes.map((plane, index) => (
+        <mesh
+          key={plane.id}
+          position={[
+            -BOARD_WIDTH / 2 + (plane.x + plane.w / 2) * BOARD_WIDTH,
+            BOARD_HEIGHT / 2 - (plane.y + plane.h / 2) * BOARD_HEIGHT,
+            // Later pieces sit a hair further out, so overlaps follow the board's own order.
+            BOARD_DEPTH / 2 + 0.01 + index * 0.002,
+          ]}
+        >
+          <planeGeometry args={[plane.w * BOARD_WIDTH, plane.h * BOARD_HEIGHT]} />
+          <Matte color={plane.color} />
+        </mesh>
+      ))}
+    </group>
+  );
+};
 
 export const VeggieBasket = () => (
   <group rotation={[0, -0.4, 0]}>

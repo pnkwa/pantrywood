@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { OPEN_SCAN } from "@/lib/page-transitions";
 import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
+import { BoardPanel } from "@/components/board/BoardPanel";
 import { BuyDialog } from "@/components/decorate/BuyDialog";
 import { CatalogPanel } from "@/components/decorate/CatalogPanel";
 import { useDecorate } from "@/lib/room/use-decorate";
@@ -38,6 +39,8 @@ export const PantryHome = () => {
   const decorate = useDecorate(room.context);
   const decorating = useUiStore((state) => state.decorating);
   const decorPiece = useUiStore((state) => state.decorPiece);
+  const boardOpen = useUiStore((state) => state.boardOpen);
+  const boardSheet = useUiStore((state) => state.boardSheet);
 
   const selection = useUiStore((state) => state.selection);
   const view = useUiStore((state) => state.view);
@@ -65,7 +68,10 @@ export const PantryHome = () => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       const ui = useUiStore.getState();
-      if (ui.decorating) {
+      if (ui.boardOpen) {
+        if (ui.boardPiece) ui.selectBoardPiece(null);
+        else ui.closeBoard();
+      } else if (ui.decorating) {
         if (ui.decorPiece) ui.selectDecorPiece(null);
         else ui.setDecorating(false);
       } else if (ui.view === "room") clearSelection();
@@ -99,7 +105,7 @@ export const PantryHome = () => {
             onSelectStorage={handleSelectStorage}
           />
           <aside
-            aria-label={decorating ? "Catalog" : `${selectedName} details`}
+            aria-label={decorating ? "Catalog" : boardOpen ? "Pegboard" : `${selectedName} details`}
             className="relative hidden min-h-0 w-[380px] shrink-0 flex-col rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
             {decorating ? (
@@ -110,6 +116,8 @@ export const PantryHome = () => {
                 storages={room.storages}
                 storedAway={room.storedAway}
               />
+            ) : boardOpen ? (
+              <BoardPanel pantry={pantry} decorate={decorate} />
             ) : (
               pantry && (
                 <InspectPanelContent
@@ -124,12 +132,20 @@ export const PantryHome = () => {
       </div>
 
       <BottomSheet
-        open={decorating || (Boolean(pantry && selection) && !doorShowsStorage)}
-        label={decorating ? "Catalog" : `${selectedName} details`}
-        onClose={decorating ? () => useUiStore.getState().setDecorating(false) : clearSelection}
-        size={decorating ? "short" : "tall"}
+        open={decorating || (boardOpen ? boardSheet : Boolean(pantry && selection) && !doorShowsStorage)}
+        label={decorating ? "Catalog" : boardOpen ? "Pegboard" : `${selectedName} details`}
+        onClose={
+          decorating
+            ? () => useUiStore.getState().setDecorating(false)
+            : boardOpen
+              ? () => useUiStore.getState().setBoardSheet(false)
+              : clearSelection
+        }
+        size={decorating || boardOpen ? "short" : "tall"}
       >
-        {decorating ? (
+        {boardOpen && !decorating ? (
+          <BoardPanel pantry={pantry} decorate={decorate} />
+        ) : decorating ? (
           <CatalogPanel
                 room={room.context}
                 decorate={decorate}
@@ -148,7 +164,7 @@ export const PantryHome = () => {
         )}
       </BottomSheet>
 
-      {decorating && <BuyDialog />}
+      {(decorating || boardOpen) && <BuyDialog />}
 
       <MobileNav
         current={view !== "room" && insideLocationId === fridge?.locationId ? "fridge" : "room"}

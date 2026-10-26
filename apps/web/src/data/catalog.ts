@@ -1,3 +1,4 @@
+import type { WallSide } from "@pantrywood/shared";
 import type {
   DecorShape,
   FloorSurface,
@@ -45,12 +46,30 @@ export type DecorCatalogItem = CatalogBase & {
   model: { shape: DecorShape; colors: [main: string, second: string] };
 };
 
+/** Sets the pegboard's color (DESIGN.md section 16). Only one board hangs in the room. */
+export type BoardCatalogItem = CatalogBase & {
+  category: "pegboard";
+  kind: "board";
+  model: { board: string; hole: string; frame: string };
+};
+
+export type AccessoryKind = "lights" | "shelf" | "penCup" | "toteHook" | "clips" | "basket" | "clock" | "stickers";
+
+/** Hangs on the pegboard; `size` is in peg holes. */
+export type AccessoryCatalogItem = CatalogBase & {
+  category: "pegboard";
+  kind: "accessory";
+  model: { accessory: AccessoryKind; size: [w: number, h: number]; colors: [main: string, second: string] };
+};
+
 export type CatalogItem =
   | StorageCatalogItem
   | ShelfCatalogItem
   | WallpaperCatalogItem
   | FloorCatalogItem
-  | DecorCatalogItem;
+  | DecorCatalogItem
+  | BoardCatalogItem
+  | AccessoryCatalogItem;
 
 export type CatalogCategory = CatalogItem["category"];
 
@@ -129,6 +148,27 @@ const decor = (
   colors: [string, string],
 ): DecorCatalogItem => ({ id, name, style, category: "decor", price, layer, footprint, model: { shape, colors } });
 
+const board = (id: string, name: string, style: CatalogStyle, price: number, [boardColor, hole, frame]: [string, string, string]): BoardCatalogItem => ({
+  id,
+  name,
+  style,
+  category: "pegboard",
+  kind: "board",
+  price,
+  footprint: [0, 0],
+  model: { board: boardColor, hole, frame },
+});
+
+const accessory = (
+  id: string,
+  name: string,
+  style: CatalogStyle,
+  price: number,
+  kind: AccessoryKind,
+  size: [number, number],
+  colors: [string, string],
+): AccessoryCatalogItem => ({ id, name, style, category: "pegboard", kind: "accessory", price, footprint: [0, 0], model: { accessory: kind, size, colors } });
+
 export const CATALOG: readonly CatalogItem[] = [
   // Storage furniture. The first of each kind keeps the room's current colors.
   storage("retro-fridge-cream", "Retro round-top fridge", "retro", "fridge", 120, ["#F3EADB", "#C9B79A", "#D9CCB0"]),
@@ -198,6 +238,21 @@ export const CATALOG: readonly CatalogItem[] = [
   decor("cocoa-mask-cat", "Cocoa mask cat", "nordic", 45, "floor", [1, 1], "maskCat", ["#F1EAE0", "#4F443D"]),
   decor("midnight-cat", "Midnight cat", "japandi", 45, "floor", [1, 1], "plainCat", ["#2B2622", "#E8A21A"]),
   decor("veggie-basket", "Veggie basket", "natural", 20, "floor", [1, 1], "veggieBasket", ["#B98B57", "#9A7043"]),
+  decor("pegboard", "Pegboard", "natural", 0, "wall", [3, 3], "pegboard", ["#EAD7B2", "#A47551"]),
+
+  // Pegboard: board colors and the accessories that hang on it (DESIGN.md section 16).
+  board("oat-pegboard", "Oat pegboard", "natural", 0, ["#EAD7B2", "#C2A87D", "#A47551"]),
+  board("sage-pegboard", "Sage pegboard", "japandi", 40, ["#CFDABF", "#9DB08A", "#7E9A68"]),
+  board("white-pegboard", "White pegboard", "nordic", 40, ["#F7F3EC", "#D9D2C4", "#C9B79A"]),
+  board("walnut-pegboard", "Walnut pegboard", "natural", 50, ["#8C6440", "#5E4430", "#5E4430"]),
+  accessory("string-lights", "String lights", "retro", 35, "lights", [24, 2], ["#F2D27A", "#6E4E33"]),
+  accessory("mini-wood-shelf", "Mini wood shelf", "natural", 30, "shelf", [8, 4], ["#A47551", "#8FA67A"]),
+  accessory("pen-cup", "Pen cup", "nordic", 15, "penCup", [2, 3], ["#A9C9DA", "#E9A9A9"]),
+  accessory("tote-hook", "Tote hook", "natural", 25, "toteHook", [4, 5], ["#A9BC95", "#7A6654"]),
+  accessory("binder-clips", "Binder clips", "nordic", 10, "clips", [3, 2], ["#4A3B2E", "#E2B25C"]),
+  accessory("wire-basket", "Wire basket", "nordic", 30, "basket", [4, 3], ["#B5CBD1", "#F7F4EE"]),
+  accessory("little-clock", "Little clock", "retro", 25, "clock", [3, 3], ["#C8755A", "#FFFBF3"]),
+  accessory("sticker-sheet", "Sticker sheet", "retro", 15, "stickers", [3, 2], ["#E2B25C", "#D9604A"]),
 ];
 
 const catalogById = new Map(CATALOG.map((item) => [item.id, item]));
@@ -217,17 +272,20 @@ export const STARTER_STORAGE: Partial<Record<StorageKind, string>> = {
 
 export const STARTER_WALLPAPER = "square-tile-wainscot";
 export const STARTER_FLOOR = "cream-blue-checker";
+export const STARTER_PEGBOARD = "oat-pegboard";
 // shortcut: a mock 1000 leaves to try the shop with, until earning leaves from XP exists.
 export const STARTER_LEAVES = 1000;
 
 /** Where the starting decor stands in a new room. Wall pieces' cells are a column and a row on the back wall. */
-export const STARTER_DECOR: readonly { id: string; itemId: string; cell: [number, number]; rotation: 0 }[] = [
+export const STARTER_DECOR: readonly { id: string; itemId: string; cell: [number, number]; rotation: 0; wall?: WallSide }[] = [
   { id: "starter-window", itemId: "gingham-window", cell: [6, 1], rotation: 0 },
   { id: "starter-clock", itemId: "tomato-wall-clock", cell: [9, 1], rotation: 0 },
   { id: "starter-frames", itemId: "little-picture-frames", cell: [4, 0], rotation: 0 },
   { id: "starter-cat-rug", itemId: "butter-oval-rug", cell: [2, 4], rotation: 0 },
   { id: "starter-cat", itemId: "napping-cat", cell: [3, 6], rotation: 0 },
   { id: "starter-basket", itemId: "veggie-basket", cell: [6, 8], rotation: 0 },
+  // Toward the front of the left wall, clear of the supplies cabinet, maker shelf and crates.
+  { id: "starter-pegboard", itemId: "pegboard", cell: [7, 0], rotation: 0, wall: "left" },
 ];
 
 export type RoomTheme = {

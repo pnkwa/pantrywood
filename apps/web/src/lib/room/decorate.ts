@@ -2,6 +2,7 @@ import type { DecorPlacement, RoomLayout, Rotation, StoragePlacement, WallSide }
 import type { StorageKind } from "@/components/scene/types";
 import {
   catalogItem,
+  STARTER_PEGBOARD,
   STARTER_STORAGE,
   storageFootprint,
   type CatalogItem,
@@ -276,6 +277,7 @@ export const applyTheme = (room: RoomContext, theme: RoomTheme): RoomLayout => {
 /** "In room" when a placed piece, the wallpaper or the floor uses this catalog item. */
 export const isInRoom = (room: RoomContext, itemId: string) =>
   room.layout.wallpaper === itemId ||
+  (room.layout.pegboard ?? STARTER_PEGBOARD) === itemId ||
   room.layout.floor === itemId ||
   room.storage.some((placement) => placement.itemId === itemId && !placement.stored) ||
   room.layout.decor.some((placement) => placement.itemId === itemId);

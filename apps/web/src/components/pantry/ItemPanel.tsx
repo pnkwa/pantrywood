@@ -11,6 +11,7 @@ import {
   PlusIcon,
   ShoppingCartSimpleIcon,
 } from "@phosphor-icons/react";
+import { LinkedNotes } from "@/components/board/LinkedNotes";
 import { ItemPictureField } from "@/components/inside/ItemPictureField";
 import { useStockAction, type StockAction } from "@/lib/grocy";
 import type { PantryItem } from "@/lib/pantry/model";
@@ -160,6 +161,7 @@ export const ItemPanel = ({
 
       <FadeIn order={2} className="flex flex-col gap-3">
         {spot}
+        <LinkedNotes productId={item.productId} />
         <ItemPictureField item={item} />
       </FadeIn>
 

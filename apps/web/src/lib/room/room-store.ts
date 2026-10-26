@@ -2,7 +2,15 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import { RoomLayoutSchema, type DecorPlacement, type RoomLayout } from "@pantrywood/shared";
 import { z } from "zod";
-import { catalogItem, STARTER_DECOR, STARTER_FLOOR, STARTER_LEAVES, STARTER_STORAGE, STARTER_WALLPAPER } from "@/data/catalog";
+import {
+  catalogItem,
+  STARTER_DECOR,
+  STARTER_FLOOR,
+  STARTER_LEAVES,
+  STARTER_PEGBOARD,
+  STARTER_STORAGE,
+  STARTER_WALLPAPER,
+} from "@/data/catalog";
 import { localStorageRepository } from "@/lib/repository/local-storage";
 
 const UNDO_STEPS = 30;
@@ -13,6 +21,7 @@ const STARTER_LAYOUT: RoomLayout = {
     ...Object.values(STARTER_STORAGE),
     STARTER_WALLPAPER,
     STARTER_FLOOR,
+    STARTER_PEGBOARD,
     ...STARTER_DECOR.map((placement) => placement.itemId),
   ],
   wallpaper: STARTER_WALLPAPER,
@@ -59,6 +68,16 @@ const MIGRATIONS: ((layout: RoomLayout) => RoomLayout)[] = [
   }),
   // Rooms saved before the mock 1000 leaves get topped up to it.
   (layout) => ({ ...layout, leaves: Math.max(layout.leaves, STARTER_LEAVES) }),
+  // The pegboard arrived: it hangs on the left wall and its oat board is owned.
+  (layout) => {
+    const pegboard = STARTER_LAYOUT.decor.find((placement) => placement.itemId === "pegboard");
+    const hasOne = layout.decor.some((placement) => placement.itemId === "pegboard");
+    return {
+      ...layout,
+      decor: pegboard && !hasOne ? [...layout.decor, pegboard] : layout.decor,
+      owned: [...new Set([...layout.owned, "pegboard", STARTER_PEGBOARD])],
+    };
+  },
 ];
 
 const SavedStateSchema = z.object({ layout: RoomLayoutSchema });

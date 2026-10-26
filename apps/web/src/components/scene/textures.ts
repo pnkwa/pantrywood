@@ -25,6 +25,21 @@ const canvasTexture = (
   return texture;
 };
 
+/** One peg hole per tile, repeated across the board. */
+export const pegboardTexture = (board: string, hole: string, [columns, rows]: [number, number]): Texture =>
+  canvasTexture(
+    32,
+    (context, size) => {
+      context.fillStyle = board;
+      context.fillRect(0, 0, size, size);
+      context.fillStyle = hole;
+      context.beginPath();
+      context.arc(size / 2, size / 2, size * 0.13, 0, Math.PI * 2);
+      context.fill();
+    },
+    [columns, rows],
+  );
+
 const WALL_TILE_SIZE = 0.5;
 
 export const wallTileTexture = (width: number, height: number): Texture =>

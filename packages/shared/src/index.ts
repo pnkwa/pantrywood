@@ -3,3 +3,4 @@ export * from "./grocy";
 export * from "./receipt";
 export * from "./room";
 export * from "./inside";
+export * from "./board";

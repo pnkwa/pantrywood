@@ -27,6 +27,7 @@ import {
   MagnifyingGlassMinusIcon,
   MagnifyingGlassPlusIcon,
   PaintBrushIcon,
+  PushPinIcon,
   ListBulletsIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
@@ -43,6 +44,7 @@ import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from 
 import { wallPose, type Room } from "@/lib/room/use-room";
 import type { WallSide } from "@pantrywood/shared";
 import type { useDecorate } from "@/lib/room/use-decorate";
+import { BoardView } from "@/components/board/BoardView";
 import { InsideView } from "@/components/inside/InsideView";
 import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -164,6 +166,8 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const selectDecorPiece = useUiStore((state) => state.selectDecorPiece);
   const setMoving = useUiStore((state) => state.setMoving);
   const setListView = useUiStore((state) => state.setListView);
+  const boardOpen = useUiStore((state) => state.boardOpen);
+  const openBoard = useUiStore((state) => state.openBoard);
 
   const openStorage = storages.find((storage) => storage.locationId === insideLocationId);
   const openLocation = pantry?.locations.find((location) => location.id === insideLocationId);
@@ -389,6 +393,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               onFloorPointerMove={handleFloorPointerMove}
               onCarryEnd={handleCarryEnd}
               onPointerDrift={cancelLongPress}
+              onOpenBoard={openBoard}
             />
           </div>
           <SceneOverlayLayer
@@ -480,6 +485,14 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               <span className="max-lg:sr-only">Decorate</span>
             </button>
           )}
+          <button
+            type="button"
+            onClick={openBoard}
+            className="flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-border bg-card text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring max-lg:w-11 lg:px-4"
+          >
+            <PushPinIcon size={18} weight="duotone" aria-hidden />
+            <span className="max-lg:sr-only">Open board</span>
+          </button>
         </motion.div>
       )}
       </AnimatePresence>
@@ -576,6 +589,18 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       )}
 
       <AnimatePresence>
+        {boardOpen && (
+          <motion.div
+            key="board"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="absolute inset-0 z-40 bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-edge)_100%)]"
+          >
+            <BoardView />
+          </motion.div>
+        )}
         {insideVisible && openLocation && openKind && (
           <motion.div
             key={`inside-${openLocation.id}`}

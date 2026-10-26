@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { FloorSurface, WallSurface } from "@/components/scene/types";
+import { AccessoryArt } from "@/components/board/PieceArt";
 import type { CatalogItem } from "@/data/catalog";
 
 // Small isometric sketches from docs/mockups/Thumb.dc.html, colored from each item's own palette.
@@ -239,7 +240,23 @@ const floorSwatch = ({ pattern, base, line }: FloorSurface): CSSProperties => {
 
 export const CatalogThumb = ({ item }: { item: CatalogItem }) => (
   <span aria-hidden className="flex h-19 w-full items-center justify-center overflow-hidden rounded-[14px] bg-background">
-    {item.category === "wallpaper" || item.category === "floor" ? (
+    {item.category === "pegboard" ? (
+      item.kind === "board" ? (
+        <span
+          className="block h-13.5 w-16.5 rounded-[10px] border-4"
+          style={{
+            borderColor: item.model.frame,
+            backgroundColor: item.model.board,
+            backgroundImage: `radial-gradient(circle, ${item.model.hole} 0 18%, transparent 22%)`,
+            backgroundSize: "8px 8px",
+          }}
+        />
+      ) : (
+        <span className="block h-12 w-16">
+          <AccessoryArt kind={item.model.accessory} colors={item.model.colors} />
+        </span>
+      )
+    ) : item.category === "wallpaper" || item.category === "floor" ? (
       <span
         style={item.category === "wallpaper" ? wallSwatch(item.material) : floorSwatch(item.material)}
         className="block h-13.5 w-16.5 rounded-[10px] border-[1.5px] border-border"

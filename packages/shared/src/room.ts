@@ -32,6 +32,8 @@ export const RoomLayoutSchema = z.object({
   leaves: z.number(),
   owned: z.array(z.string()),
   wallpaper: z.string(),
+  /** The pegboard's catalog item, which sets its color. Absent means the starter oat board. */
+  pegboard: z.string().optional(),
   floor: z.string(),
   storage: z.array(StoragePlacementSchema),
   decor: z.array(DecorPlacementSchema),

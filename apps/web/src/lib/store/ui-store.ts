@@ -41,6 +41,15 @@ type UiState = {
   setDecorating: (decorating: boolean) => void;
   selectDecorPiece: (key: string | null) => void;
   setMoving: (moving: boolean) => void;
+  /** The pegboard's board view, and the piece picked on it for the side panel. */
+  boardOpen: boolean;
+  boardPiece: string | null;
+  /** Phones and tablets: the board's panel is a bottom sheet, open only when asked for so the board stays visible. */
+  boardSheet: boolean;
+  setBoardSheet: (open: boolean) => void;
+  openBoard: () => void;
+  closeBoard: () => void;
+  selectBoardPiece: (id: string | null) => void;
   /** A catalog item waiting for the Buy dialog; `confirm` spends the leaves and uses it. */
   purchase: { item: CatalogItem; confirm: () => void } | null;
   askToBuy: (item: CatalogItem, confirm: () => void) => void;
@@ -73,7 +82,24 @@ export const useUiStore = create<UiState>()((set, get) => ({
   decorPiece: null,
   moving: false,
   setDecorating: (decorating) =>
-    set({ decorating, decorPiece: null, moving: false, selection: null, listView: false, view: "room", hoveredLocationId: null }),
+    set({
+      decorating,
+      decorPiece: null,
+      moving: false,
+      selection: null,
+      listView: false,
+      view: "room",
+      hoveredLocationId: null,
+      boardOpen: false,
+    }),
+  boardOpen: false,
+  boardPiece: null,
+  boardSheet: false,
+  setBoardSheet: (open) => set({ boardSheet: open }),
+  openBoard: () =>
+    set({ boardOpen: true, boardPiece: null, boardSheet: false, selection: null, view: "room", hoveredLocationId: null }),
+  closeBoard: () => set({ boardOpen: false, boardPiece: null, boardSheet: false }),
+  selectBoardPiece: (id) => set({ boardPiece: id }),
   selectDecorPiece: (key) => set({ decorPiece: key, moving: false }),
   setMoving: (moving) => set({ moving }),
   purchase: null,

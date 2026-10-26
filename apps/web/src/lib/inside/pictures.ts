@@ -36,7 +36,7 @@ export const grocyPictureUrl = (fileName: string | null) => {
 };
 
 /** A PNG no taller or wider than PICTURE_EDGE_PX, with the white background cleared when asked. */
-const preparePicture = async (file: Blob, removeBackground: boolean) => {
+export const preparePicture = async (file: Blob, removeBackground: boolean) => {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => {
     throw new Error("Couldn't open that picture. Try a PNG or JPEG.");
   });

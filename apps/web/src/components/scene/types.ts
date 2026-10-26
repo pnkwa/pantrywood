@@ -80,7 +80,11 @@ export type DecorShape =
   | "cat"
   | "maskCat"
   | "plainCat"
-  | "veggieBasket";
+  | "veggieBasket"
+  | "pegboard";
+
+/** A board piece seen from the room: a flat card, placed in fractions of the board (0 to 1 from the top-left). */
+export type BoardPlane = { id: string; x: number; y: number; w: number; h: number; color: string };
 
 export type SceneDecor = {
   id: string;
@@ -90,4 +94,6 @@ export type SceneDecor = {
   rotationY: number;
   /** Footprint in cells, for rugs. */
   size: [width: number, depth: number];
+  /** The pegboard only: its colors and what hangs on it. */
+  board?: { board: string; hole: string; frame: string; columns: number; rows: number; planes: BoardPlane[] };
 };

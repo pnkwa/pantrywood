@@ -17,6 +17,7 @@ import { usePantry } from "@/lib/pantry/use-pantry";
 import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
 import { matchReceiptLine, normalizeReceiptName } from "@/lib/receipt/match";
 import { receiptMatches, receiptMemories, useRefreshReceipts, useRememberedMatches } from "@/lib/receipt/store";
+import { useBoardStore } from "@/lib/board/board-store";
 import { LEAVES_PER_RECEIPT } from "@/lib/room/leaves";
 import { useRoomStore } from "@/lib/room/room-store";
 import { useUiStore } from "@/lib/store/ui-store";
@@ -186,7 +187,15 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
     setView(clampedView(view.zoom, start.x + event.clientX - start.pointerX, start.y + event.clientY - start.pointerY));
   };
 
-  const keepMemory = async () => {
+  /** Keeps the receipt with what it added to stock, and pins it to the pegboard as a slip. */
+  const keepMemory = async (addedLines: ReadonlySet<number>) => {
+    const addedByProduct = new Map<number, { productId: number; name: string; amount: number }>();
+    for (const { choice, index } of rows) {
+      const product = activeProducts.find((candidate) => candidate.id === choice.productId);
+      if (!product || !addedLines.has(index)) continue;
+      const earlier = addedByProduct.get(product.id);
+      addedByProduct.set(product.id, { productId: product.id, name: product.name, amount: (earlier?.amount ?? 0) + choice.amount });
+    }
     const memory = {
       id: crypto.randomUUID(),
       store: scan.store,
@@ -195,7 +204,9 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       currency: scan.currency,
       lineCount: scan.lines.length,
       savedAt: new Date().toISOString(),
+      added: [...addedByProduct.values()],
     };
+    useBoardStore.getState().add({ id: crypto.randomUUID(), kind: "slip", pin: "clip", receiptId: memory.id, w: 5, h: 8 });
     try {
       await receiptMemories.save(memory.id, {
         ...memory,
@@ -239,7 +250,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
         await receiptMatches.save(receiptName, { receiptName, productId: choice.productId }).catch(() => undefined);
       }
     }
-    await keepMemory();
+    await keepMemory(nowAdded);
     await refreshReceipts();
     showToast(`Added ${nowAdded.size} ${nowAdded.size === 1 ? "item" : "items"} to stock`);
     earnLeaves(LEAVES_PER_RECEIPT);
