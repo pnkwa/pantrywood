@@ -7,5 +7,5 @@ export default defineConfig([
   ...base,
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts"]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", "public/zxing/**", "public/ocr/**"]),
 ]);

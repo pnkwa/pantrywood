@@ -33,7 +33,14 @@ type Stage =
 
 const ErrorBodySchema = z.object({ error_message: z.string() });
 
+/** On this device by default (free, private); `NEXT_PUBLIC_RECEIPT_READER=claude` sends it to Claude instead. */
+const READ_WITH_CLAUDE = process.env.NEXT_PUBLIC_RECEIPT_READER === "claude";
+
 const readReceipt = async (photo: Blob, groupNames: string[]) => {
+  if (!READ_WITH_CLAUDE) {
+    const { readReceiptOnDevice } = await import("@/lib/ocr/read-receipt");
+    return readReceiptOnDevice(photo);
+  }
   const form = new FormData();
   form.append("image", photo, "receipt.jpg");
   for (const name of groupNames) form.append("group", name);
