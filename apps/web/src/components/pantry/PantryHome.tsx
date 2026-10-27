@@ -53,6 +53,7 @@ export const PantryHome = () => {
   const boardOpen = useUiStore((state) => state.boardOpen);
   const reducedMotion = useReducedMotion();
   const sheetOpen = useUiStore((state) => state.sheetOpen);
+  const itemListOpen = useUiStore((state) => state.itemListOpen);
 
   const selection = useUiStore((state) => state.selection);
   const view = useUiStore((state) => state.view);
@@ -94,9 +95,9 @@ export const PantryHome = () => {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [clearSelection, closeInside]);
 
-  const selectedName =
-    pantry?.locations.find((location) => location.id === selection?.locationId)
-      ?.name ?? "Storage";
+  const selectedName = itemListOpen
+    ? "All items"
+    : (pantry?.locations.find((location) => location.id === selection?.locationId)?.name ?? "Storage");
 
   return (
     <>
@@ -169,7 +170,7 @@ export const PantryHome = () => {
 
       <BottomSheet
         // Decorate keeps its catalog in the room's build tray, so the sheet stays shut.
-        open={decorating ? false : boardOpen ? sheetOpen : Boolean(pantry && selection) && !doorShowsStorage}
+        open={decorating ? false : boardOpen ? sheetOpen : Boolean(pantry && (selection || itemListOpen)) && !doorShowsStorage}
         label={boardOpen ? "Pegboard" : `${selectedName} details`}
         onClose={boardOpen ? () => useUiStore.getState().setSheetOpen(false) : clearSelection}
         size={boardOpen ? "short" : "tall"}

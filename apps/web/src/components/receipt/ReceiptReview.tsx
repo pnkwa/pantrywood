@@ -14,6 +14,7 @@ import {
 import { NAV_FORWARD } from "@/lib/page-transitions";
 import { formatDate, formatMoney } from "@/lib/pantry/format";
 import { usePantry } from "@/lib/pantry/use-pantry";
+import { pinchZoom, wheelZoom } from "@/lib/receipt/crop";
 import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
 import { correctedName, matchReceiptLine, normalizeReceiptName, unifyRepeats } from "@/lib/receipt/match";
 import { UNREADABLE_NAME } from "@/lib/receipt/parse";
@@ -52,6 +53,18 @@ type SummaryTileProps = {
   label: string;
   value: ReactNode;
   tone?: "plain" | "sage" | "honey";
+};
+
+// Lines read before top/bottom existed, or from Claude without them, get one printed line around y.
+const FALLBACK_HALF_HEIGHT = 0.012;
+const SPAN_PADDING = 0.004;
+
+/** Where the line sits on the photo, from its first printed row to its last. */
+const highlightSpan = (line: ReceiptLine | undefined) => {
+  if (!line || line.y === null) return undefined;
+  const top = line.top ?? line.y - FALLBACK_HALF_HEIGHT;
+  const bottom = line.bottom ?? line.y + FALLBACK_HALF_HEIGHT;
+  return { top: Math.max(0, top - SPAN_PADDING), bottom: Math.min(1, bottom + SPAN_PADDING) };
 };
 
 const SummaryTile = ({ label, value, tone = "plain" }: SummaryTileProps) => (
@@ -105,6 +118,8 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const [view, setView] = useState({ zoom: 1, x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ pointerX: 0, pointerY: 0, x: 0, y: 0 });
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const pinchStart = useRef<{ distance: number; zoom: number; x: number; y: number } | null>(null);
   const [saving, setSaving] = useState(false);
   // Phones and tablets: the lines sit in a sheet over the photo; lowering it shows the receipt.
   const [sheetOpen, setSheetOpen] = useState(true);
@@ -157,7 +172,21 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   );
 
   const shownLines = lines ?? scan.lines;
-  const lineTotal = shownLines.reduce((sum, line) => sum + line.line_total, 0);
+  const openSpan = openLine === null ? undefined : highlightSpan(shownLines[openLine]);
+  const linesSum = shownLines.reduce((sum, line) => sum + line.line_total, 0);
+  const lineTotal = linesSum - scan.discount;
+  const linesAddUp =
+    scan.discount > 0 ? (
+      <>
+        Lines <span className="tabular">{formatMoney(linesSum, scan.currency)}</span> − discounts{" "}
+        <span className="tabular">{formatMoney(scan.discount, scan.currency)}</span> ={" "}
+        <b className="tabular">{formatMoney(lineTotal, scan.currency)}</b>
+      </>
+    ) : (
+      <>
+        Lines add up to <b className="tabular">{formatMoney(lineTotal, scan.currency)}</b>
+      </>
+    );
   const totalMatches = scan.total === null || Math.abs(lineTotal - scan.total) < TOTAL_TOLERANCE;
   const rows = (choices ?? []).map((choice, index) => ({ choice, index, line: shownLines[index] }));
   const needsYouCount = rows.filter((row) => needsYou(row.choice)).length;
@@ -207,17 +236,60 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
     );
   };
 
+  const fingerDistance = () => {
+    const [first, second] = [...fingers.current.values()];
+    return first && second ? Math.hypot(first.x - second.x, first.y - second.y) : 0;
+  };
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
-    if (view.zoom <= 1) return;
     event.currentTarget.setPointerCapture(event.pointerId);
+    fingers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (fingers.current.size === 2) {
+      pinchStart.current = { distance: fingerDistance(), zoom: view.zoom, x: view.x, y: view.y };
+      setDragging(true);
+      return;
+    }
+    if (view.zoom <= 1) return;
     dragStart.current = { pointerX: event.clientX, pointerY: event.clientY, x: view.x, y: view.y };
     setDragging(true);
   };
 
   const drag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!fingers.current.has(event.pointerId)) return;
+    fingers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const pinch = pinchStart.current;
+    if (pinch) {
+      const zoom = pinchZoom(pinch.zoom, pinch.distance, fingerDistance(), MAX_ZOOM);
+      setView(clampedView(zoom, (pinch.x * zoom) / pinch.zoom, (pinch.y * zoom) / pinch.zoom));
+      return;
+    }
     if (!dragging) return;
     const start = dragStart.current;
     setView(clampedView(view.zoom, start.x + event.clientX - start.pointerX, start.y + event.clientY - start.pointerY));
+  };
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    fingers.current.delete(event.pointerId);
+    pinchStart.current = null;
+    const [remaining] = [...fingers.current.values()];
+    // Lifting one finger of a pinch carries on as a drag from where the other one is.
+    if (remaining && view.zoom > 1) dragStart.current = { pointerX: remaining.x, pointerY: remaining.y, x: view.x, y: view.y };
+    else setDragging(false);
+  };
+
+  // React's wheel listener is passive, so it can't stop the browser zooming the whole page on a trackpad pinch.
+  const photoWithWheel = (photo: HTMLDivElement | null) => {
+    photoRef.current = photo;
+    if (!photo) return;
+    const zoomOnPinch = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      setView((current) => {
+        const zoom = wheelZoom(current.zoom, event.deltaY, MAX_ZOOM);
+        return clampedView(zoom, (current.x * zoom) / current.zoom, (current.y * zoom) / current.zoom);
+      });
+    };
+    photo.addEventListener("wheel", zoomOnPinch, { passive: false });
+    return () => photo.removeEventListener("wheel", zoomOnPinch);
   };
 
   /** Keeps the receipt with what it added to stock, and pins it to the pegboard as a slip. */
@@ -300,7 +372,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       <ReceiptScanHeader>
         <SummaryTile label="Lines" value={<AnimatedNumber value={shownLines.length} />} />
         <SummaryTile label="Total" value={formatMoney(scan.total ?? lineTotal, scan.currency)} />
-        <SummaryTile label="Matched" value={<AnimatedNumber value={rows.length - needsYouCount} />} tone="sage" />
+        <SummaryTile label="To add" value={<AnimatedNumber value={toAdd.length} />} tone="sage" />
         <SummaryTile label="Needs you" value={<AnimatedNumber value={needsYouCount} />} tone="honey" />
       </ReceiptScanHeader>
 
@@ -312,15 +384,15 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:rounded-xl lg:bg-[#EFE6D3]">
           <div className="flex min-h-0 flex-1 overflow-hidden p-6">
             <div
-              ref={photoRef}
+              ref={photoWithWheel}
               onPointerDown={startDrag}
               onPointerMove={drag}
-              onPointerUp={() => setDragging(false)}
-              onPointerCancel={() => setDragging(false)}
+              onPointerUp={endDrag}
+              onPointerCancel={endDrag}
               style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}
               className={`relative m-auto origin-center select-none motion-reduce:transition-none ${
                 dragging ? "cursor-grabbing" : "transition-transform duration-300 ease-out"
-              } ${view.zoom > 1 ? "touch-none cursor-grab" : ""}`}
+              } touch-none ${view.zoom > 1 ? "cursor-grab" : ""}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing to optimize */}
               <img
@@ -329,15 +401,22 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                 draggable={false}
                 className="block max-h-[calc(100dvh-20rem)] w-auto max-w-full rounded-md shadow-paper lg:max-h-[calc(100dvh-260px)]"
               />
+              {openSpan && (
+                <span
+                  aria-hidden
+                  style={{ top: `${openSpan.top * 100}%`, height: `${(openSpan.bottom - openSpan.top) * 100}%` }}
+                  className="pointer-events-none absolute inset-x-0 rounded-sm bg-honey/35"
+                />
+              )}
               {rows.map(({ choice, index, line }) =>
                 line?.y === null || line?.y === undefined ? null : (
                   <span
                     key={index}
                     aria-hidden
                     style={{ top: `${Math.min(Math.max(line.y, 0), 1) * 100}%` }}
-                    className={`absolute -left-3 flex size-5.5 -translate-y-1/2 items-center justify-center rounded-full text-[11px] font-semibold text-primary-foreground shadow-paper ring-2 ring-[#3A322A] lg:ring-[#EFE6D3] ${
+                    className={`absolute -left-3 flex size-5.5 -translate-y-1/2 items-center justify-center rounded-full text-[11px] font-semibold text-primary-foreground shadow-paper ring-2 ring-[#3A322A] transition-opacity duration-150 lg:ring-[#EFE6D3] ${
                       needsYou(choice) ? "bg-[#C8901F]" : "bg-sage-deep"
-                    }`}
+                    } ${openLine === index ? "z-10" : openLine !== null ? "opacity-35" : ""}`}
                   >
                     {index + 1}
                   </span>
@@ -406,7 +485,12 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   <span className="text-base font-medium text-muted-foreground"> · {formatDate(scan.date)}</span>
                 )}
               </h2>
-              <span className="text-[13px] text-muted-foreground">Tap a match to change it</span>
+              <span className="text-[13px] text-muted-foreground">
+                <span className="tabular font-semibold text-foreground lg:hidden">
+                  {formatMoney(scan.total ?? lineTotal, scan.currency)}
+                </span>
+                <span className="max-lg:hidden">Tap a line to check it</span>
+              </span>
             </div>
             <div role="tablist" aria-label="Filter lines" className="ml-auto flex gap-1 rounded-full bg-muted p-1">
               {[
@@ -431,12 +515,6 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 px-4 pb-2.5 lg:hidden">
-            <SummaryTile label="Total" value={formatMoney(scan.total ?? lineTotal, scan.currency)} />
-            <SummaryTile label="Matched" value={<AnimatedNumber value={rows.length - needsYouCount} />} tone="sage" />
-            <SummaryTile label="Needs you" value={<AnimatedNumber value={needsYouCount} />} tone="honey" />
-          </div>
-
           <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 pt-1 pb-3">
             {choices === null && <li className="py-6 text-center text-sm text-muted-foreground">Matching lines…</li>}
             {choices !== null && visibleRows.length === 0 && (
@@ -453,7 +531,6 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   added={added.has(index)}
                   open={openLine === index}
                   products={reviewProducts}
-                  places={places}
                   onToggle={() => openLineAt(openLine === index ? null : index)}
                   onChange={(next) => updateChoice(index, next)}
                   onRename={(name) => renameLine(index, name)}
@@ -465,15 +542,16 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
           <div className="flex flex-col gap-2.5 border-t-[1.5px] border-border px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <div className="flex flex-wrap items-center gap-x-4.5 gap-y-2">
               {totalMatches ? (
-                <span className="inline-flex items-center gap-2 text-sm text-status-fresh-foreground">
-                  <CheckIcon size={18} weight="bold" aria-hidden />
-                  Lines add up to <b className="tabular">{formatMoney(lineTotal, scan.currency)}</b>, same as the receipt
+                <span className="flex items-start gap-2 text-sm text-status-fresh-foreground">
+                  <CheckIcon size={18} weight="bold" aria-hidden className="mt-px shrink-0" />
+                  <span>{linesAddUp}, same as the receipt</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-2 text-sm text-status-soon-foreground">
-                  <WarningIcon size={18} weight="duotone" aria-hidden />
-                  Lines add up to <b className="tabular">{formatMoney(lineTotal, scan.currency)}</b>, the receipt says{" "}
-                  <b className="tabular">{formatMoney(scan.total ?? 0, scan.currency)}</b>
+                <span className="flex items-start gap-2 text-sm text-status-soon-foreground">
+                  <WarningIcon size={18} weight="duotone" aria-hidden className="mt-px shrink-0" />
+                  <span>
+                    {linesAddUp}, the receipt says <b className="tabular">{formatMoney(scan.total ?? 0, scan.currency)}</b>
+                  </span>
                 </span>
               )}
               <label className="inline-flex min-h-11 items-center gap-2 text-sm">

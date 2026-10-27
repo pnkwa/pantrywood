@@ -17,6 +17,8 @@ const NOT_ITEM = [
 // Most specific first: the first match wins.
 const TOTAL = [/grand\s*total|net\s*total|ยอดสุทธิ|^สุทธิ/i, /^total\b|^ยอดรวม|รวมทั้งสิ้น|^รวมเงิน/i, /\btotal\b|^รวม(?![ก-๙])/i];
 const SUBTOTAL = /sub\s*total|ก่อนภาษี|\bvat\b|\btax\b|ภาษี/i;
+// Not "save"/"you saved": those sum up the discounts again, after the total.
+const DISCOUNT = /\bdisc(ount)?\b|mix\s*&?\s*match|coupon|ส่วนลด|คูปอง/i;
 
 // Chains whose name is often a logo or prints garbled.
 const KNOWN_STORES: [RegExp, string][] = [
@@ -76,7 +78,9 @@ const firstPrice = (text: string) => {
   return first ? toNumber(first[1] ?? "0", first[2] ?? "00") : null;
 };
 
-type Row = { text: string; y: number; score: number };
+const TEXT_SHARE = 0.6;
+
+type Row = { text: string; y: number; top: number; bottom: number; score: number };
 
 export const groupRows = (texts: readonly OcrText[]): Row[] => {
   const sorted = [...texts].filter((text) => text.text.trim()).sort((first, second) => first.y + first.height / 2 - (second.y + second.height / 2));
@@ -90,6 +94,8 @@ export const groupRows = (texts: readonly OcrText[]): Row[] => {
     if (row && Math.abs(center - rowCenter) < typical * 0.55) row.push(text);
     else rows.push([text]);
   }
+  // The text finder pads every box (unclip 1.5); the printed letters fill about the middle 60% of it.
+  const textHalfHeight = (row: OcrText[]) => (Math.max(...row.map((part) => part.height)) * TEXT_SHARE) / 2;
   return rows.map((row) => ({
     text: normalize(
       [...row]
@@ -98,6 +104,8 @@ export const groupRows = (texts: readonly OcrText[]): Row[] => {
         .join(" "),
     ),
     y: row.reduce((sum, part) => sum + part.y + part.height / 2, 0) / row.length,
+    top: row.reduce((sum, part) => sum + part.y + part.height / 2, 0) / row.length - textHalfHeight(row),
+    bottom: row.reduce((sum, part) => sum + part.y + part.height / 2, 0) / row.length + textHalfHeight(row),
     score: Math.min(...row.map((part) => part.score)),
   }));
 };
@@ -160,6 +168,8 @@ const cleanName = (text: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+type NameAbove = { name: string; top: number };
+
 type ParseOptions = { imageHeight: number; currentYear: number };
 
 export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYear }: ParseOptions): ReceiptScan => {
@@ -169,13 +179,16 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
   let date: string | null = null;
   let total: number | null = null;
   let totalRank = TOTAL.length;
+  let discount = 0;
   // Nothing below the totals is an item: payment, change, points.
   let itemsDone = false;
   let knownStore: string | null = null;
-  let nameAbove: string | null = null;
+  let nameAbove: NameAbove | null = null;
   const fullText = rows.map((row) => row.text).join("\n");
 
-  const lineFor = (name: string, quantity: number, unitPrice: number | null, total: number, y: number): ReceiptLine => ({
+  const fraction = (pixels: number) => (imageHeight > 0 ? Math.min(1, Math.max(0, pixels / imageHeight)) : null);
+  // top is where the item starts: its own row, or the name row above it.
+  const lineFor = (name: string, quantity: number, unitPrice: number | null, total: number, row: Row, top: number): ReceiptLine => ({
     name,
     name_en: null,
     quantity,
@@ -183,13 +196,15 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
     line_total: total,
     kind: SUPPLY_WORDS.test(name) ? "supply" : "food",
     suggested_group: null,
-    y: imageHeight > 0 ? Math.min(1, Math.max(0, y / imageHeight)) : null,
+    y: fraction(row.y),
+    top: fraction(top),
+    bottom: fraction(row.bottom),
   });
 
   for (const row of rows) {
     const { text } = row;
     // Only the row directly above can be this row's name.
-    const above = nameAbove;
+    const above: NameAbove | null = nameAbove;
     nameAbove = null;
     date ??= parseDate(text, currentYear);
     knownStore ??= KNOWN_STORES.find(([pattern]) => pattern.test(text))?.[1] ?? null;
@@ -200,6 +215,11 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
       totalRank = rank;
     }
     if (price && lines.length > 0 && (rank !== -1 || SUBTOTAL.test(text))) itemsDone = true;
+    // Discounts print among the items or between the subtotal and the total ("ส่วนลด 4.00", "Mix&Match -18.00").
+    if (price && lines.length > 0 && totalRank === TOTAL.length && rank === -1 && (DISCOUNT.test(text) || price.value < 0)) {
+      discount += Math.abs(price.value);
+      continue;
+    }
     // An amount equal to the items so far, bare or on a non-item row, is the total even when its label was misread.
     const quantity = quantityOnly(text);
     const previous = lines.at(-1);
@@ -219,11 +239,13 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
       previous.quantity = count;
       previous.unit_price = unitPrice ?? (price ? price.value / count : previous.unit_price);
       if (price && unitPrice !== null && Math.abs(price.value - count * unitPrice) < 0.01) previous.line_total = price.value;
+      previous.bottom = fraction(row.bottom);
       continue;
     }
 
     const itemsSum = lines.reduce((sum, line) => sum + line.line_total, 0);
-    if (price && (!hasLetters(price.before) || isNotItem(text)) && lines.length > 1 && Math.abs(price.value - itemsSum) < 0.01) {
+    const sumSoFar = (amount: number) => [itemsSum, itemsSum - discount].some((sum) => Math.abs(amount - sum) < 0.01);
+    if (price && (!hasLetters(price.before) || isNotItem(text)) && lines.length > 1 && sumSoFar(price.value)) {
       total ??= price.value;
       itemsDone = true;
     }
@@ -233,7 +255,9 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
     if (!price || price.value <= 0) {
       const storeLike = !price && hasLetters(text) && !DATE.test(text) && !NOT_STORE.test(text) && row.score >= MIN_STORE_SCORE;
       if (lines.length === 0 && store === null && storeLike) store = text;
-      nameAbove = !price && hasLetters(text) ? cleanName(text) : null;
+      nameAbove = !price && hasLetters(text) ? { name: cleanName(text), top: row.top } : null;
+      // A barcode row between a name and its price ("(2105060000380000003921)N") passes the name on.
+      if (!price && !hasLetters(cleanName(text))) nameAbove = above;
       continue;
     }
 
@@ -269,12 +293,13 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
     const named = inline ? price.before.replace(inline[0], " ") : price.before;
     const ownName = cleanName(quantityColumn ? named.replace(/^\d+\s+/, "") : named);
     // Wholesale slips print the name on its own line above "(barcode) (1 * 169.00) 169.00".
-    const name = hasLetters(ownName) ? ownName : above;
-    if (name) lines.push(lineFor(name, count, unitPrice, price.value, row.y));
+    const name = hasLetters(ownName) ? ownName : (above?.name ?? null);
+    const top = !hasLetters(ownName) && above ? above.top : row.top;
+    if (name) lines.push(lineFor(name, count, unitPrice, price.value, row, top));
     // A price among the items whose name the OCR couldn't read stays a line, so it can be picked by hand.
-    else if (lines.length > 0) lines.push(lineFor(UNREADABLE_NAME, count, unitPrice, price.value, row.y));
+    else if (lines.length > 0) lines.push(lineFor(UNREADABLE_NAME, count, unitPrice, price.value, row, row.top));
   }
 
   const currency = /\$|usd/i.test(fullText) && !/บาท|฿|thb/i.test(fullText) ? "USD" : "THB";
-  return { store: knownStore ?? store, date, total, currency, lines };
+  return { store: knownStore ?? store, date, total, discount, currency, lines };
 };

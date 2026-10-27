@@ -70,7 +70,8 @@ export const ReceiptCrop = ({ photoUrl, onBack, onRead }: ReceiptCropProps) => {
       className="animate-in fade-in duration-200 flex flex-col items-center justify-center gap-4 overflow-hidden bg-[#3A322A] px-5 pt-24 pb-6 max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:p-5"
     >
       <p className="text-center text-sm text-[#F3EADB]/80 lg:text-muted-foreground">
-        Drag the corners to the edges of the slip · a focused corner also moves with the arrow keys
+        Drag the corners to the edges of the slip
+        <span className="max-lg:hidden"> · a focused corner also moves with the arrow keys</span>
       </p>
       <div ref={photoRef} className="relative min-h-0 touch-none select-none">
         {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL, nothing to optimize */}
@@ -102,33 +103,36 @@ export const ReceiptCrop = ({ photoUrl, onBack, onRead }: ReceiptCropProps) => {
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap items-center justify-center gap-2">
-        <button type="button" onClick={onBack} className={`${toolButton} bg-card text-foreground hover:bg-muted`}>
-          <ArrowLeftIcon size={18} weight="bold" aria-hidden />
-          Another photo
-        </button>
-        <button
-          type="button"
-          onClick={() => setRect(WHOLE_PHOTO)}
-          disabled={isWholePhoto(rect)}
-          className={`${toolButton} bg-card text-foreground hover:bg-muted disabled:opacity-50`}
-        >
-          <ArrowCounterClockwiseIcon size={18} weight="bold" aria-hidden />
-          Whole photo
-        </button>
-        <button
-          type="button"
-          aria-pressed={brighten}
-          onClick={() => setBrighten((on) => !on)}
-          className={`${toolButton} ${brighten ? "bg-foreground text-background" : "bg-card text-foreground hover:bg-muted"}`}
-        >
-          <SunIcon size={18} weight="duotone" aria-hidden />
-          Brighten
-        </button>
+      <div className="flex w-full max-w-md flex-col gap-2">
+        <div className="flex justify-center gap-2">
+          <button type="button" onClick={onBack} className={`${toolButton} bg-card text-foreground hover:bg-muted`}>
+            <ArrowLeftIcon size={18} weight="bold" aria-hidden />
+            Retake
+          </button>
+          <button
+            type="button"
+            aria-label="Reset to the whole photo"
+            onClick={() => setRect(WHOLE_PHOTO)}
+            disabled={isWholePhoto(rect)}
+            className={`${toolButton} bg-card text-foreground hover:bg-muted disabled:opacity-50`}
+          >
+            <ArrowCounterClockwiseIcon size={18} weight="bold" aria-hidden />
+            Reset
+          </button>
+          <button
+            type="button"
+            aria-pressed={brighten}
+            onClick={() => setBrighten((on) => !on)}
+            className={`${toolButton} ${brighten ? "bg-foreground text-background" : "bg-card text-foreground hover:bg-muted"}`}
+          >
+            <SunIcon size={18} weight="duotone" aria-hidden />
+            Brighten
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => onRead(rect, brighten)}
-          className={`${toolButton} bg-sage-deep text-primary-foreground shadow-[0_3px_0_#3F5236] hover:bg-sage-deep/85`}
+          className={`${toolButton} justify-center bg-sage-deep text-base text-primary-foreground shadow-[0_3px_0_#3F5236] hover:bg-sage-deep/85`}
         >
           <ScanIcon size={18} weight="bold" aria-hidden />
           Read receipt

@@ -28,4 +28,11 @@ export const moveCorner = (rect: CropRect, corner: Corner, dx: number, dy: numbe
 /** A line's height in the whole photo (0–1), as a height in the cropped picture shown on review. */
 export const yInCrop = (y: number, rect: CropRect) => clamp((y - rect.y) / rect.height, 0, 1);
 
+/** The zoom after two fingers moved from `startDistance` apart to `distance` apart, kept between 1× and `maxZoom`. */
+export const pinchZoom = (startZoom: number, startDistance: number, distance: number, maxZoom: number) =>
+  startDistance > 0 ? clamp((startZoom * distance) / startDistance, 1, maxZoom) : startZoom;
+
+/** A trackpad pinch arrives as a ctrl+wheel; each step of deltaY zooms a little. */
+export const wheelZoom = (zoom: number, deltaY: number, maxZoom: number) => clamp(zoom * Math.exp(-deltaY * 0.01), 1, maxZoom);
+
 export const isWholePhoto = (rect: CropRect) => rect.x <= 0 && rect.y <= 0 && rect.width >= 1 && rect.height >= 1;

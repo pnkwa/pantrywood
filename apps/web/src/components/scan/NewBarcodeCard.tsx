@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { z } from "zod";
-import type { GrocyPlace } from "@/lib/pantry/model";
 import { ProductForm } from "./ProductForm";
 import { ProductPicker } from "./ProductPicker";
 
@@ -38,10 +37,9 @@ const UnknownBarcodeIcon = () => (
 
 type NewBarcodeCardProps = {
   barcode: string;
-  places: GrocyPlace[];
 };
 
-export const NewBarcodeCard = ({ barcode, places }: NewBarcodeCardProps) => {
+export const NewBarcodeCard = ({ barcode }: NewBarcodeCardProps) => {
   const [step, setStep] = useState<Step>("choose");
   const [suggestedName, setSuggestedName] = useState("");
   const [lookup, setLookup] = useState<"idle" | "looking" | "not-found">("idle");
@@ -108,7 +106,6 @@ export const NewBarcodeCard = ({ barcode, places }: NewBarcodeCardProps) => {
         <ProductForm
           barcode={barcode}
           suggestedName={suggestedName}
-          places={places}
           onCancel={() => setStep("choose")}
           onCreated={() => setStep("choose")}
         />

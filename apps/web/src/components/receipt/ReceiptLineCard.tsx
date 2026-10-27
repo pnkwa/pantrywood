@@ -8,7 +8,6 @@ import { AmountStepper, FieldSelect } from "@/components/scan/fields";
 import { ProductForm } from "@/components/scan/ProductForm";
 import { PANEL_SPRING } from "@/lib/motion";
 import { formatMoney, formatNumber } from "@/lib/pantry/format";
-import type { GrocyPlace } from "@/lib/pantry/model";
 import { normalizeReceiptName, type MatchHow } from "@/lib/receipt/match";
 
 export type LineChoice = {
@@ -50,7 +49,6 @@ type ReceiptLineCardProps = {
   added: boolean;
   open: boolean;
   products: ReadonlyMap<number, ReviewProduct>;
-  places: GrocyPlace[];
   onToggle: () => void;
   onChange: (choice: LineChoice) => void;
   /** A fixed name for a misread line; it is remembered for the next receipt. */
@@ -71,7 +69,6 @@ export const ReceiptLineCard = ({
   added,
   open,
   products,
-  places,
   onToggle,
   onChange,
   onRename,
@@ -192,7 +189,6 @@ export const ReceiptLineCard = ({
                   suggestedThaiName={/\p{Script=Thai}/u.test(line.name) ? normalizeReceiptName(line.name) : ""}
                   suggestedSupply={line.kind === "supply"}
                   suggestedGroupName={line.suggested_group}
-                  places={places}
                   onCancel={() => setCreating(false)}
                   onCreated={pick}
                 />

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isWholePhoto, moveCorner, WHOLE_PHOTO, yInCrop } from "../src/lib/receipt/crop.ts";
+import { isWholePhoto, moveCorner, pinchZoom, wheelZoom, WHOLE_PHOTO, yInCrop } from "../src/lib/receipt/crop.ts";
 
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} ≠ ${expected}`);
 
@@ -30,4 +30,15 @@ test("line heights move into the cropped picture, and the whole photo is recogni
   close(yInCrop(0.9, rect), 1);
   assert.ok(isWholePhoto(WHOLE_PHOTO));
   assert.ok(!isWholePhoto(rect));
+});
+
+test("pinching zooms by how far the fingers spread, between 1× and the limit", () => {
+  close(pinchZoom(1, 100, 200, 3), 2);
+  close(pinchZoom(2, 100, 50, 3), 1);
+  close(pinchZoom(1, 100, 30, 3), 1);
+  close(pinchZoom(2, 100, 400, 3), 3);
+  close(pinchZoom(2, 0, 50, 3), 2);
+  assert.ok(wheelZoom(1, -50, 3) > 1);
+  close(wheelZoom(1, 50, 3), 1);
+  close(wheelZoom(2.9, -500, 3), 3);
 });

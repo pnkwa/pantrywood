@@ -16,6 +16,7 @@ import {
 } from "@/lib/grocy";
 import { formatDate } from "@/lib/pantry/format";
 import type { GrocyPlace } from "@/lib/pantry/model";
+import { isPutAwayName } from "@/lib/pantry/put-away";
 import { useScanStore, type ScanMode } from "@/lib/store/scan-store";
 import { useUiStore } from "@/lib/store/ui-store";
 import { AmountStepper, FIELD_INPUT_CLASS, FieldSelect, FieldTile, NO_CHOICE, PrimaryButton } from "./fields";
@@ -86,7 +87,9 @@ export const ScanResultCard = ({ barcode, details, mode, places, onDone }: ScanR
   const unchanged = mode === "check" && amount === details.stock_amount;
 
   const confirmLabel = {
-    add: `Add ${amount} ${unitText(amount)} to ${placeName}`,
+    add: isPutAwayName(placeName)
+      ? `Add ${amount} ${unitText(amount)} · to put away`
+      : `Add ${amount} ${unitText(amount)} to ${placeName}`,
     eat: `${kind === "food" ? "Eat" : "Use"} ${amount} ${unitText(amount)}`,
     check: unchanged ? "All correct" : `Set to ${amount} ${unitText(amount)}`,
   }[mode];

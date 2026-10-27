@@ -55,6 +55,9 @@ type UiState = {
   purchase: { item: CatalogItem; confirm: () => void; addingAs?: string } | null;
   askToBuy: (item: CatalogItem, confirm: () => void, addingAs?: string) => void;
   closePurchase: () => void;
+  /** The list of every item with where it is, waiting ones first. Shown where the storage panel goes. */
+  itemListOpen: boolean;
+  openItemList: () => void;
   selectStorage: (locationId: number) => void;
   selectItem: (locationId: number, productId: number, itemKey?: string) => void;
   clearSelection: () => void;
@@ -107,14 +110,17 @@ export const useUiStore = create<UiState>()((set, get) => ({
   purchase: null,
   askToBuy: (item, confirm, addingAs) => set({ purchase: { item, confirm, addingAs } }),
   closePurchase: () => set({ purchase: null }),
+  itemListOpen: false,
+  openItemList: () => set({ itemListOpen: true, selection: null }),
   selectStorage: (locationId) =>
-    set({ selection: { type: "storage", locationId } }),
+    set({ selection: { type: "storage", locationId }, itemListOpen: false }),
   selectItem: (locationId, productId, itemKey) =>
     set({
+      itemListOpen: false,
       selection: { type: "item", locationId, productId, itemKey },
       flyingItemKey: itemKey ?? `${locationId}-${productId}`,
     }),
-  clearSelection: () => set({ selection: null }),
+  clearSelection: () => set({ selection: null, itemListOpen: false }),
   clearFlyingItem: () => set({ flyingItemKey: null }),
   setHoveredLocation: (locationId) => set({ hoveredLocationId: locationId }),
   openInside: (locationId) =>

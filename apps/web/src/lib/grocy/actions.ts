@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
-import { StockLogEntrySchema, THAI_NAME_USERFIELD } from "@pantrywood/shared";
-import { grocyDelete, grocyPost, grocyPostFor, grocyPut } from "./client";
+import { LocationSchema, StockLogEntrySchema, THAI_NAME_USERFIELD } from "@pantrywood/shared";
+import { grocyDelete, grocyFetch, grocyPost, grocyPostFor, grocyPut } from "./client";
+import { isPutAwayName, PUT_AWAY_NAME } from "@/lib/pantry/put-away";
 import { useBoardStore } from "@/lib/board/board-store";
 import { rewardLeaves } from "@/lib/room/leaf-rewards";
 import { grocyKeys } from "./queries";
@@ -138,12 +139,26 @@ export type NewProduct = {
   name: string;
   thaiName: string;
   productGroupId: number | null;
-  locationId: number;
+  /** null: it waits in "To put away" until it's placed. */
+  locationId: number | null;
   quantityUnitId: number;
   bestBeforeDays: number;
   minStock: number;
   /** Empty when the product comes from a receipt line rather than a scan. */
   barcode: string;
+};
+
+/** The "To put away" location's id, creating it the first time. */
+const putAwayLocationId = async () => {
+  const locations = await grocyFetch("objects/locations", z.array(LocationSchema));
+  const existing = locations.find((location) => location.active !== 0 && isPutAwayName(location.name));
+  if (existing) return existing.id;
+  const { created_object_id: locationId } = await grocyPostFor(
+    "objects/locations",
+    { name: PUT_AWAY_NAME, description: "New stock waits here until it's put away (Pantrywood)", is_freezer: 0 },
+    CreatedSchema,
+  );
+  return locationId;
 };
 
 const createProduct = async (product: NewProduct) => {
@@ -152,7 +167,7 @@ const createProduct = async (product: NewProduct) => {
     {
       name: product.name,
       product_group_id: product.productGroupId,
-      location_id: product.locationId,
+      location_id: product.locationId ?? (await putAwayLocationId()),
       qu_id_purchase: product.quantityUnitId,
       qu_id_stock: product.quantityUnitId,
       qu_id_consume: product.quantityUnitId,

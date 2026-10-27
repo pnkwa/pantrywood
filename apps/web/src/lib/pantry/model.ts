@@ -13,6 +13,7 @@ import {
   type QuantityUnit,
   type StockEntry,
 } from "@pantrywood/shared";
+import { isPutAwayName } from "./put-away";
 
 export type ItemStatus =
   | "fresh"
@@ -85,6 +86,10 @@ export type Pantry = {
   locations: PantryLocation[];
   /** Every active Grocy location, e.g. as "Move to…" destinations. */
   places: GrocyPlace[];
+  /** The "To put away" location, once it exists; never a storage piece. */
+  putAwayId: number | null;
+  /** Stock in it, waiting to be put on a shelf. */
+  waiting: PantryItem[];
   stats: PantryStats;
 };
 
@@ -186,6 +191,7 @@ export const buildPantry = ({
     (location) => location.is_freezer !== 1 && FRIDGE_NAME.test(location.name),
   );
   const unitById = new Map(quantityUnits.map((unit) => [unit.id, unit]));
+  const putAwayId = activeLocations.find((location) => isPutAwayName(location.name))?.id ?? null;
 
   const totalByProduct = new Map<number, number>();
   for (const entry of stockEntries) {
@@ -273,7 +279,7 @@ export const buildPantry = ({
   const mergedIntoFridge = (locationId: number) =>
     fridge !== undefined && freezerIds.has(locationId);
   const pantryLocations = activeLocations
-    .filter((location) => !mergedIntoFridge(location.id))
+    .filter((location) => !mergedIntoFridge(location.id) && location.id !== putAwayId)
     .map((location): PantryLocation => {
       const ownItems = itemsByLocation.get(location.id) ?? [];
       const freezerItems =
@@ -293,7 +299,10 @@ export const buildPantry = ({
       };
     });
 
-  const allItems = pantryLocations.flatMap((location) => location.items);
+  const putAwayItems = putAwayId === null ? [] : (itemsByLocation.get(putAwayId) ?? []);
+  const waiting = putAwayItems.filter((item) => item.amount > 0).sort(compareItems);
+  // Waiting stock is in the house, just not on a shelf yet, so it still counts (and so does running out of it).
+  const allItems = [...pantryLocations.flatMap((location) => location.items), ...putAwayItems];
   const byUrgency = (first: PantryItem, second: PantryItem) =>
     STATUS_RANK[first.status] - STATUS_RANK[second.status] ||
     (first.daysLeft ?? Infinity) - (second.daysLeft ?? Infinity);
@@ -308,6 +317,8 @@ export const buildPantry = ({
       name: location.name,
       isFreezer: location.is_freezer === 1,
     })),
+    putAwayId,
+    waiting,
     stats: {
       useSoon: summarize(
         allItems

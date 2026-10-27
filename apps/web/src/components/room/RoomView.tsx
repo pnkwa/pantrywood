@@ -28,6 +28,7 @@ import {
   MagnifyingGlassPlusIcon,
   PaintBrushIcon,
   PushPinIcon,
+  TrayIcon,
   ListBulletsIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
@@ -48,7 +49,8 @@ import type { WallSide } from "@pantrywood/shared";
 import type { useDecorate } from "@/lib/room/use-decorate";
 import { BoardView } from "@/components/board/BoardView";
 import { InsideView } from "@/components/inside/InsideView";
-import type { Pantry } from "@/lib/pantry/model";
+import type { GrocyPlace, Pantry } from "@/lib/pantry/model";
+import { putAwayDestinations } from "@/components/pantry/ItemListPanel";
 import { useUiStore } from "@/lib/store/ui-store";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
@@ -146,6 +148,26 @@ type RoomViewProps = {
   onSelectStorage: (locationId: number) => void;
   room: Room;
   decorate: ReturnType<typeof useDecorate>;
+};
+
+const PutAwayChip = ({ count, className }: { count: number; className: string }) => (
+  <button
+    type="button"
+    onClick={() => useUiStore.getState().openItemList()}
+    className={`flex h-11 items-center justify-center gap-1.5 rounded-full border-[1.5px] border-honey bg-status-soon px-4 text-sm font-semibold text-status-soon-foreground shadow-paper transition-colors duration-150 ease-out hover:bg-status-soon/80 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${className}`}
+  >
+    <TrayIcon size={18} weight="duotone" aria-hidden />
+    <span className="tabular">{count} to put away</span>
+  </button>
+);
+
+// The open piece first (and its freezer, for the fridge), so "Put in…" starts with "here".
+const destinationsFrom = (pantry: Pantry, openLocationId: number) => {
+  const destinations = putAwayDestinations(pantry);
+  const here = (place: GrocyPlace) =>
+    place.id === openLocationId ||
+    (place.isFreezer && pantry.locations.find((location) => location.id === openLocationId)?.items.some((item) => item.locationId === place.id));
+  return [...destinations.filter(here), ...destinations.filter((place) => !here(place))];
 };
 
 export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, room, decorate }: RoomViewProps) => {
@@ -523,6 +545,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             );
           })}
         </div>
+          {pantry && pantry.waiting.length > 0 && <PutAwayChip count={pantry.waiting.length} className="max-lg:hidden" />}
           {!listView && (
             <button
               type="button"
@@ -678,10 +701,17 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               selectedItemKey={selection?.type === "item" ? (selection.itemKey ?? `${selection.locationId}-${selection.productId}`) : null}
               onPickItem={(productId, itemKey) => selectItem(openLocation.id, productId, itemKey)}
               onClose={closeInside}
+              waiting={pantry?.waiting ?? []}
+              destinations={pantry ? destinationsFrom(pantry, openLocation.id) : []}
             />
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Phones have no room for it in the top row, so it waits at the bottom of the room instead. */}
+      {pantry && pantry.waiting.length > 0 && !decorating && view === "room" && (
+        <PutAwayChip count={pantry.waiting.length} className="absolute bottom-4 left-4 z-30 lg:hidden" />
+      )}
 
       {loading && (
         <p

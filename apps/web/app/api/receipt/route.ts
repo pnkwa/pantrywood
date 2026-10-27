@@ -24,7 +24,7 @@ const instructionsFor = (groupNames: string[]) =>
     "Read this shopping receipt photo. It is often Thai, sometimes English or mixed.",
     "List every purchased item line. Keep the printed text in `name`; give a short English product name in `name_en`.",
     "If a line has a multiplier (e.g. 2 x 25.00), set quantity and unit_price from it. Weights like 5kg stay in the name with quantity 1.",
-    "Leave out subtotals, VAT, rounding, cash, change, member points and discounts.",
+    "Leave out subtotals, VAT, rounding, cash, change and member points. Discounts are not lines: add them up in `discount`.",
     "Convert Buddhist-era years (e.g. 2569) to Gregorian (2026).",
     groupNames.length > 0
       ? `Pick suggested_group from these product groups only: ${groupNames.join(", ")}.`

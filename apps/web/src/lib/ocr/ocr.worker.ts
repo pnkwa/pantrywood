@@ -45,7 +45,7 @@ const pixelsOf = (bitmap: ImageBitmap, crop: { x: number; y: number; width: numb
   return context.getImageData(0, 0, width, height).data;
 };
 
-const read = async (bitmap: ImageBitmap, preferred: readonly string[]) => {
+const read = async (bitmap: ImageBitmap, preferred: readonly string[], report: (done: number, total: number) => void) => {
   const { detect, recognize, dictionary } = await (models ??= load());
   const size = detectSize(bitmap.width, bitmap.height);
   const whole = { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
@@ -62,7 +62,10 @@ const read = async (bitmap: ImageBitmap, preferred: readonly string[]) => {
   const scaleY = bitmap.height / size.height;
 
   const texts = [];
-  for (const box of boxesFromMap(map.data, size.width, size.height)) {
+  const boxes = boxesFromMap(map.data, size.width, size.height);
+  report(0, boxes.length);
+  for (const [index, box] of boxes.entries()) {
+    report(index, boxes.length);
     const crop = { x: box.x * scaleX, y: box.y * scaleY, width: box.width * scaleX, height: box.height * scaleY };
     const width = recognizeWidth(crop.width, crop.height);
     const input = new ort.Tensor("float32", toTensor(pixelsOf(bitmap, crop, width, RECOGNIZE_HEIGHT), width, RECOGNIZE_HEIGHT, RECOGNIZE_MEAN, RECOGNIZE_STD), [
@@ -85,7 +88,7 @@ self.addEventListener("message", async (event: MessageEvent) => {
   if (typeof id !== "string" || !(bitmap instanceof ImageBitmap)) return;
   const words = Array.isArray(preferred) ? preferred.filter((word): word is string => typeof word === "string") : [];
   try {
-    self.postMessage({ id, texts: await read(bitmap, words) });
+    self.postMessage({ id, texts: await read(bitmap, words, (done, total) => self.postMessage({ id, progress: { done, total } })) });
   } catch (error) {
     self.postMessage({ id, error: error instanceof Error ? error.message : "The receipt reader stopped." });
   } finally {

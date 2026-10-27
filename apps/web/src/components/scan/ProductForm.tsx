@@ -7,7 +7,6 @@ import {
   useProductGroups,
   useQuantityUnits,
 } from "@/lib/grocy";
-import type { GrocyPlace } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
 import { FIELD_INPUT_CLASS, FieldSelect, FieldTile, NO_CHOICE, PrimaryButton } from "./fields";
 
@@ -21,7 +20,6 @@ type ProductFormProps = {
   suggestedThaiName?: string;
   suggestedSupply?: boolean;
   suggestedGroupName?: string | null;
-  places: GrocyPlace[];
   onCancel: () => void;
   onCreated: (productId: number) => void;
 };
@@ -32,7 +30,6 @@ export const ProductForm = ({
   suggestedThaiName = "",
   suggestedSupply = false,
   suggestedGroupName = null,
-  places,
   onCancel,
   onCreated,
 }: ProductFormProps) => {
@@ -47,7 +44,6 @@ export const ProductForm = ({
   // undefined = not touched yet, so the suggested group shows once groups have loaded.
   const [groupId, setGroupId] = useState<number | null | undefined>(undefined);
   const [unitId, setUnitId] = useState<number | null>(null);
-  const [placeId, setPlaceId] = useState<number | null>(places[0]?.id ?? null);
   const [shelfLifeDays, setShelfLifeDays] = useState(DEFAULT_SHELF_LIFE_DAYS);
   const [minStock, setMinStock] = useState(0);
 
@@ -60,16 +56,17 @@ export const ProductForm = ({
       : groupId;
   const units = quantityUnits.data ?? [];
   const chosenUnitId = unitId ?? units[0]?.id ?? null;
-  const canSave = name.trim() !== "" && chosenUnitId !== null && placeId !== null;
+  const canSave = name.trim() !== "" && chosenUnitId !== null;
 
   const save = () => {
-    if (chosenUnitId === null || placeId === null) return;
+    if (chosenUnitId === null) return;
     createProduct.mutate(
       {
         name: name.trim(),
         thaiName: thaiName.trim(),
         productGroupId: chosenGroupId,
-        locationId: placeId,
+        // Where it lives is decided when it's put away, not when it's made.
+        locationId: null,
         quantityUnitId: chosenUnitId,
         bestBeforeDays: isSupply ? -1 : shelfLifeDays,
         minStock,
@@ -159,13 +156,6 @@ export const ProductForm = ({
             value={chosenUnitId === null ? "" : String(chosenUnitId)}
             onChange={(value) => setUnitId(Number(value))}
             options={units.map((unit) => ({ value: String(unit.id), label: unit.name }))}
-          />
-        </FieldTile>
-        <FieldTile label="Lives in">
-          <FieldSelect
-            value={placeId === null ? "" : String(placeId)}
-            onChange={(value) => setPlaceId(Number(value))}
-            options={places.map((place) => ({ value: String(place.id), label: place.name }))}
           />
         </FieldTile>
         {isSupply ? (

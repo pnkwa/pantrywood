@@ -61,6 +61,7 @@ test("an English supermarket receipt with a quantity line under its item and a d
   assert.equal(scan.store, "FRESH MART");
   assert.equal(scan.date, "2026-10-20");
   assert.equal(scan.total, 343);
+  assert.equal(scan.discount, 20);
   assert.deepEqual(
     scan.lines.map((line) => [line.name, line.quantity, line.unit_price, line.line_total, line.kind]),
     [
@@ -299,6 +300,7 @@ test("a 7-Eleven receipt with missed quantity digits, an unreadable name and the
   assert.equal(scan.lines.length, 10);
   assert.equal(scan.lines.filter((line) => line.name === UNREADABLE_NAME).length, 1);
   assert.equal(scan.lines.reduce((sum, line) => sum + line.line_total, 0), 224);
+  assert.equal(scan.discount, 14);
 });
 
 test("a percent sign the OCR read as 8 comes back in item names, never in prices", () => {
@@ -399,6 +401,20 @@ test("Go Wholesale: names from the line above, codes stripped, total not the VAT
   assert.ok(scan.lines.every((line) => line.name === UNREADABLE_NAME || !/\d{8,}|\*|\(/.test(line.name)));
 });
 
+test("an item printed on three rows (name, barcode, price) keeps its name and spans all three", () => {
+  const scan = reviewParse([["Bread", "40.00"], ["Chicken fillet per kg"], ["(210506000038000003921)N"], ["(0.392 * 97.00)", "38.00"], ["TOTAL", "78.00"]]);
+  const chicken = scan.lines[1];
+  assert.equal(chicken?.name, "Chicken fillet per kg");
+  assert.equal(chicken?.line_total, 38);
+  assert.ok(chicken && chicken.top !== null && chicken.bottom !== null && chicken.bottom - chicken.top >= 0.07);
+});
+
+test("a quantity row under its item stretches the item's span down to it", () => {
+  const scan = reviewParse([["Coke", "25.00"], ["2 x 25.00", "50.00"]]);
+  const coke = scan.lines[0];
+  assert.ok(coke && coke.y !== null && coke.bottom !== null && coke.bottom > coke.y + 0.03);
+});
+
 // Tops: quantity rows "2 * 49.00 / ชิ้น" under the item, and a date that holds "18.10".
 const TOPS = [
   {"text": "MDh", "x": 999, "y": 27, "width": 109, "height": 95, "score": 0.64},
@@ -476,6 +492,7 @@ test("Tops: quantity rows with a unit, and no date or store header read as an it
   assert.equal(scan.date, "2026-10-18");
   assert.equal(scan.total, 693);
   assert.deepEqual(scan.lines.map((line) => [line.quantity, line.line_total]), [[2, 78], [1, 188], [2, 98], [1, 159], [1, 90], [2, 98]]);
+  assert.equal(scan.discount, 18);
 });
 
 test("a weight in grams read as 'n' comes back as ก", () => {
@@ -523,4 +540,16 @@ test("an @ the OCR read as a digit still gives the unit price when the quantity 
     ["โยเกิร์ตเมจิ รสจืด", 2, 14, 28],
     ["นมสด", 1, 52, 52],
   ]);
+});
+
+test("a discount after the total, or a savings summary, isn't counted again", () => {
+  const scan = reviewParse([["Bread", "40.00"], ["Coupon", "-5.00"], ["TOTAL", "35.00"], ["You saved", "5.00"], ["ส่วนลดสมาชิก", "5.00"]]);
+  assert.equal(scan.discount, 5);
+  assert.equal(scan.total, 35);
+});
+
+test("a bare total after a discount is still the total", () => {
+  const scan = reviewParse([["Bread", "40.00"], ["Milk", "60.00"], ["ส่วนลด", "10.00"], ["", "90.00"], ["Gum", "12.00"]]);
+  assert.equal(scan.total, 90);
+  assert.deepEqual(scan.lines.map((line) => line.name), ["Bread", "Milk"]);
 });

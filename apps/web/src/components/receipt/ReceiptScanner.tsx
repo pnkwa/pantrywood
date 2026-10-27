@@ -12,6 +12,7 @@ import {
   SunIcon,
 } from "@phosphor-icons/react";
 import { ReceiptScanSchema, THAI_NAME_USERFIELD, type ReceiptScan } from "@pantrywood/shared";
+import type { ReadProgress } from "@/lib/ocr/read-receipt";
 import { z } from "zod";
 import { Toasts } from "@/components/pantry/Toasts";
 import { useProductGroups, useProducts } from "@/lib/grocy";
@@ -31,7 +32,7 @@ const UPLOAD_QUALITY = 0.85;
 type Stage =
   | { name: "pick"; problem: string | null }
   | { name: "crop"; photo: Blob; photoUrl: string }
-  | { name: "reading"; photoUrl: string }
+  | { name: "reading"; photoUrl: string; progress: ReadProgress | null }
   | { name: "review"; photo: Blob; photoUrl: string; scan: ReceiptScan };
 
 const ErrorBodySchema = z.object({ error_message: z.string() });
@@ -39,10 +40,15 @@ const ErrorBodySchema = z.object({ error_message: z.string() });
 // Read on the device unless NEXT_PUBLIC_RECEIPT_READER=claude.
 const READ_WITH_CLAUDE = process.env.NEXT_PUBLIC_RECEIPT_READER === "claude";
 
-const readReceipt = async (photo: Blob, groupNames: string[], knownNames: string[]) => {
+const readReceipt = async (
+  photo: Blob,
+  groupNames: string[],
+  knownNames: string[],
+  onProgress: (progress: ReadProgress) => void,
+) => {
   if (!READ_WITH_CLAUDE) {
     const { readReceiptOnDevice } = await import("@/lib/ocr/read-receipt");
-    return readReceiptOnDevice(photo, knownNames);
+    return readReceiptOnDevice(photo, knownNames, onProgress);
   }
   const form = new FormData();
   form.append("image", photo, "receipt.jpg");
@@ -309,7 +315,11 @@ const PhotoPicker = ({ problem, onPhoto }: PhotoPickerProps) => {
   );
 };
 
-const ReadingReceipt = ({ photoUrl }: { photoUrl: string }) => (
+// Claude reads in one go and never reports progress, so it stays on the first message.
+const readingShare = (progress: ReadProgress | null) =>
+  progress === null || progress.total === 0 ? null : progress.done / progress.total;
+
+const ReadingReceipt = ({ photoUrl, progress }: { photoUrl: string; progress: ReadProgress | null }) => (
   <section
     aria-label="Reading the receipt"
     className="animate-in fade-in duration-200 flex items-center justify-center overflow-hidden bg-[#3A322A] px-5 pt-24 pb-20 max-lg:absolute max-lg:inset-0 lg:relative lg:min-h-0 lg:flex-[1_1_420px] lg:rounded-xl lg:bg-[#EFE6D3] lg:p-5"
@@ -340,7 +350,17 @@ const ReadingReceipt = ({ photoUrl }: { photoUrl: string }) => (
         aria-hidden
         className="size-2 rounded-full bg-sage motion-safe:animate-pulse"
       />
-      Reading every line…
+      {readingShare(progress) === null ? "Finding the text…" : "Reading the text"}
+      {/* Only the step is announced; the percentage changes for every bit of text. */}
+      <span aria-hidden className="tabular">
+        {readingShare(progress) === null ? "" : `· ${Math.round((readingShare(progress) ?? 0) * 100)}%`}
+      </span>
+      <span aria-hidden className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+        <span
+          style={{ transform: `scaleX(${readingShare(progress) ?? 0})` }}
+          className="block h-full origin-left rounded-full bg-sage-deep transition-transform duration-300 ease-out motion-reduce:transition-none"
+        />
+      </span>
     </p>
   </section>
 );
@@ -354,7 +374,7 @@ const RecentReceipts = () => {
   return (
     <aside
       aria-label="Recent receipts"
-      className="hidden min-h-0 flex-col gap-4 rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex lg:flex-[1_1_480px]"
+      className="hidden min-h-0 flex-col gap-4 self-start rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex lg:flex-[1_1_480px]"
     >
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-xl">Recent receipts</h2>
@@ -379,7 +399,7 @@ const RecentReceipts = () => {
           ))}
         </ul>
       )}
-      <ol className="mt-auto flex flex-col gap-2 rounded-md bg-muted px-4 py-3.5">
+      <ol className="flex flex-col gap-2 rounded-md bg-muted px-4 py-3.5">
         {STEPS.map((step, index) => (
           <li key={step} className="flex items-center gap-3 text-sm">
             <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-card text-xs font-semibold">
@@ -431,15 +451,23 @@ export const ReceiptScanner = () => {
       const photoUrl = await toDataUrl(photo);
       // "Another photo" may have been tapped while the frame was being prepared.
       if (thisAttempt !== attempt.current) return;
-      setStage({ name: "reading", photoUrl });
+      setStage({ name: "reading", photoUrl, progress: null });
       const read = await readReceipt(
         toRead,
         (productGroups.data ?? []).map((group) => group.name),
         knownNames,
+        (progress) => {
+          if (thisAttempt === attempt.current) setStage({ name: "reading", photoUrl, progress });
+        },
       );
       const scan = {
         ...read,
-        lines: read.lines.map((line) => ({ ...line, y: line.y === null ? null : yInCrop(line.y, rect) })),
+        lines: read.lines.map((line) => ({
+          ...line,
+          y: line.y === null ? null : yInCrop(line.y, rect),
+          top: line.top === null ? null : yInCrop(line.top, rect),
+          bottom: line.bottom === null ? null : yInCrop(line.bottom, rect),
+        })),
       };
       if (thisAttempt !== attempt.current) return;
       setStage(
@@ -488,7 +516,7 @@ export const ReceiptScanner = () => {
                 onRead={(rect, brighten) => readPhoto(stage.photo, rect, brighten)}
               />
             ) : (
-              <ReadingReceipt photoUrl={stage.photoUrl} />
+              <ReadingReceipt photoUrl={stage.photoUrl} progress={stage.progress} />
             )}
             <RecentReceipts />
           </div>

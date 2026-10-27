@@ -232,7 +232,6 @@ export const ScanStation = () => {
       <NewBarcodeCard
         key={currentBarcode}
         barcode={currentBarcode}
-        places={places}
       />
     );
   })();

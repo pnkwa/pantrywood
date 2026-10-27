@@ -10,12 +10,15 @@ export const ReceiptLineSchema = z.object({
   kind: z.enum(["food", "supply"]).describe("food = eaten or drunk; supply = household, personal care, hobby"),
   suggested_group: z.string().nullable().describe("Best product group from the given list, or null"),
   y: z.number().nullable().describe("Vertical center of the line as a fraction of the image height, 0 = top, 1 = bottom"),
+  top: z.number().nullable().describe("Top edge of the item's first printed row (its name, when that is on its own row), same scale as y"),
+  bottom: z.number().nullable().describe("Bottom edge of the item's last printed row (its price or quantity row), same scale as y"),
 });
 
 export const ReceiptScanSchema = z.object({
   store: z.string().nullable(),
   date: z.string().nullable().describe("Purchase date as YYYY-MM-DD in the Gregorian calendar"),
   total: z.number().nullable().describe("Grand total printed on the receipt"),
+  discount: z.number().describe("Sum of the discounts printed before the grand total, as a positive amount; 0 when none"),
   currency: z.string().describe("ISO 4217 code, e.g. THB"),
   lines: z.array(ReceiptLineSchema).describe("Purchased items only: no totals, tax, change or discounts"),
 });

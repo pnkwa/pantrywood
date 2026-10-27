@@ -19,6 +19,8 @@ import { ItemPanel } from "./ItemPanel";
 import { ItemSpot } from "@/components/inside/ItemSpot";
 import { storageKindFor } from "@/lib/room/layout";
 import { StoragePanel } from "./StoragePanel";
+import { ItemListPanel } from "./ItemListPanel";
+import { ListBulletsIcon } from "@phosphor-icons/react";
 
 type InspectPanelProps = {
   pantry: Pantry;
@@ -87,6 +89,7 @@ const StorageList = ({
   storages: readonly SceneStorage[];
 }) => {
   const selectStorage = useUiStore((state) => state.selectStorage);
+  const openItemList = useUiStore((state) => state.openItemList);
   return (
     <div className="flex h-full flex-col gap-4">
       <FadeIn>
@@ -97,6 +100,23 @@ const StorageList = ({
       </FadeIn>
       <FadeIn order={1} className="flex min-h-0 flex-col">
       <ul className="flex flex-col gap-2 overflow-y-auto">
+        <li>
+          <button
+            type="button"
+            onClick={openItemList}
+            className="flex min-h-14 w-full items-center gap-3 rounded-md border-[1.5px] border-border px-3 py-2 text-left transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            <span className="flex size-10 items-center justify-center rounded-[12px] bg-muted text-muted-foreground">
+              <ListBulletsIcon size={22} weight="duotone" aria-hidden />
+            </span>
+            <span className="flex-1 font-semibold">All items</span>
+            {pantry.waiting.length > 0 && (
+              <span className="tabular rounded-full bg-status-soon px-2 py-0.5 text-xs font-semibold text-status-soon-foreground">
+                {pantry.waiting.length} to put away
+              </span>
+            )}
+          </button>
+        </li>
         {pantry.locations.map((location) => {
           const StorageIcon = STORAGE_ICONS[kindFor(storages, location)];
           return (
@@ -136,6 +156,7 @@ export const InspectPanelContent = ({
   const view = useUiStore((state) => state.view);
   const insideLocationId = useUiStore((state) => state.insideLocationId);
   const showToast = useUiStore((state) => state.showToast);
+  const itemListOpen = useUiStore((state) => state.itemListOpen);
   const stockAction = useStockAction();
   const [navigation, setNavigation] = useState<{
     key: string | null;
@@ -156,6 +177,7 @@ export const InspectPanelContent = ({
       : undefined;
 
   const content = (() => {
+    if (!location && itemListOpen) return { key: "items", node: <ItemListPanel pantry={pantry} /> };
     if (!location) {
       return {
         key: "list",
