@@ -16,15 +16,16 @@ const GUESS_THRESHOLD = 0.35;
 const CANDIDATE_THRESHOLD = 0.2;
 const CANDIDATE_COUNT = 3;
 const MIN_NAME_LENGTH = 2;
-// A product name found inside a longer line must cover this much of it, unless the line starts with it.
 const MIN_COVERAGE = 0.5;
+// OCR misreads the same print a little differently each time: two reads of one line score about 0.65–0.9,
+// while different products from one brand mostly stay under 0.6.
+const REMEMBERED_SIMILARITY = 0.65;
+// A saved fix rewrites the name you see, so it needs a closer reading: different flavours of one product
+// scored up to 0.82 in testing, while repeat misreads of one print scored 0.84 and above.
+const SAVED_FIX_SIMILARITY = 0.83;
 
-/**
- * Whether a product name stands for the whole line, not just a word in it: "มาม่า ต้มยำกุ้ง" (tom yum shrimp
- * noodles) contains "กุ้ง" (shrimp) but isn't shrimp. Thai puts the head noun first and the flavour after, so
- * a name the line starts with, or one covering most of it, counts; a printed word inside a longer product
- * name ("ทิชชู่" in "กระดาษทิชชู่") always does.
- */
+// "มาม่า ต้มยำกุ้ง" contains "กุ้ง" (shrimp) but isn't shrimp. Thai puts the head noun first, so a name
+// counts when the line starts with it or it covers most of the line.
 const namesTheLine = (name: string, text: string) =>
   name.includes(text) ||
   (text.includes(name) && (text.startsWith(name) || name.length / text.length >= MIN_COVERAGE));
@@ -91,8 +92,7 @@ export const matchReceiptLine = (
       id: product.id,
       score: Math.max(
         0,
-        // A name that's only a small word in the line ("กุ้ง" in a tom yum noodle line) shares all its letter
-        // pairs with it, which would make it a confident guess; it stays a suggestion instead.
+        // A small word inside the line shares all its letter pairs, which would make it a confident guess.
         ...namesOf(product).flatMap((name) =>
           texts.map((text) =>
             text.includes(name) && !namesTheLine(name, text)
@@ -109,8 +109,10 @@ export const matchReceiptLine = (
       .slice(0, CANDIDATE_COUNT)
       .map((entry) => entry.id);
 
-  const rememberedId = remembered.get(normalizeReceiptName(printedName));
-  if (rememberedId !== undefined && products.some((product) => product.id === rememberedId)) {
+  const printed = normalizeReceiptName(printedName);
+  const exists = (productId: number) => products.some((product) => product.id === productId);
+  const rememberedId = remembered.get(printed);
+  if (rememberedId !== undefined && exists(rememberedId)) {
     return { productId: rememberedId, how: "remembered", candidateIds: candidatesBesides(rememberedId) };
   }
 
@@ -126,9 +128,44 @@ export const matchReceiptLine = (
     return { productId: byName.id, how: "name", candidateIds: candidatesBesides(byName.id) };
   }
 
+  const closeRemembered = [...remembered]
+    .filter(([, productId]) => exists(productId))
+    .map(([name, productId]) => ({ id: productId, score: similarity(name, printed) }))
+    .sort((first, second) => second.score - first.score)[0];
+  if (closeRemembered && closeRemembered.score >= REMEMBERED_SIMILARITY) {
+    return { productId: closeRemembered.id, how: "guess", candidateIds: candidatesBesides(closeRemembered.id) };
+  }
+
   const best = scored[0];
   if (best && best.score >= GUESS_THRESHOLD) {
     return { productId: best.id, how: "guess", candidateIds: candidatesBesides(best.id) };
   }
   return { productId: null, how: "none", candidateIds: candidatesBesides(null) };
+};
+
+/**
+ * Lines with the same price whose readings are close may be the same print read differently. A line takes
+ * another reading only when that exact reading came out at least twice: misreads of one print repeat, while
+ * different flavours of one brand at one price (as close as two misreads) each appear once.
+ */
+export const unifyRepeats = (lines: readonly { name: string; line_total: number }[]) =>
+  lines.map((line) => {
+    const key = normalizeReceiptName(line.name);
+    const group = lines.filter(
+      (other) => other.line_total === line.line_total && similarity(normalizeReceiptName(other.name), key) >= REMEMBERED_SIMILARITY,
+    );
+    const countOf = (name: string) => group.filter((member) => member.name === name).length;
+    const common = group.map((member) => member.name).reduce((best, next) => (countOf(next) > countOf(best) ? next : best), line.name);
+    return countOf(common) >= 2 && countOf(common) > countOf(line.name) ? common : line.name;
+  });
+
+/** Your earlier fix for this misreading (keyed by the normalized OCR text), or for a close one. */
+export const correctedName = (read: string, corrections: ReadonlyMap<string, string>) => {
+  const key = normalizeReceiptName(read);
+  const exact = corrections.get(key);
+  if (exact !== undefined) return exact;
+  const closest = [...corrections]
+    .map(([misread, text]) => ({ text, score: similarity(misread, key) }))
+    .sort((first, second) => second.score - first.score)[0];
+  return closest && closest.score >= SAVED_FIX_SIMILARITY ? closest.text : read;
 };

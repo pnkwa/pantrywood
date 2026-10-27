@@ -53,6 +53,8 @@ type ReceiptLineCardProps = {
   places: GrocyPlace[];
   onToggle: () => void;
   onChange: (choice: LineChoice) => void;
+  /** A fixed name for a misread line; it is remembered for the next receipt. */
+  onRename: (name: string) => void;
 };
 
 const SKIP_OPTION = { value: SKIP_VALUE, label: "Don't add this line" };
@@ -72,6 +74,7 @@ export const ReceiptLineCard = ({
   places,
   onToggle,
   onChange,
+  onRename,
 }: ReceiptLineCardProps) => {
   const detailsId = useId();
   const [creating, setCreating] = useState(false);
@@ -166,6 +169,22 @@ export const ReceiptLineCard = ({
             exit={{ opacity: 0, y: -6, transition: { duration: 0.12 } }}
             className="flex flex-col gap-3 px-3.5 pb-3.5"
           >
+            <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+              Printed name · fix it if it was misread
+              <input
+                key={line.name}
+                defaultValue={line.name}
+                onBlur={(event) => onRename(event.currentTarget.value.trim())}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") event.currentTarget.blur();
+                  if (event.key === "Escape") {
+                    event.currentTarget.value = line.name;
+                    event.currentTarget.blur();
+                  }
+                }}
+                className="h-11 rounded-full border-[1.5px] border-border bg-card px-4 text-[15px] font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
+              />
+            </label>
             {creating ? (
               <div className="rounded-lg bg-card p-3">
                 <ProductForm

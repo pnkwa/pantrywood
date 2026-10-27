@@ -46,3 +46,9 @@ export const ReceiptMatchSchema = z.object({
   productId: z.number(),
 });
 
+/** A name you fixed on the review screen: what the OCR read (normalized) and what it really says. */
+export const ReceiptCorrectionSchema = z.object({
+  read: z.string(),
+  text: z.string(),
+});
+

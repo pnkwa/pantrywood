@@ -1,27 +1,40 @@
 // No "@/" imports: scripts/receipt-parse.test.mjs runs this file directly with Node.
 import type { ReceiptLine, ReceiptScan } from "@pantrywood/shared";
 
-// Turns OCR text boxes from a receipt photo into a ReceiptScan, for Thai and English receipts.
-// The OCR engine only finds text; everything receipt-shaped (rows, prices, totals, dates) happens here.
-
-/** One piece of text the OCR found, with its box in image pixels. */
 export type OcrText = { text: string; x: number; y: number; width: number; height: number; score: number };
 
-/** Lines that are never items: totals, tax, payment, change, discounts, points, receipt furniture. */
+// Thai has no spaces, so short Thai words only count at the start of a line: โอน is also inside โบโอน่า.
 const NOT_ITEM = [
-  /total|sub\s*total|amount|net|balance|grand/i,
-  /รวม|ยอด|สุทธิ|ทั้งหมด|ชำระ/,
-  /vat|tax|ภาษี|มูลค่าสินค้า|ก่อนภาษี/i,
-  /cash|change|card|credit|debit|paid|tendered|qr|promptpay|wallet/i,
-  /เงินสด|เงินทอน|ทอน|รับเงิน|บัตร|เครดิต|พร้อมเพย์|โอน/,
-  /discount|save|saving|coupon|promo|ส่วนลด|ลด|คูปอง|โปรโมชั่น/i,
-  /point|member|แต้ม|คะแนน|สมาชิก|the\s*1|all\s*member/i,
-  /tel|phone|tax\s*id|pos|receipt|invoice|cashier|thank|โทร|ใบเสร็จ|ใบกำกับ|พนักงาน|ขอบคุณ|เลขประจำตัว|สาขา|branch/i,
-  /items?\s*\d|\d+\s*items?|จำนวน\s*\d+|\d+\s*ชิ้น/i,
+  /\b(sub\s*total|total|amount|net|balance|grand|vat|tax|cash|change|card|credit|debit|paid|tendered|qr|promptpay|wallet|discount|save|saved|saving|savings|coupon|promo|points?|members?|membership|tel|phone|pos|receipt|invoice|cashier|thank|branch)\b/i,
+  // A short label counts only on its own ("รวม 3 ชิ้น"), not as the start of a name ("รวมมิตร", "ลดา").
+  /^(รวม|ยอด|ทอน|โอน|ลด|ชำระ|บัตร)(?![ก-๙])/,
+  /^(ยอดรวม|ยอดเงิน|ยอดชำระ|รวมเงิน|รวมทั้ง|ทอนเงิน|โอนเงิน|ชำระเงิน|บัตร)/,
+  /สุทธิ|ทั้งหมด|ภาษี|มูลค่าสินค้า|เงินสด|เงินทอน|รับเงิน|บัตรเครดิต|เครดิต|พร้อมเพย์|ส่วนลด|คูปอง|โปรโมชั่น|แต้ม|คะแนน|สมาชิก|โทร|ใบเสร็จ|ใบกำกับ|พนักงาน|ขอบคุณ|เลขประจำตัว|สาขา/,
+  /the\s*1|all\s*member/i,
+  /\bitems?\s*\d|\d+\s*items?\b|จำนวน\s*\d+|\d+\s*ชิ้น/i,
 ];
 
-/** Lines that state the amount paid; the first match wins, so the most specific come first. */
-const TOTAL = [/grand\s*total|net\s*total|ยอดสุทธิ|สุทธิ/i, /^total\b|ยอดรวม|รวมทั้งสิ้น|รวมเงิน/i, /total|รวม/i];
+// Most specific first: the first match wins.
+const TOTAL = [/grand\s*total|net\s*total|ยอดสุทธิ|^สุทธิ/i, /^total\b|^ยอดรวม|รวมทั้งสิ้น|^รวมเงิน/i, /\btotal\b|^รวม(?![ก-๙])/i];
+const SUBTOTAL = /sub\s*total|ก่อนภาษี|\bvat\b|\btax\b|ภาษี/i;
+
+// Chains whose name is often a logo or prints garbled.
+const KNOWN_STORES: [RegExp, string][] = [
+  // 0107542000011 is CP ALL's tax ID, printed on every 7-Eleven slip.
+  [/7[-\s]?(eleven|e1even|elev|blen|11)\b|cp\s*al{1,2}\b|เซเว่น|0107542000011/i, "7-Eleven"],
+  [/lotus'?s|โลตัส/i, "Lotus's"],
+  [/big\s*c\b|บิ๊กซี/i, "Big C"],
+  [/\btops\b|ท็อปส์/i, "Tops"],
+  [/go\s*wholesale|central\s*food\s*wholesale/i, "Go Wholesale"],
+  [/makro|แม็คโคร|แมคโคร/i, "Makro"],
+  [/family\s*mart|แฟมิลี่มาร์ท/i, "FamilyMart"],
+  [/lawson|ลอว์สัน/i, "Lawson"],
+  [/cj\s*(express|more)/i, "CJ"],
+  [/villa\s*market/i, "Villa Market"],
+  [/gourmet\s*market/i, "Gourmet Market"],
+  [/foodland/i, "Foodland"],
+  [/max\s*valu|แม็กซ์แวลู/i, "MaxValu"],
+];
 
 const SUPPLY_WORDS =
   /tissue|toilet|paper|shampoo|soap|detergent|toothpaste|toothbrush|lotion|wash|cleaner|filament|battery|ทิชชู่|กระดาษ|แชมพู|สบู่|ผงซักฟอก|น้ำยา|ยาสีฟัน|แปรงสีฟัน|โลชั่น|ครีมอาบน้ำ|ถุงขยะ|ถ่าน/i;
@@ -33,11 +46,10 @@ const DATE = /(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})/;
 const ISO_DATE = /(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})/;
 const BUDDHIST_ERA_OFFSET = 543;
 
-/** Thai digits to Arabic, and the letters OCR mistakes for digits when they sit inside a number. */
 export const normalize = (text: string) =>
   text
     .replace(/[๐-๙]/g, (digit) => String(THAI_DIGITS.indexOf(digit)))
-    // Only inside a word that is otherwise a number, so "Oil" and "Milk" keep their letters.
+    // OCR reads 0 as O and 1 as l; only fixed inside numbers, so "Oil" keeps its letters.
     .replace(/[\doOlI|.,]+/g, (word) =>
       /\d/.test(word) && /^[\doOlI|]+([.,][\doOlI|]{2})?$/.test(word) ? word.replace(/[oO]/g, "0").replace(/[lI|]/g, "1") : word,
     )
@@ -46,17 +58,26 @@ export const normalize = (text: string) =>
 
 const toNumber = (whole: string, cents: string) => Number(`${whole.replace(/,/g, "")}.${cents}`);
 
-/** The last price on a row (the line total sits at the right), and the text before it. */
+// Dates and times look like prices ("18.10.2026" holds "18.10"); blank them out, keeping positions.
+const withoutDates = (text: string) =>
+  text.replace(new RegExp(`${ISO_DATE.source}|${DATE.source}|\\d{1,2}:\\d{2}`, "g"), (match) => " ".repeat(match.length));
+
+const pricesIn = (text: string) => [...withoutDates(text).matchAll(new RegExp(PRICE.source, "g"))];
+
 const lastPrice = (text: string) => {
-  const matches = [...text.matchAll(new RegExp(PRICE.source, "g"))];
-  const last = matches.at(-1);
+  const last = pricesIn(text).at(-1);
   if (!last || last.index === undefined) return null;
   return { value: toNumber(last[1] ?? "0", last[2] ?? "00"), before: text.slice(0, last.index).trim() };
 };
 
-type Row = { text: string; y: number };
+// A total row can also carry the VAT printed beside it ("Total 809.00 30.75"); the total comes first.
+const firstPrice = (text: string) => {
+  const first = pricesIn(text)[0];
+  return first ? toNumber(first[1] ?? "0", first[2] ?? "00") : null;
+};
 
-/** Boxes on the same printed line, joined left to right; rows from top to bottom. */
+type Row = { text: string; y: number; score: number };
+
 export const groupRows = (texts: readonly OcrText[]): Row[] => {
   const sorted = [...texts].filter((text) => text.text.trim()).sort((first, second) => first.y + first.height / 2 - (second.y + second.height / 2));
   const heights = sorted.map((text) => text.height).sort((first, second) => first - second);
@@ -77,21 +98,22 @@ export const groupRows = (texts: readonly OcrText[]): Row[] => {
         .join(" "),
     ),
     y: row.reduce((sum, part) => sum + part.y + part.height / 2, 0) / row.length,
+    score: Math.min(...row.map((part) => part.score)),
   }));
 };
 
-/** A date as YYYY-MM-DD; Buddhist-era years (2569, or 69 printed short) become Gregorian. */
 export const parseDate = (text: string, currentYear: number) => {
   const iso = ISO_DATE.exec(text);
   const dated = iso ? [iso[3], iso[2], iso[1]] : DATE.exec(text)?.slice(1, 4);
   if (!dated) return null;
-  const day = Number(dated[0]);
-  const month = Number(dated[1]);
+  // Thai receipts print day/month; US ones month/day, which shows when the middle number can't be a month.
+  const usOrder = !iso && Number(dated[1]) > 12 && Number(dated[0]) <= 12;
+  const day = Number(usOrder ? dated[1] : dated[0]);
+  const month = Number(usOrder ? dated[0] : dated[1]);
   let year = Number(dated[2]);
   if (year < 100) {
-    // A short year that lands near now as Buddhist era (69 → 2569 → 2026) is read that way.
-    const asBuddhist = 2500 + year - BUDDHIST_ERA_OFFSET;
-    year = Math.abs(asBuddhist - currentYear) <= 1 ? asBuddhist : 2000 + year;
+    // A short year that would be in the future is Buddhist era: 63 → 2563 → 2020.
+    year = 2000 + year > currentYear + 1 ? 2500 + year - BUDDHIST_ERA_OFFSET : 2000 + year;
   } else if (year > 2400) year -= BUDDHIST_ERA_OFFSET;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -100,11 +122,17 @@ export const parseDate = (text: string, currentYear: number) => {
 const hasLetters = (text: string) => /[A-Za-z฀-๿]{2,}/.test(text);
 const isNotItem = (text: string) => NOT_ITEM.some((pattern) => pattern.test(text));
 
-/** A quantity line on its own ("2 x 25.00", "2 @ 12.50 25.00"), which belongs to the item above it. */
+const NOT_STORE =
+  /^\d+\s|street|\bst\.|road|\brd\.|avenue|\bave\b|suite|city|state|zip|\(\d{3}\)|\d{3}[-\s]\d{3,4}|store\s*[:#]|register|ถนน|ซอย|แขวง|เขต|ตำบล|อำเภอ|จังหวัด|ต\.|อ\.|จ\./i;
+// Logos read poorly; an unsure store name is left out rather than guessed.
+const MIN_STORE_SCORE = 0.9;
+
+// A quantity printed on its own row ("2 x 25.00") belongs to the item above it.
 const quantityOnly = (text: string) => {
   const match = QUANTITY.exec(text);
   if (!match) return null;
-  const rest = text.replace(match[0], "").replace(PRICE, "").trim();
+  // "2 * 49.00 / ชิ้น" (Tops) ends with the unit it's priced per.
+  const rest = text.replace(match[0], "").replace(PRICE, "").replace(/\/\s*\S*$/, "").trim();
   return hasLetters(rest) ? null : match;
 };
 
@@ -114,9 +142,26 @@ const quantityFrom = (match: RegExpExecArray) => {
   return { quantity: Number(match[1]), unitPrice: unit.includes(".") || unit.includes(",") ? Number(unit.replace(",", ".")) : Number(unit) };
 };
 
+export const UNREADABLE_NAME = "(unreadable)";
+
+/** An item name without the receipt's codes: barcodes, "(1 * 169.00)", prices, VAT flags, currency. */
+const cleanName = (text: string) =>
+  text
+    .replace(/\(?\d[\d.]{7,}\)?\s*[A-Z]?\d?\b/g, " ")
+    .replace(/\(\s*\d+\s*[*x×+-]?\s*\d+[.,]?\d*\s*\)?/g, " ")
+    .replace(/@\s*\d+[.,]\d{2}/, " ")
+    .replace(new RegExp(PRICE.source, "g"), " ")
+    .replace(/[$฿€£¥]|\bTHB\b|บาท/g, " ")
+    // OCR reads "%" as 8: "100%" comes out as "1008".
+    .replace(/(?<![\d.,])(100|[1-9]0)8(?![\d.,])/g, "$1%")
+    // Grams: "200n" is "200ก".
+    .replace(/(\d)\s*n\.?(?=\s|$)/g, "$1ก.")
+    .replace(/[()]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 type ParseOptions = { imageHeight: number; currentYear: number };
 
-/** OCR boxes → store, date, total and item lines. Names stay as printed; matching to products happens later. */
 export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYear }: ParseOptions): ReceiptScan => {
   const rows = groupRows(texts);
   const lines: ReceiptLine[] = [];
@@ -124,22 +169,52 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
   let date: string | null = null;
   let total: number | null = null;
   let totalRank = TOTAL.length;
+  // Nothing below the totals is an item: payment, change, points.
+  let itemsDone = false;
+  let knownStore: string | null = null;
+  let nameAbove: string | null = null;
   const fullText = rows.map((row) => row.text).join("\n");
+
+  const lineFor = (name: string, quantity: number, unitPrice: number | null, total: number, y: number): ReceiptLine => ({
+    name,
+    name_en: null,
+    quantity,
+    unit_price: unitPrice ?? total / quantity,
+    line_total: total,
+    kind: SUPPLY_WORDS.test(name) ? "supply" : "food",
+    suggested_group: null,
+    y: imageHeight > 0 ? Math.min(1, Math.max(0, y / imageHeight)) : null,
+  });
 
   for (const row of rows) {
     const { text } = row;
+    // Only the row directly above can be this row's name.
+    const above = nameAbove;
+    nameAbove = null;
     date ??= parseDate(text, currentYear);
+    knownStore ??= KNOWN_STORES.find(([pattern]) => pattern.test(text))?.[1] ?? null;
     const price = lastPrice(text);
     const rank = TOTAL.findIndex((pattern) => pattern.test(text));
-    if (price && rank !== -1 && rank < totalRank && !/sub\s*total|ก่อนภาษี|vat|ภาษี/i.test(text)) {
-      total = price.value;
+    if (price && rank !== -1 && rank < totalRank && !SUBTOTAL.test(text)) {
+      total = firstPrice(text) ?? price.value;
       totalRank = rank;
     }
-    if (isNotItem(text)) continue;
-
+    if (price && lines.length > 0 && (rank !== -1 || SUBTOTAL.test(text))) itemsDone = true;
+    // An amount equal to the items so far, bare or on a non-item row, is the total even when its label was misread.
     const quantity = quantityOnly(text);
     const previous = lines.at(-1);
-    if (quantity && previous) {
+    const near = (first: number, second: number) => Math.abs(first - second) < 0.01;
+    // A row with its own amount is a new item ("(barcode) (1 * 160.00) 160.00"), unless it restates the one above.
+    const forPrevious =
+      quantity &&
+      previous &&
+      above === null &&
+      (!price ||
+        near(price.value, previous.line_total) ||
+        near(quantityFrom(quantity).quantity * (quantityFrom(quantity).unitPrice ?? 0), previous.line_total) ||
+        // "Coke 25.00" then "2 x 25.00 50.00": the row gives the quantity of the unit price above.
+        near(quantityFrom(quantity).unitPrice ?? -1, previous.unit_price ?? -2));
+    if (!itemsDone && !isNotItem(text) && quantity && previous && forPrevious) {
       const { quantity: count, unitPrice } = quantityFrom(quantity);
       previous.quantity = count;
       previous.unit_price = unitPrice ?? (price ? price.value / count : previous.unit_price);
@@ -147,31 +222,59 @@ export const parseReceipt = (texts: readonly OcrText[], { imageHeight, currentYe
       continue;
     }
 
-    if (!price || price.value <= 0 || !hasLetters(price.before)) {
-      // Before the first item, the first wordy line without a price is the store's name.
-      if (lines.length === 0 && store === null && !price && hasLetters(text) && !DATE.test(text)) store = text;
+    const itemsSum = lines.reduce((sum, line) => sum + line.line_total, 0);
+    if (price && (!hasLetters(price.before) || isNotItem(text)) && lines.length > 1 && Math.abs(price.value - itemsSum) < 0.01) {
+      total ??= price.value;
+      itemsDone = true;
+    }
+    if (itemsDone || isNotItem(text)) continue;
+
+
+    if (!price || price.value <= 0) {
+      const storeLike = !price && hasLetters(text) && !DATE.test(text) && !NOT_STORE.test(text) && row.score >= MIN_STORE_SCORE;
+      if (lines.length === 0 && store === null && storeLike) store = text;
+      nameAbove = !price && hasLetters(text) ? cleanName(text) : null;
       continue;
     }
 
+    // Either "2 x 25.00" inline, or a quantity column with "@25.00" (7-Eleven).
     const inline = QUANTITY.exec(price.before);
-    const { quantity: count, unitPrice } = inline ? quantityFrom(inline) : { quantity: 1, unitPrice: null };
-    const name = (inline ? price.before.replace(inline[0], " ") : price.before)
-      .replace(/^\d+\s+/, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!hasLetters(name)) continue;
-    lines.push({
-      name,
-      name_en: null,
-      quantity: count,
-      unit_price: unitPrice ?? price.value / count,
-      line_total: price.value,
-      kind: SUPPLY_WORDS.test(name) ? "supply" : "food",
-      suggested_group: null,
-      y: imageHeight > 0 ? Math.min(1, Math.max(0, row.y / imageHeight)) : null,
-    });
+    const leading = /^(\d{1,2})\s+(?=\D)/.exec(price.before);
+    const at = /@\s*(\d+[.,]\d{2})/.exec(price.before);
+    // With a quantity column, a middle amount is the unit price when count × it = the total, also when the OCR
+    // read the "@" before it as a digit ("2 โยเกิร์ต 814.00 28.00" is 2 × 14.00).
+    const columnCount = Number(leading?.[1] ?? 0);
+    const misreadAt =
+      !at && columnCount > 1
+        ? pricesIn(price.before)
+            .flatMap((match) => [toNumber(match[1] ?? "0", match[2] ?? "00"), toNumber((match[1] ?? "0").slice(1) || "0", match[2] ?? "00")])
+            .find((value) => value > 0 && near(columnCount * value, price.value))
+        : undefined;
+    const unitPrice = inline
+      ? quantityFrom(inline).unitPrice
+      : at
+        ? Number((at[1] ?? "").replace(",", "."))
+        : (misreadAt ?? null);
+    // The small quantity digit is easy to miss; "@14.00 … 28.00" says it was 2.
+    const fromPrices = unitPrice ? price.value / unitPrice : 0;
+    // A leading number is a quantity column (7-Eleven, Tops) only if it's 1 or the prices confirm it;
+    // otherwise it belongs to the name ("3 in 1 Coffee", "2 ply Tissue").
+    const leadingCount = Number(leading?.[1] ?? 0);
+    const quantityColumn = leadingCount === 1 || (leadingCount > 1 && near(fromPrices, leadingCount));
+    const count = inline
+      ? quantityFrom(inline).quantity
+      : Number.isInteger(fromPrices) && fromPrices > 0
+        ? fromPrices
+        : 1;
+    const named = inline ? price.before.replace(inline[0], " ") : price.before;
+    const ownName = cleanName(quantityColumn ? named.replace(/^\d+\s+/, "") : named);
+    // Wholesale slips print the name on its own line above "(barcode) (1 * 169.00) 169.00".
+    const name = hasLetters(ownName) ? ownName : above;
+    if (name) lines.push(lineFor(name, count, unitPrice, price.value, row.y));
+    // A price among the items whose name the OCR couldn't read stays a line, so it can be picked by hand.
+    else if (lines.length > 0) lines.push(lineFor(UNREADABLE_NAME, count, unitPrice, price.value, row.y));
   }
 
   const currency = /\$|usd/i.test(fullText) && !/บาท|฿|thb/i.test(fullText) ? "USD" : "THB";
-  return { store, date, total, currency, lines };
+  return { store: knownStore ?? store, date, total, currency, lines };
 };

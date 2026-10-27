@@ -66,3 +66,56 @@ test("the head word of a Thai line still matches, ahead of a flavour word later 
   assert.equal(match.productId, 7);
   assert.equal(match.how, "name");
 });
+
+test("a remembered line read with slightly different OCR slips is offered as the best guess", () => {
+  // Saved in Grocy under an English name, so only the remembered receipt text can find it.
+  const snacks = [...products, { id: 8, name: "Honey lemon drink", thaiName: "" }];
+  const remembered = new Map([[normalizeReceiptName("โออิชีน้ำนึ่งมะนาว80"), 8]]);
+  const match = matchReceiptLine("โออิช์น้ำนึ่งมะนาว80", null, snacks, remembered);
+  assert.equal(match.productId, 8);
+  assert.equal(match.how, "guess");
+});
+
+test("a remembered line doesn't pull in a different product that only shares a brand", () => {
+  const remembered = new Map([[normalizeReceiptName("โออิชีน้ำนึ่งมะนาว80"), 1]]);
+  const match = matchReceiptLine("โออิชีกรีนทีต้นตำรับ", null, products, remembered);
+  assert.notEqual(match.productId, 1);
+});
+
+test("lines printed alike (same price, close reading) share one reading: the one closest to the rest", async () => {
+  const { unifyRepeats } = await import("../src/lib/receipt/match.ts");
+  const names = unifyRepeats([
+    { name: "ทิปโก้พรุน จุ่น100%", line_total: 18 },
+    { name: "ทิปโก้พรุนองุ่น100%", line_total: 18 },
+    { name: "ทิปโก้พรุนอง100%", line_total: 18 },
+    { name: "ทิปโก้พรุนองุ่น100%", line_total: 18 },
+    { name: "ทิปโก้เชอร์รี่เบอร์รี่", line_total: 18 },
+    { name: "ทิปโก้พรุนองุ่น100%", line_total: 20 },
+  ]);
+  assert.deepEqual(names.slice(0, 4), Array(4).fill("ทิปโก้พรุนองุ่น100%"));
+  assert.equal(names[4], "ทิปโก้เชอร์รี่เบอร์รี่");
+  assert.equal(names[5], "ทิปโก้พรุนองุ่น100%");
+});
+
+test("a name you corrected before replaces the same misreading, or a close one", async () => {
+  const { correctedName } = await import("../src/lib/receipt/match.ts");
+  const corrections = new Map([[normalizeReceiptName("โอเกร์ตเมจิ รสจิจ"), "โยเกิร์ตเมจิ รสจืด"]]);
+  assert.equal(correctedName("โอเกร์ตเมจิ รสจิจ", corrections), "โยเกิร์ตเมจิ รสจืด");
+  assert.equal(correctedName("โอเกิร์ตเมจิ รสจิด", corrections), "โยเกิร์ตเมจิ รสจืด");
+  assert.equal(correctedName("ทิปโก้พรุนองุ่น100%", corrections), "ทิปโก้พรุนองุ่น100%");
+});
+
+test("two flavours of one brand at one price stay two different lines", async () => {
+  const { unifyRepeats } = await import("../src/lib/receipt/match.ts");
+  const names = unifyRepeats([
+    { name: "โยเกิร์ตเมจิ รสสตรอเบอร์รี่", line_total: 15 },
+    { name: "โยเกิร์ตเมจิ รสบลูเบอร์รี่", line_total: 15 },
+  ]);
+  assert.deepEqual(names, ["โยเกิร์ตเมจิ รสสตรอเบอร์รี่", "โยเกิร์ตเมจิ รสบลูเบอร์รี่"]);
+});
+
+test("an earlier fix isn't applied to a different flavour of the same product", async () => {
+  const { correctedName } = await import("../src/lib/receipt/match.ts");
+  const corrections = new Map([[normalizeReceiptName("โอเกร์ตเมจิ รสจิจ"), "โยเกิร์ตเมจิ รสจืด"]]);
+  assert.equal(correctedName("โยเกิร์ตเมจิ รสสตรอเบอร์รี่", corrections), "โยเกิร์ตเมจิ รสสตรอเบอร์รี่");
+});

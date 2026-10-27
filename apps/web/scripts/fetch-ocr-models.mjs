@@ -1,5 +1,4 @@
-// Downloads the receipt OCR models into /public/ocr once, checking each file against its known hash.
-// PaddleOCR's PP-OCRv5 models (Apache-2.0), as ONNX, from the oar-ocr project's v0.3.0 release.
+// PaddleOCR's PP-OCRv5 models (Apache-2.0) as ONNX, from the oar-ocr project's release.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

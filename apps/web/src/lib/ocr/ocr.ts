@@ -1,32 +1,24 @@
 // No "@/" imports: scripts/ocr.test.mjs runs this file directly with Node.
 
-// The math around PaddleOCR's two models (PP-OCRv5 mobile detection, Thai+English recognition), kept free
-// of the DOM and of ONNX Runtime so it can be tested: image → tensor, probability map → text boxes, and
-// recognizer output → text. The worker in ./ocr.worker.ts does the resizing, cropping and model runs.
-
-/** Detection sees the photo with its longer side at most this many pixels, in multiples of 32. */
-export const DETECT_LIMIT = 960;
+// A receipt is often a small strip of a phone photo; below this its tight lines blur together.
+export const DETECT_LIMIT = 1280;
 export const RECOGNIZE_HEIGHT = 48;
-/** Wider crops are squeezed; a receipt line is rarely longer than this at 48 px tall. */
+// A receipt line is rarely wider than this at 48 px tall; wider crops are squeezed.
 export const RECOGNIZE_MAX_WIDTH = 1280;
 
 export type Box = { x: number; y: number; width: number; height: number; score: number };
 
-/** The detection input size for a photo: scaled down to the limit, each side a multiple of 32. */
+// The detector needs each side to be a multiple of 32.
 export const detectSize = (width: number, height: number, limit = DETECT_LIMIT) => {
   const scale = Math.min(1, limit / Math.max(width, height));
   const round = (side: number) => Math.max(32, Math.round((side * scale) / 32) * 32);
   return { width: round(width), height: round(height) };
 };
 
-/** A crop's width at the recognizer's fixed height, keeping its shape. */
 export const recognizeWidth = (width: number, height: number) =>
   Math.min(RECOGNIZE_MAX_WIDTH, Math.max(RECOGNIZE_HEIGHT / 3, Math.round((RECOGNIZE_HEIGHT * width) / Math.max(1, height))));
 
-/**
- * RGBA pixels → a [3, height, width] tensor, channels in BGR order like PaddleOCR's OpenCV training,
- * each scaled to 0–1 then normalized: (value - mean) / std.
- */
+// BGR channel order: PaddleOCR's models were trained on OpenCV images.
 export const toTensor = (
   rgba: ArrayLike<number>,
   width: number,
@@ -54,16 +46,13 @@ export const RECOGNIZE_STD = [0.5, 0.5, 0.5] as const;
 
 type BoxOptions = { threshold?: number; boxThreshold?: number; unclip?: number; minSide?: number };
 
-/**
- * Text boxes from the detector's probability map (DB post-processing, kept to upright rectangles since
- * receipts are photographed roughly straight): pixels over `threshold` are joined into regions, weak regions
- * are dropped, and each one grows by `unclip` because the model marks a shrunk core of each text line.
- */
+// Upright boxes only, since receipts are photographed roughly straight. Each box grows by `unclip`
+// because the model marks a shrunk core of every text line.
 export const boxesFromMap = (
   map: ArrayLike<number>,
   width: number,
   height: number,
-  { threshold = 0.3, boxThreshold = 0.6, unclip = 1.6, minSide = 3 }: BoxOptions = {},
+  { threshold = 0.6, boxThreshold = 0.6, unclip = 1.5, minSide = 3 }: BoxOptions = {},
 ): Box[] => {
   const seen = new Uint8Array(width * height);
   const boxes: Box[] = [];
@@ -110,16 +99,18 @@ export const boxesFromMap = (
   return boxes;
 };
 
-/**
- * The recognizer's per-step class scores → text (greedy CTC): class 0 is "blank", classes 1…N are the
- * dictionary's characters in order, and the one after them is a space. Repeats collapse unless a blank
- * separates them. The score is the mean confidence of the characters kept.
- */
+// Below this share of the best letter's score, another letter isn't a real alternative.
+const ALTERNATIVE_RATIO = 0.08;
+const MAX_ALTERNATIVES = 4;
+
+// Greedy CTC: class 0 is blank, 1…N the dictionary's characters, N + 1 a space. Each kept letter also
+// carries the other letters the model scored highly at that step, for the corrector to choose from.
 export const ctcDecode = (scores: ArrayLike<number>, steps: number, classes: number, dictionary: readonly string[]) => {
-  let text = "";
+  const letters: string[] = [];
+  const alternatives: string[][] = [];
   let confidence = 0;
-  let kept = 0;
   let previous = -1;
+  const letterOf = (index: number) => (index === dictionary.length + 1 ? " " : (dictionary[index - 1] ?? ""));
   for (let step = 0; step < steps; step++) {
     let best = 0;
     let bestScore = -Infinity;
@@ -131,11 +122,26 @@ export const ctcDecode = (scores: ArrayLike<number>, steps: number, classes: num
       }
     }
     if (best !== 0 && best !== previous) {
-      text += best === dictionary.length + 1 ? " " : (dictionary[best - 1] ?? "");
+      const others: { letter: string; score: number }[] = [];
+      for (let index = 1; index < classes; index++) {
+        const score = scores[step * classes + index] ?? 0;
+        if (index !== best && score >= bestScore * ALTERNATIVE_RATIO) others.push({ letter: letterOf(index), score });
+      }
+      letters.push(letterOf(best));
+      alternatives.push(others.sort((first, second) => second.score - first.score).slice(0, MAX_ALTERNATIVES).map((other) => other.letter));
       confidence += bestScore;
-      kept++;
     }
     previous = best;
   }
-  return { text: text.trim(), score: kept > 0 ? confidence / kept : 0 };
+  const kept = letters.length;
+  // Trim spaces from both ends, keeping each letter's alternatives in step with it.
+  let start = 0;
+  let end = kept;
+  while (start < end && letters[start] === " ") start++;
+  while (end > start && letters[end - 1] === " ") end--;
+  return {
+    text: letters.slice(start, end).join(""),
+    alternatives: alternatives.slice(start, end),
+    score: kept > 0 ? confidence / kept : 0,
+  };
 };

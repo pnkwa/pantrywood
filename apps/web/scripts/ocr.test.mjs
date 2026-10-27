@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { boxesFromMap, ctcDecode, detectSize, recognizeWidth, toTensor } from "../src/lib/ocr/ocr.ts";
 
 test("the detector sees the photo scaled to its limit, each side a multiple of 32", () => {
-  assert.deepEqual(detectSize(3000, 4000), { width: 736, height: 960 });
+  assert.deepEqual(detectSize(3000, 4000), { width: 960, height: 1280 });
   assert.deepEqual(detectSize(500, 300), { width: 512, height: 288 });
   assert.deepEqual(detectSize(10, 10), { width: 32, height: 32 });
   assert.equal(recognizeWidth(200, 20), 480);
@@ -42,4 +42,14 @@ test("CTC: repeats collapse, blanks split doubled letters, the last class is a s
   const { text, score } = ctcDecode(scores, 8, classes, dictionary);
   assert.equal(text, "aab ก");
   assert.ok(Math.abs(score - 0.9) < 1e-6);
+});
+
+test("CTC keeps the letters the model also considered at each step", () => {
+  const dictionary = ["ด", "อ", "ก"];
+  const classes = dictionary.length + 2;
+  // Step 1: อ 0.6, ด 0.35 (a real alternative), ก 0.01 (not).
+  const scores = [[0.04, 0.35, 0.6, 0.01, 0]].flat();
+  const { text, alternatives } = ctcDecode(scores, 1, classes, dictionary);
+  assert.equal(text, "อ");
+  assert.deepEqual(alternatives, [["ด"]]);
 });

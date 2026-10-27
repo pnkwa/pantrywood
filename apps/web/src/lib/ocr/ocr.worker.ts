@@ -1,6 +1,3 @@
-// Reads a receipt photo with PaddleOCR's models (PP-OCRv5 mobile detection, Thai+English recognition),
-// off the main thread. Models, dictionary and ONNX Runtime's wasm are served from /public/ocr, so it works
-// offline and the photo never leaves the device.
 import * as ort from "onnxruntime-web/wasm";
 import {
   boxesFromMap,
@@ -14,12 +11,14 @@ import {
   recognizeWidth,
   toTensor,
 } from "./ocr";
+import { correctThai } from "@/lib/receipt/correct";
+import { THAI_RECEIPT_WORDS } from "@/lib/receipt/thai-words";
 
-/** Below this the recognizer is guessing; such boxes are usually smudges or logos. */
+// Below this the recognizer is guessing at smudges or logos.
 const MIN_TEXT_SCORE = 0.5;
 
 ort.env.wasm.wasmPaths = "/ocr/ort/";
-// Threads need cross-origin isolation, which the app doesn't turn on; this already runs off the main thread.
+// Threads need cross-origin isolation, which the app doesn't turn on.
 ort.env.wasm.numThreads = 1;
 
 type Models = { detect: ort.InferenceSession; recognize: ort.InferenceSession; dictionary: string[] };
@@ -46,7 +45,7 @@ const pixelsOf = (bitmap: ImageBitmap, crop: { x: number; y: number; width: numb
   return context.getImageData(0, 0, width, height).data;
 };
 
-const read = async (bitmap: ImageBitmap) => {
+const read = async (bitmap: ImageBitmap, preferred: readonly string[]) => {
   const { detect, recognize, dictionary } = await (models ??= load());
   const size = detectSize(bitmap.width, bitmap.height);
   const whole = { x: 0, y: 0, width: bitmap.width, height: bitmap.height };
@@ -75,17 +74,18 @@ const read = async (bitmap: ImageBitmap) => {
     const output = (await recognize.run({ [recognize.inputNames[0] ?? "x"]: input }))[recognize.outputNames[0] ?? ""];
     if (!output || !(output.data instanceof Float32Array)) continue;
     const [, steps = 0, classes = 0] = output.dims;
-    const { text, score } = ctcDecode(output.data, steps, classes, dictionary);
-    if (text && score >= MIN_TEXT_SCORE) texts.push({ text, ...crop, score });
+    const { text, alternatives, score } = ctcDecode(output.data, steps, classes, dictionary);
+    if (text && score >= MIN_TEXT_SCORE) texts.push({ text: correctThai(text, THAI_RECEIPT_WORDS, { alternatives, preferred }), ...crop, score });
   }
   return texts;
 };
 
 self.addEventListener("message", async (event: MessageEvent) => {
-  const { id, bitmap } = event.data ?? {};
+  const { id, bitmap, preferred } = event.data ?? {};
   if (typeof id !== "string" || !(bitmap instanceof ImageBitmap)) return;
+  const words = Array.isArray(preferred) ? preferred.filter((word): word is string => typeof word === "string") : [];
   try {
-    self.postMessage({ id, texts: await read(bitmap) });
+    self.postMessage({ id, texts: await read(bitmap, words) });
   } catch (error) {
     self.postMessage({ id, error: error instanceof Error ? error.message : "The receipt reader stopped." });
   } finally {

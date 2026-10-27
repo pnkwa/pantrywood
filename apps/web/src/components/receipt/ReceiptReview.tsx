@@ -3,7 +3,7 @@
 import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { CheckIcon, WarningIcon } from "@phosphor-icons/react";
-import { THAI_NAME_USERFIELD, toIsoDate, type ReceiptScan } from "@pantrywood/shared";
+import { THAI_NAME_USERFIELD, toIsoDate, type ReceiptLine, type ReceiptScan } from "@pantrywood/shared";
 import {
   useCurrentStock,
   useProducts,
@@ -15,8 +15,16 @@ import { NAV_FORWARD } from "@/lib/page-transitions";
 import { formatDate, formatMoney } from "@/lib/pantry/format";
 import { usePantry } from "@/lib/pantry/use-pantry";
 import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
-import { matchReceiptLine, normalizeReceiptName } from "@/lib/receipt/match";
-import { receiptMatches, receiptMemories, useRefreshReceipts, useRememberedMatches } from "@/lib/receipt/store";
+import { correctedName, matchReceiptLine, normalizeReceiptName, unifyRepeats } from "@/lib/receipt/match";
+import { UNREADABLE_NAME } from "@/lib/receipt/parse";
+import {
+  receiptCorrections,
+  receiptMatches,
+  receiptMemories,
+  useReceiptCorrections,
+  useRefreshReceipts,
+  useRememberedMatches,
+} from "@/lib/receipt/store";
 import { useBoardStore } from "@/lib/board/board-store";
 import { LEAVES_PER_RECEIPT } from "@/lib/room/leaves";
 import { useRoomStore } from "@/lib/room/room-store";
@@ -75,6 +83,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const stock = useCurrentStock();
   const shops = useShoppingLocations();
   const remembered = useRememberedMatches();
+  const corrections = useReceiptCorrections();
   const pantryState = usePantry();
   const places = pantryState.status === "ready" ? pantryState.pantry.places : [];
   const stockAction = useStockAction();
@@ -83,6 +92,8 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const earnLeaves = useRoomStore((state) => state.earn);
 
   const [choices, setChoices] = useState<LineChoice[] | null>(null);
+  // The names as shown: one reading per repeated line, your earlier fixes, and anything you edit here.
+  const [lines, setLines] = useState<ReceiptLine[] | null>(null);
   // Lines that needed you when the receipt was read come first, and keep their place once fixed.
   const [lineOrder, setLineOrder] = useState<number[]>([]);
   const [openLine, setOpenLine] = useState<number | null>(null);
@@ -99,14 +110,22 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const [sheetOpen, setSheetOpen] = useState(true);
 
   const activeProducts = (products.data ?? []).filter((product) => product.active === 1);
-  if (choices === null && products.data && remembered.data) {
-    const matchable = activeProducts.map((product) => ({
-      id: product.id,
-      name: product.name,
-      thaiName: product.userfields?.[THAI_NAME_USERFIELD] ?? "",
-    }));
-    const matched = scan.lines.map((line) => ({
-      ...matchReceiptLine(line.name, line.name_en, matchable, remembered.data),
+  const matchable = activeProducts.map((product) => ({
+    id: product.id,
+    name: product.name,
+    thaiName: product.userfields?.[THAI_NAME_USERFIELD] ?? "",
+  }));
+  if (choices === null && products.data && remembered.data && corrections.data) {
+    const unified = unifyRepeats(scan.lines);
+    // "(unreadable)" says nothing about the item, so no saved fix or match may be looked up by it.
+    const shown = scan.lines.map((line, index) =>
+      line.name === UNREADABLE_NAME ? line : { ...line, name: correctedName(unified[index] ?? line.name, corrections.data) },
+    );
+    setLines(shown);
+    const matched = shown.map((line) => ({
+      ...(line.name === UNREADABLE_NAME
+        ? { productId: null, how: "none" as const, candidateIds: [] }
+        : matchReceiptLine(line.name, line.name_en, matchable, remembered.data)),
       amount: line.quantity,
     }));
     const order = matched
@@ -137,9 +156,10 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       }),
   );
 
-  const lineTotal = scan.lines.reduce((sum, line) => sum + line.line_total, 0);
+  const shownLines = lines ?? scan.lines;
+  const lineTotal = shownLines.reduce((sum, line) => sum + line.line_total, 0);
   const totalMatches = scan.total === null || Math.abs(lineTotal - scan.total) < TOTAL_TOLERANCE;
-  const rows = (choices ?? []).map((choice, index) => ({ choice, index, line: scan.lines[index] }));
+  const rows = (choices ?? []).map((choice, index) => ({ choice, index, line: shownLines[index] }));
   const needsYouCount = rows.filter((row) => needsYou(row.choice)).length;
   const toAdd = rows.filter((row) => row.choice.productId !== null && row.choice.how !== "skipped" && !added.has(row.index));
   const visibleRows = lineOrder
@@ -149,6 +169,19 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
 
   const updateChoice = (index: number, choice: LineChoice) =>
     setChoices((current) => current?.map((existing, position) => (position === index ? choice : existing)) ?? null);
+
+  // Your fix is remembered at once against what the OCR read, so the next receipt shows it too.
+  const renameLine = (index: number, name: string) => {
+    const read = scan.lines[index]?.name;
+    const choice = choices?.[index];
+    if (!read || !choice || !name.trim() || name === shownLines[index]?.name) return;
+    setLines(shownLines.map((line, position) => (position === index ? { ...line, name } : line)));
+    if (choice.how !== "picked" && choice.how !== "skipped" && remembered.data) {
+      updateChoice(index, { ...matchReceiptLine(name, shownLines[index]?.name_en ?? null, matchable, remembered.data), amount: choice.amount });
+    }
+    const key = read === UNREADABLE_NAME ? "" : normalizeReceiptName(read);
+    if (key) receiptCorrections.save(key, { read: key, text: name }).catch(() => undefined);
+  };
 
   // Keeps the photo's edges inside the panel at any zoom.
   const clampedView = (zoom: number, x: number, y: number) => {
@@ -166,7 +199,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   // When zoomed in, opening a line glides the photo to that line: panning without a drag.
   const openLineAt = (index: number | null) => {
     setOpenLine(index);
-    const lineY = index === null ? null : scan.lines[index]?.y;
+    const lineY = index === null ? null : shownLines[index]?.y;
     const photo = photoRef.current;
     if (lineY === null || lineY === undefined || !photo) return;
     setView((current) =>
@@ -202,7 +235,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       date: scan.date,
       total: scan.total ?? lineTotal,
       currency: scan.currency,
-      lineCount: scan.lines.length,
+      lineCount: shownLines.length,
       savedAt: new Date().toISOString(),
       added: [...addedByProduct.values()],
     };
@@ -244,10 +277,14 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
       }
     }
     if (rememberMatches) {
-      for (const { choice, line } of rows) {
+      for (const { choice, line, index } of rows) {
         if (choice.productId === null || !line) continue;
-        const receiptName = normalizeReceiptName(line.name);
-        await receiptMatches.save(receiptName, { receiptName, productId: choice.productId }).catch(() => undefined);
+        // Both what the OCR read and the name as shown, so either spelling matches next time.
+        for (const name of new Set([scan.lines[index]?.name ?? line.name, line.name])) {
+          if (name === UNREADABLE_NAME) continue;
+          const receiptName = normalizeReceiptName(name);
+          await receiptMatches.save(receiptName, { receiptName, productId: choice.productId }).catch(() => undefined);
+        }
       }
     }
     await keepMemory(nowAdded);
@@ -261,7 +298,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   return (
     <>
       <ReceiptScanHeader>
-        <SummaryTile label="Lines" value={<AnimatedNumber value={scan.lines.length} />} />
+        <SummaryTile label="Lines" value={<AnimatedNumber value={shownLines.length} />} />
         <SummaryTile label="Total" value={formatMoney(scan.total ?? lineTotal, scan.currency)} />
         <SummaryTile label="Matched" value={<AnimatedNumber value={rows.length - needsYouCount} />} tone="sage" />
         <SummaryTile label="Needs you" value={<AnimatedNumber value={needsYouCount} />} tone="honey" />
@@ -311,7 +348,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
           </div>
           <div className="flex items-center gap-1 rounded-full border-[1.5px] border-border bg-card p-1">
             <span className="flex-1 truncate pl-3.5 text-sm text-muted-foreground">
-              {scan.lines.length} {scan.lines.length === 1 ? "line" : "lines"}
+              {shownLines.length} {shownLines.length === 1 ? "line" : "lines"}
               <span className="max-sm:hidden"> read from this photo</span>
             </span>
             <button
@@ -419,6 +456,7 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
                   places={places}
                   onToggle={() => openLineAt(openLine === index ? null : index)}
                   onChange={(next) => updateChoice(index, next)}
+                  onRename={(name) => renameLine(index, name)}
                 />
               ) : null,
             )}

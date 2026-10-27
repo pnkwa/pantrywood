@@ -1,5 +1,4 @@
-// Serves the wasm binaries from /public so camera scanning and receipt reading work offline, without a CDN:
-// zxing-wasm's barcode reader and ONNX Runtime's wasm backend for the receipt OCR.
+// Served from /public so barcode and receipt reading work offline, without a CDN.
 import { copyFileSync, mkdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";

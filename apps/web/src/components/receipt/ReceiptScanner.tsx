@@ -11,14 +11,16 @@ import {
   ReceiptIcon,
   SunIcon,
 } from "@phosphor-icons/react";
-import { ReceiptScanSchema, type ReceiptScan } from "@pantrywood/shared";
+import { ReceiptScanSchema, THAI_NAME_USERFIELD, type ReceiptScan } from "@pantrywood/shared";
 import { z } from "zod";
 import { Toasts } from "@/components/pantry/Toasts";
-import { useProductGroups } from "@/lib/grocy";
+import { useProductGroups, useProducts } from "@/lib/grocy";
 import { NAV_FORWARD } from "@/lib/page-transitions";
 import { formatDate } from "@/lib/pantry/format";
-import { shrinkImage, toDataUrl } from "@/lib/receipt/image";
-import { useReceiptMemories } from "@/lib/receipt/store";
+import { isWholePhoto, yInCrop, type CropRect } from "@/lib/receipt/crop";
+import { blankOutside, cropPhoto, shrinkImage, toDataUrl } from "@/lib/receipt/image";
+import { ReceiptCrop } from "./ReceiptCrop";
+import { useReceiptCorrections, useReceiptMemories } from "@/lib/receipt/store";
 import { ReceiptPolaroid } from "./ReceiptPolaroid";
 import { ReceiptScanHeader } from "./ReceiptScanHeader";
 import { ReceiptReview } from "./ReceiptReview";
@@ -28,18 +30,19 @@ const UPLOAD_QUALITY = 0.85;
 
 type Stage =
   | { name: "pick"; problem: string | null }
+  | { name: "crop"; photo: Blob; photoUrl: string }
   | { name: "reading"; photoUrl: string }
   | { name: "review"; photo: Blob; photoUrl: string; scan: ReceiptScan };
 
 const ErrorBodySchema = z.object({ error_message: z.string() });
 
-/** On this device by default (free, private); `NEXT_PUBLIC_RECEIPT_READER=claude` sends it to Claude instead. */
+// Read on the device unless NEXT_PUBLIC_RECEIPT_READER=claude.
 const READ_WITH_CLAUDE = process.env.NEXT_PUBLIC_RECEIPT_READER === "claude";
 
-const readReceipt = async (photo: Blob, groupNames: string[]) => {
+const readReceipt = async (photo: Blob, groupNames: string[], knownNames: string[]) => {
   if (!READ_WITH_CLAUDE) {
     const { readReceiptOnDevice } = await import("@/lib/ocr/read-receipt");
-    return readReceiptOnDevice(photo);
+    return readReceiptOnDevice(photo, knownNames);
   }
   const form = new FormData();
   form.append("image", photo, "receipt.jpg");
@@ -392,19 +395,52 @@ const RecentReceipts = () => {
 
 export const ReceiptScanner = () => {
   const productGroups = useProductGroups();
+  const products = useProducts();
+  const corrections = useReceiptCorrections();
+  // What your receipts most likely say: your products' names and the names you fixed before.
+  const knownNames = [
+    ...(products.data ?? []).flatMap((product) => [product.name, product.userfields?.[THAI_NAME_USERFIELD] ?? ""]),
+    ...(corrections.data?.values() ?? []),
+  ].filter(Boolean);
   const [stage, setStage] = useState<Stage>({ name: "pick", problem: null });
   const attempt = useRef(0);
 
-  const readPhoto = async (picked: File) => {
+  const pickPhoto = async (picked: File) => {
     const thisAttempt = ++attempt.current;
     try {
       const photo = await shrinkImage(picked, UPLOAD_EDGE_PX, UPLOAD_QUALITY);
       const photoUrl = await toDataUrl(photo);
+      if (thisAttempt === attempt.current) setStage({ name: "crop", photo, photoUrl });
+    } catch (error) {
+      if (thisAttempt !== attempt.current) return;
+      setStage({ name: "pick", problem: error instanceof Error ? error.message : "Couldn't open that photo." });
+    }
+  };
+
+  // The reader gets your frame with the rest painted white; review shows just the frame, lines placed to match.
+  const readPhoto = async (original: Blob, rect: CropRect, brighten: boolean) => {
+    const thisAttempt = ++attempt.current;
+    try {
+      const untouched = isWholePhoto(rect) && !brighten;
+      const [toRead, photo] = untouched
+        ? [original, original]
+        : await Promise.all([
+            blankOutside(original, rect, brighten, UPLOAD_QUALITY),
+            cropPhoto(original, rect, brighten, UPLOAD_QUALITY),
+          ]);
+      const photoUrl = await toDataUrl(photo);
+      // "Another photo" may have been tapped while the frame was being prepared.
+      if (thisAttempt !== attempt.current) return;
       setStage({ name: "reading", photoUrl });
-      const scan = await readReceipt(
-        photo,
+      const read = await readReceipt(
+        toRead,
         (productGroups.data ?? []).map((group) => group.name),
+        knownNames,
       );
+      const scan = {
+        ...read,
+        lines: read.lines.map((line) => ({ ...line, y: line.y === null ? null : yInCrop(line.y, rect) })),
+      };
       if (thisAttempt !== attempt.current) return;
       setStage(
         scan.lines.length > 0
@@ -444,7 +480,13 @@ export const ReceiptScanner = () => {
           <ReceiptScanHeader />
           <div className="lg:mx-auto lg:flex lg:w-full lg:max-w-310 lg:min-h-0 lg:flex-1 lg:gap-5">
             {stage.name === "pick" ? (
-              <PhotoPicker problem={stage.problem} onPhoto={readPhoto} />
+              <PhotoPicker problem={stage.problem} onPhoto={pickPhoto} />
+            ) : stage.name === "crop" ? (
+              <ReceiptCrop
+                photoUrl={stage.photoUrl}
+                onBack={retake}
+                onRead={(rect, brighten) => readPhoto(stage.photo, rect, brighten)}
+              />
             ) : (
               <ReadingReceipt photoUrl={stage.photoUrl} />
             )}
