@@ -12,6 +12,7 @@ import { DOOR_OPEN_ANGLE, OpenFridge } from "@/components/scene/storage/OpenFrid
 import { HINGE_X, SEAM_Z, WIDTH } from "@/components/scene/storage/Fridge";
 import { fridgeSurfaces, pickHeightFor, type FridgeSurface } from "@/lib/inside/fridge-surfaces";
 import { pickScene, setScenePicker, type ScenePick } from "@/lib/inside/scene-pick";
+import { trayAt } from "@/lib/inside/tray-drop";
 import { BACK, FRONT, MAX_SIZE, MIN_SIZE, SIZE_STEP, type ShelfSpot } from "@/lib/inside/shelf-place";
 import type { PantryItem } from "@/lib/pantry/model";
 import { sceneItemFor } from "@/lib/room/items";
@@ -83,26 +84,25 @@ type DropBox = { mesh: Mesh; surface: FridgeSurface; height: number };
 
 /**
  * `pick` is the last allowed spot the pointer was over: over a gap it stays put, so what you see is where it lands.
- * `tray` is the Item tray under the pointer: let go there and it comes off its shelf.
+ * `tray` is the Item tray under the pointer: the carried item shrinks away, and letting go takes it off its shelf.
  */
 type Drag = { key: string; startX: number; startY: number; moved: boolean; pick: ScenePick | null; tray: HTMLElement | null };
 
-/** The right-side panel under a point on the page, if any: dropping there puts an item back in the Item tray. */
-const trayAt = (clientX: number, clientY: number) =>
-  document.elementsFromPoint(clientX, clientY).map((element) => element.closest<HTMLElement>("[data-tray-drop]")).find((element) => element !== null) ?? null;
+
 
 /** A spring's pull and how quickly it calms down (1 = no overshoot, lower = bouncier). */
 type Spring = { stiffness: number; damping: number };
-// Only the item you're handling bounces; the ones making room for it glide aside without overshooting.
-const ACTIVE_SPRING: Spring = { stiffness: 240, damping: 0.42 };
-const CALM_SPRING: Spring = { stiffness: 240, damping: 1 };
-const CARRY_SPRING: Spring = { stiffness: 520, damping: 0.55 };
+// DESIGN.md section 10: a drag settles in about 200 ms and neighbours slide aside without jumping or overshooting;
+// only the item you're handling gets a small playful bounce (about 10% overshoot), and the carried one barely sways.
+const ACTIVE_SPRING: Spring = { stiffness: 560, damping: 0.6 };
+const CALM_SPRING: Spring = { stiffness: 760, damping: 1 };
+const CARRY_SPRING: Spring = { stiffness: 640, damping: 0.75 };
 /** How hard an item hops when you pick it, and how much of its fall it keeps when it bounces off the shelf. */
 const HOP_SPEED = 1.7;
 const SHELF_BOUNCE = 0.35;
 const SPRING_STEP = 1 / 120;
 
-type GlideProps = Omit<ThreeElements["group"], "position" | "ref"> & {
+type GlideProps = Omit<ThreeElements["group"], "position" | "scale" | "ref"> & {
   target: [number, number, number];
   /** How far above (or below) its target it starts: a dropped item falls into place, a lifted one springs up. */
   dropFrom?: number;
@@ -111,19 +111,23 @@ type GlideProps = Omit<ThreeElements["group"], "position" | "ref"> & {
   standing?: boolean;
   /** Hops once each time this turns true (when you pick it). */
   hop?: boolean;
+  scale?: number;
+  /** Shrinks away (and grows back) instead of vanishing, e.g. while carried over the Item tray. */
+  shown?: boolean;
   instant: boolean;
   groupRef?: (group: Group) => (() => void) | void;
 };
 
-/** A group that springs to its target instead of jumping, so neighbours slide aside with a little overshoot and drops bounce. */
-const Glide = ({ target, dropFrom = 0, spring = CALM_SPRING, standing = false, hop = false, instant, groupRef, children, ...props }: GlideProps) => {
+/** A group that springs to its target instead of jumping: neighbours slide aside, the handled item bounces a little. */
+const Glide = ({ target, dropFrom = 0, spring = CALM_SPRING, standing = false, hop = false, scale = 1, shown = true, instant, groupRef, children, ...props }: GlideProps) => {
   const [x, y, z] = target;
   const group = useRef<Group | null>(null);
   const invalidate = useThree((state) => state.invalidate);
   const [start] = useState<[number, number, number]>(() => [x, y + (instant ? 0 : dropFrom), z]);
-  // Working state for the spring, changed every frame outside React.
-  const motion = useRef({ goal: new Vector3(), velocity: new Vector3(), pull: new Vector3() });
-  useEffect(() => invalidate(), [invalidate, x, y, z]);
+  const [startScale] = useState(() => scale * (shown ? 1 : 0));
+  // Working state for the springs (position, and a 0–1 size), changed every frame outside React.
+  const motion = useRef({ goal: new Vector3(), velocity: new Vector3(), pull: new Vector3(), size: shown ? 1 : 0, sizeVelocity: 0 });
+  useEffect(() => invalidate(), [invalidate, x, y, z, scale, shown]);
   useEffect(() => {
     if (!hop || instant) return;
     motion.current.velocity.y = HOP_SPEED;
@@ -132,12 +136,18 @@ const Glide = ({ target, dropFrom = 0, spring = CALM_SPRING, standing = false, h
   useFrame((_, delta) => {
     const current = group.current;
     if (!current) return;
-    const { goal, velocity, pull } = motion.current;
+    const state = motion.current;
+    const { goal, velocity, pull } = state;
     goal.set(x, y, z);
-    const resting = current.position.distanceToSquared(goal) < 1e-7 && velocity.lengthSq() < 1e-6;
+    const sizeGoal = shown ? 1 : 0;
+    const resting =
+      current.position.distanceToSquared(goal) < 1e-7 && velocity.lengthSq() < 1e-6 && Math.abs(state.size - sizeGoal) < 1e-3 && Math.abs(state.sizeVelocity) < 1e-3;
     if (instant || resting) {
       current.position.copy(goal);
       velocity.set(0, 0, 0);
+      state.size = sizeGoal;
+      state.sizeVelocity = 0;
+      current.scale.setScalar(scale * sizeGoal);
       return;
     }
     const friction = 2 * spring.damping * Math.sqrt(spring.stiffness);
@@ -151,13 +161,19 @@ const Glide = ({ target, dropFrom = 0, spring = CALM_SPRING, standing = false, h
         current.position.y = goal.y;
         velocity.y *= -SHELF_BOUNCE;
       }
+      // The size never overshoots: things shrink away and grow back calmly.
+      const calm = 2 * Math.sqrt(spring.stiffness);
+      state.sizeVelocity += ((sizeGoal - state.size) * spring.stiffness - state.sizeVelocity * calm) * step;
+      state.size += state.sizeVelocity * step;
     }
+    current.scale.setScalar(scale * Math.max(0, state.size));
     invalidate();
   });
   return (
     <group
       {...props}
       position={start}
+      scale={startScale}
       ref={(node) => {
         group.current = node;
         return node ? groupRef?.(node) : undefined;
@@ -333,7 +349,7 @@ const SectionItems = ({ surface, pickHeight, spots, itemsByKey, widthOf, turnOf,
 );
 
 /** The item being carried, lifted and following the pointer along the shelf; the landing outline shows where it goes. */
-const CarriedItem = ({ item, surface, x, row, width, turn, instant }: { item: PantryItem; surface: FridgeSurface; x: number; row?: number; width: number; turn: number; instant: boolean }) => {
+const CarriedItem = ({ item, surface, x, row, width, turn, instant, shown = true }: { item: PantryItem; surface: FridgeSurface; x: number; row?: number; width: number; turn: number; instant: boolean; shown?: boolean }) => {
   const model = sceneItemFor(item);
   const scale = (width * surface.width) / groupWidth(model.shape, model.copies);
   return (
@@ -344,7 +360,7 @@ const CarriedItem = ({ item, surface, x, row, width, turn, instant }: { item: Pa
       instant={instant}
       rotation={[0, MathUtils.degToRad(turn), 0]}
       scale={scale * 1.06}
-      raycast={() => null}
+      shown={shown}
     >
       <ItemModelMeshes model={model} outlined />
     </Glide>
@@ -374,7 +390,6 @@ const FridgeScene = (props: FrontViewProps) => {
     dragRef.current = next;
     setDrag(next);
   };
-  const toTray = inside.unplace;
   const surfaces = fridgeSurfaces(inside.layout.sections);
   const carried = drag?.moved ? drag : null;
   const carriedItem = carried ? inside.itemsByKey.get(carried.key) : undefined;
@@ -384,10 +399,10 @@ const FridgeScene = (props: FrontViewProps) => {
   const shownSpots = (sectionId: string) => {
     if (!carried) return spotsFor(sectionId);
     const others = spotsFor(sectionId).filter((spot) => spot.key !== carried.key);
-    if (carried.pick?.sectionId !== sectionId) return others;
+    if (carried.tray || carried.pick?.sectionId !== sectionId) return others;
     return inside.previewAt(carried.key, sectionId, carried.pick.x, undefined, carried.pick.row) ?? others;
   };
-  const carriedFull = Boolean(carried?.pick && !inside.previewAt(carried.key, carried.pick.sectionId, carried.pick.x, undefined, carried.pick.row));
+  const carriedFull = Boolean(carried?.pick && !carried.tray && !inside.previewAt(carried.key, carried.pick.sectionId, carried.pick.x, undefined, carried.pick.row));
 
   const handleItemPointerDown = (key: string, clientX: number, clientY: number) => {
     // Synchronously, so the camera doesn't start turning under the item.
@@ -400,7 +415,7 @@ const FridgeScene = (props: FrontViewProps) => {
       const moved = current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > DRAG_START_PIXELS;
       if (!moved) return;
       const tray = trayAt(event.clientX, event.clientY);
-      const pick = tray ? null : (pickAllowed(current.key, event.clientX, event.clientY) ?? current.pick);
+      const pick = tray ? current.pick : (pickAllowed(current.key, event.clientX, event.clientY) ?? current.pick);
       updateDrag({ ...current, moved, pick, tray });
     };
     const stop = () => {
@@ -415,7 +430,7 @@ const FridgeScene = (props: FrontViewProps) => {
       stop();
       if (!current) return;
       if (current.moved && current.tray) {
-        toTray(current.key);
+        inside.unplace(current.key);
         return;
       }
       if (current.moved) setDroppedKey(current.key);
@@ -435,7 +450,7 @@ const FridgeScene = (props: FrontViewProps) => {
   };
 
   const sectionItems = (surface: FridgeSurface) => {
-    const carriedHere = carried?.pick?.sectionId === surface.sectionId;
+    const carriedHere = !carried?.tray && carried?.pick?.sectionId === surface.sectionId;
     return (
       <SectionItems
         key={surface.sectionId}
@@ -458,7 +473,7 @@ const FridgeScene = (props: FrontViewProps) => {
   };
   const carriedSurface = carried?.pick ? surfaces.find((surface) => surface.sectionId === carried.pick?.sectionId) : undefined;
   const carriedModel =
-    carriedItem && carriedSurface && carried?.pick && !carried.tray ? (
+    carriedItem && carriedSurface && carried?.pick ? (
       <CarriedItem
         item={carriedItem}
         surface={carriedSurface}
@@ -467,6 +482,7 @@ const FridgeScene = (props: FrontViewProps) => {
         width={inside.widthsOn(carriedSurface.sectionId)(carriedItem.key)}
         turn={inside.turnOf(carriedItem.key)}
         instant={reducedMotion}
+        shown={!carried.tray}
       />
     ) : null;
   // Something dragged in from the Item tray: its 3D model, lifted over the spot it would land on.
@@ -555,7 +571,7 @@ const FridgeScene = (props: FrontViewProps) => {
           <button type="button" aria-label={`Turn ${selected.name} right`} onClick={() => inside.turn(selectedItemKey, "right")} className={roundButton}>
             <ArrowClockwiseIcon size={16} weight="bold" aria-hidden />
           </button>
-          <button type="button" aria-label={`Put ${selected.name} back in the Item tray`} onClick={() => toTray(selectedItemKey)} className={roundButton}>
+          <button type="button" aria-label={`Put ${selected.name} back in the Item tray`} onClick={() => inside.unplace(selectedItemKey)} className={roundButton}>
             <TrayIcon size={16} weight="bold" aria-hidden />
           </button>
           {selectedDeep && (

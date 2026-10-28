@@ -2,6 +2,7 @@
 
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -10,7 +11,8 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { OPEN_SCAN } from "@/lib/page-transitions";
+import { useRouter } from "next/navigation";
+import { NAV_FORWARD, OPEN_SCAN } from "@/lib/page-transitions";
 import { AnimatePresence, motion, type MotionProps } from "motion/react";
 import {
   ArrowArcLeftIcon,
@@ -42,16 +44,12 @@ import { DecorateBar, PieceToolbar } from "@/components/decorate/DecorateControl
 import { catalogItem } from "@/data/catalog";
 import { pieceInfo } from "@/lib/room/decorate";
 import { tagRank } from "@/lib/room/declutter";
-import { storageKindFor } from "@/lib/room/layout";
 import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from "@/lib/room/grid";
 import { wallPose, type Room } from "@/lib/room/use-room";
 import type { WallSide } from "@pantrywood/shared";
 import type { useDecorate } from "@/lib/room/use-decorate";
 import { BoardView } from "@/components/board/BoardView";
-import { InsideView } from "@/components/inside/InsideView";
-import type { GrocyPlace, Pantry } from "@/lib/pantry/model";
-import { putAwayDestinations } from "@/components/pantry/ItemListPanel";
-import { itemRows } from "@/lib/pantry/put-away";
+import type { Pantry } from "@/lib/pantry/model";
 import { useUiStore } from "@/lib/store/ui-store";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
@@ -162,15 +160,6 @@ const PutAwayChip = ({ count, className }: { count: number; className: string })
   </button>
 );
 
-// The open piece first (and its freezer, for the fridge), so "Put in…" starts with "here".
-const destinationsFrom = (pantry: Pantry, openLocationId: number) => {
-  const destinations = putAwayDestinations(pantry);
-  const here = (place: GrocyPlace) =>
-    place.id === openLocationId ||
-    (place.isFreezer && pantry.locations.find((location) => location.id === openLocationId)?.items.some((item) => item.locationId === place.id));
-  return [...destinations.filter(here), ...destinations.filter((place) => !here(place))];
-};
-
 export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, room, decorate }: RoomViewProps) => {
   const cameraRef = useRef<CameraApi>(null);
   const [overlay] = useState(createSceneOverlay);
@@ -182,7 +171,6 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const clearSelection = useUiStore((state) => state.clearSelection);
   const setHoveredLocation = useUiStore((state) => state.setHoveredLocation);
   const showInside = useUiStore((state) => state.showInside);
-  const closeInside = useUiStore((state) => state.closeInside);
   const listView = useUiStore((state) => state.listView);
   const decorating = useUiStore((state) => state.decorating);
   const decorPiece = useUiStore((state) => state.decorPiece);
@@ -195,10 +183,6 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const openBoard = useUiStore((state) => state.openBoard);
 
   const openStorage = storages.find((storage) => storage.locationId === insideLocationId);
-  const openLocation = pantry?.locations.find((location) => location.id === insideLocationId);
-  const openKind =
-    [...storages, ...room.storedAway].find((storage) => storage.locationId === insideLocationId)?.kind ??
-    (openLocation ? storageKindFor(openLocation) : undefined);
   const focus = useMemo(
     () => (view !== "room" && openStorage ? frontOf(openStorage) : null),
     [view, openStorage],
@@ -216,6 +200,11 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   // Without a 3D piece to glide to (list view, or put away), the inside view shows straight away.
   const insideVisible =
     view === "inside" || (view === "entering" && (!openStorage || listView));
+  // The inside of a piece is its own page: once the camera has arrived (or straight away, with nothing to glide to), go there.
+  const router = useRouter();
+  useEffect(() => {
+    if (insideVisible && insideLocationId !== null) router.push(`/storage/${insideLocationId}`, { transitionTypes: NAV_FORWARD });
+  }, [insideVisible, insideLocationId, router]);
 
   const piece = decorPiece ? pieceInfo(room.context, decorPiece) : undefined;
   const [trayHeight, setTrayHeight] = useState(0);
@@ -684,29 +673,6 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
             className="absolute inset-0 z-40 bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-edge)_100%)]"
           >
             <BoardView />
-          </motion.div>
-        )}
-        {insideVisible && openLocation && openKind && (
-          <motion.div
-            key={`inside-${openLocation.id}`}
-            // Grows into place as the camera arrives, so opening a piece reads as one zoom; a fade with reduced motion.
-            initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.92 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: reducedMotion ? 1 : 0.92 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute inset-0 z-40 bg-gingham"
-          >
-            <InsideView
-              location={openLocation}
-              kind={openKind}
-              palette={[...storages, ...room.storedAway].find((storage) => storage.locationId === insideLocationId)?.palette ?? null}
-              selectedItemKey={selection?.type === "item" ? (selection.itemKey ?? `${selection.locationId}-${selection.productId}`) : null}
-              onPickItem={(productId, itemKey) => selectItem(openLocation.id, productId, itemKey)}
-              onClose={closeInside}
-              waiting={pantry?.waiting ?? []}
-              elsewhere={pantry ? itemRows([], pantry.locations.filter((location) => location.id !== openLocation.id)) : []}
-              destinations={pantry ? destinationsFrom(pantry, openLocation.id) : []}
-            />
           </motion.div>
         )}
       </AnimatePresence>

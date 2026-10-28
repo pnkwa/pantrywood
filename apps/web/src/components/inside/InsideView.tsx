@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { useTraySlot } from "@/lib/inside/tray-slot";
@@ -35,6 +35,7 @@ import { useInside } from "@/lib/inside/use-inside";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { PANEL_SPRING } from "@/lib/motion";
 import { pickScene, type ScenePick } from "@/lib/inside/scene-pick";
+import { trayAt } from "@/lib/inside/tray-drop";
 import { Fridge3dView } from "./Fridge3dView";
 import { FrontView } from "./FrontView";
 import { LiftedItem } from "./InsideItem";
@@ -94,9 +95,14 @@ const collisionsFor: CollisionDetection = (args) => {
     const type = dataOf(container.data).type;
     return dragged === "shelf" ? type === "notch" : type === "item" || type === "section";
   });
-  const scoped = { ...args, droppableContainers };
+  const pointer = args.pointerCoordinates;
+  // The tray (and only the tray) when the pointer is on it: the phone drawer covers shelves still on the page under it.
+  if (pointer && trayAt(pointer.x, pointer.y)) return droppableContainers.some((container) => container.id === UNSORTED) ? [{ id: UNSORTED }] : [];
+  // Off the tray, a pointer drag never lands in it just because it's the closest thing.
+  const candidates = pointer ? droppableContainers.filter((container) => container.id !== UNSORTED) : droppableContainers;
+  const scoped = { ...args, droppableContainers: candidates };
   const isItem = (id: UniqueIdentifier) =>
-    dataOf(droppableContainers.find((container) => container.id === id)?.data).type === "item";
+    dataOf(candidates.find((container) => container.id === id)?.data).type === "item";
   const within = pointerWithin(scoped).sort((first, second) => Number(isItem(second.id)) - Number(isItem(first.id)));
   return within.length > 0 ? within : closestCenter(scoped);
 };
@@ -237,6 +243,10 @@ export const InsideView = ({
           : null;
     if (!start) return;
     const point = { x: start.x + delta.x, y: start.y + delta.y };
+    if (trayAt(point.x, point.y)) {
+      setPreview(null);
+      return;
+    }
     const shelf = document
       .elementsFromPoint(point.x, point.y)
       .map((element) => element.closest<HTMLElement>("[data-section-id]"))
@@ -374,8 +384,16 @@ export const InsideView = ({
       onPut={(item) => onPickItem(item.productId, `${location.id}-${item.productId}`)}
       onPickItem={(item) => onPickItem(item.productId, item.key)}
       onClose={close}
+      closeLabel={close === onClose ? "Close the piece and go back to the room" : "Close the Item tray"}
     />
   );
+  const [trayButton, setTrayButton] = useState<HTMLButtonElement | null>(null);
+  const closeTray = () => {
+    setTrayOpen(false);
+    trayButton?.focus();
+  };
+  // Moves focus into the drawer as it opens (stable, so it runs once per opening, not on every render).
+  const focusOnOpen = useCallback((node: HTMLDivElement | null) => node?.focus({ preventScroll: true }), []);
   // Over the 3D fridge, the scene draws what's carried as its model, so the flat sticker steps aside.
   // Over a full shelf there is no landing spot to draw it at, so the sticker (with its "is full" tag) stays.
   const shownIn3d = kind === "fridge" && !editing && preview !== null && fullSectionId === null;
@@ -488,9 +506,13 @@ export const InsideView = ({
           createPortal(tray(onClose), traySlot)
         ) : (
           <>
-            {spec.view !== "riceBin" && !trayOpen && (
+            {spec.view !== "riceBin" && (
+              // Stays put under the open drawer, so focus has somewhere to come back to.
               <button
+                ref={setTrayButton}
                 type="button"
+                aria-expanded={trayOpen}
+                aria-controls="item-tray-drawer"
                 onClick={() => setTrayOpen(true)}
                 className="absolute bottom-4 left-4 z-20 flex h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-ring"
               >
@@ -502,17 +524,27 @@ export const InsideView = ({
               {trayOpen && (
                 <motion.div
                   key="tray"
-                  role="dialog"
+                  id="item-tray-drawer"
+                  ref={focusOnOpen}
+                  tabIndex={-1}
+                  role="region"
                   aria-label="Item tray"
+                  onKeyDown={(event) => {
+                    // Shuts only the drawer; without this, Escape reaches the page and leaves the whole piece.
+                    if (event.key !== "Escape") return;
+                    event.stopPropagation();
+                    closeTray();
+                  }}
                   initial={reducedMotion ? { opacity: 0 } : { y: "100%" }}
                   animate={reducedMotion ? { opacity: 1 } : { y: 0 }}
-                  exit={reducedMotion ? { opacity: 0 } : { y: "100%" }}
+                  // DESIGN.md section 10: exits a bit faster than enters.
+                  exit={reducedMotion ? { opacity: 0 } : { y: "100%", transition: { duration: 0.2, ease: "easeIn" } }}
                   transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
                   // Half the view, so the shelves stay in sight above it while you drag; items dragged out of the 3D fridge drop here too.
                   data-tray-drop
                   className="absolute inset-x-0 bottom-0 z-30 h-[48%] rounded-t-[24px] border-t-[1.5px] border-border bg-card p-4 shadow-paper outline-2 -outline-offset-4 outline-transparent outline-dashed transition-[outline-color] duration-150 data-[drop-over]:outline-sage-deep"
                 >
-                  {tray(() => setTrayOpen(false))}
+                  {tray(closeTray)}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -520,12 +552,17 @@ export const InsideView = ({
         )}
 
         <DragOverlay dropAnimation={reducedMotion ? null : undefined}>
-          {activeItem && !shownIn3d && <LiftedItem item={activeItem} landing={landing(activeItem.key)} />}
-          {waitingItem && !shownIn3d && (
-            <LiftedItem
-              item={waitingItem}
-              landing={(front ? landing(waitingItem.key) : waitingTarget ? inside.label(waitingTarget) : "") || "a shelf"}
-            />
+          {(activeItem || waitingItem) && (
+            // Cross-fades with the 3D model instead of popping on and off at the fridge's edge.
+            <div className={`transition-opacity duration-150 ease-out ${shownIn3d ? "opacity-0" : "opacity-100"}`}>
+              {activeItem && <LiftedItem item={activeItem} landing={landing(activeItem.key)} />}
+              {waitingItem && (
+                <LiftedItem
+                  item={waitingItem}
+                  landing={(front ? landing(waitingItem.key) : waitingTarget ? inside.label(waitingTarget) : "") || "a shelf"}
+                />
+              )}
+            </div>
           )}
           {activeShelfId && (
             <span className="flex h-11 w-9 items-center justify-center rounded-[12px] border-2 border-[#C8901F] bg-card text-muted-foreground shadow-[0_12px_20px_-8px_rgba(74,59,46,0.5)]">

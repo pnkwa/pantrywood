@@ -4,7 +4,6 @@ import { useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { TrayIcon } from "@phosphor-icons/react";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { OPEN_SCAN } from "@/lib/page-transitions";
@@ -168,17 +167,8 @@ export const PantryHome = () => {
             exit={{ opacity: 0, x: reducedMotion ? 0 : 24, transition: { duration: 0.15 } }}
             transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
             aria-label={boardOpen ? "Pegboard" : `${selectedName} details`}
-            // Whatever it shows, an item dragged out of a 3D inside view can be dropped here to go back in the Item tray.
-            data-tray-drop
-            className="group/tray relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
+            className="relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-2 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-sage-deep bg-card/90 text-sage-deep opacity-0 transition-opacity duration-150 ease-out group-data-[drop-over]/tray:opacity-100"
-            >
-              <TrayIcon size={32} weight="duotone" />
-              <span className="text-sm font-semibold">Drop to put it back in the Item tray</span>
-            </div>
             {boardOpen ? (
               <BoardPanel pantry={pantry} decorate={decorate} />
             ) : (

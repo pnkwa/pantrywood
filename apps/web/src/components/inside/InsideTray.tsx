@@ -78,10 +78,12 @@ type InsideTrayProps = {
   onPut: (item: PantryItem) => void;
   onPickItem: (item: PantryItem) => void;
   onClose: () => void;
+  /** What ✕ does: leaves the piece from the side panel, only shuts the drawer on phones. */
+  closeLabel: string;
 };
 
 /** The side panel while a piece is open: an inventory of things to drag onto its shelves. */
-export const InsideTray = ({ pieceName, waiting, here, loose, elsewhere, onPut, onPickItem, onClose }: InsideTrayProps) => {
+export const InsideTray = ({ pieceName, waiting, here, loose, elsewhere, onPut, onPickItem, onClose, closeLabel }: InsideTrayProps) => {
   const { putIn, busy } = usePutAway();
   // The whole tray takes things back off their shelves: "Not on a shelf", still kept in this piece.
   const { setNodeRef, isOver } = useDroppable({ id: UNSORTED, data: { type: "section" } });
@@ -103,7 +105,7 @@ export const InsideTray = ({ pieceName, waiting, here, loose, elsewhere, onPut, 
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close the piece and go back to the room"
+          aria-label={closeLabel}
           className="flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <XIcon size={18} weight="bold" aria-hidden />
