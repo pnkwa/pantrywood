@@ -83,13 +83,11 @@ export const insideSpecFor = (kind: StorageKind, isFreezer: boolean): InsideSpec
     case "pantryShelf":
       return front("Inside the pantry shelf", [tab("main", "Tiers", 8)], shelves("main", "board", [1, 3, 5, 7]));
     case "suppliesCabinet":
-      return front(
-        "Inside the supplies cabinet",
-        [tab("main", "Shelves", 6), tab("door", "Door", 4)],
-        [...shelves("main", "board", [2, 5]), ...shelves("door", "doorBin", [1, 3])],
-      );
+      // An open dresser in the room: two tiers, no door.
+      return front("Inside the supplies cabinet", [tab("main", "Shelves", 6)], shelves("main", "board", [2, 5]));
     case "makerShelf":
-      return front("The maker shelf", [tab("main", "Boards", 6)], shelves("main", "board", [2, 5]));
+      // One floating board on brass brackets in the room; more can be added on the wall.
+      return front("The maker shelf", [tab("main", "Boards", 6)], shelves("main", "board", [4]));
     case "counter":
       return front("Inside the counter", [tab("main", "Cabinet", 4)], shelves("main", "board", [1, 3]));
     case "crates":
@@ -114,6 +112,16 @@ export const insideSpecFor = (kind: StorageKind, isFreezer: boolean): InsideSpec
 };
 
 export const defaultLayout = (spec: InsideSpec): InsideLayout => ({ sections: [...spec.sections], slots: {} });
+
+/**
+ * A saved layout as it fits the piece today: parts in a tab the piece no longer has (the supplies cabinet's old
+ * door) are dropped, and their items fall back to the emptiest shelves like any unplaced item.
+ */
+export const fitToSpec = (layout: InsideLayout, spec: InsideSpec): InsideLayout => {
+  const tabIds = new Set(spec.tabs.map((candidate) => candidate.id));
+  const sections = layout.sections.filter((section) => tabIds.has(section.tab));
+  return sections.length === layout.sections.length ? layout : { ...layout, sections };
+};
 
 /** Top to bottom: notched shelves by notch, then fixed parts in the order they were added. */
 export const sectionsInTab = (layout: InsideLayout, tabId: string): InsideSection[] =>
@@ -156,10 +164,22 @@ export const arrange = (spec: InsideSpec, layout: InsideLayout, items: readonly 
   );
 };
 
-/** Saves where everything stands now, so items that were only spread out by default stay put after a change. */
-const pinAll = (arranged: ReadonlyMap<string, readonly string[]>) => {
+/**
+ * Saves where everything stands now, so items that were only spread out by default stay put after a change.
+ * An item still on the same shelf keeps its spot along it.
+ */
+/**
+ * Every item's section and order, keeping the rest of its slot: its size, turn and layer go wherever it goes, while
+ * its spot along a shelf (`x`) and its row only mean something on the shelf it was on.
+ */
+const pinAll = (arranged: ReadonlyMap<string, readonly string[]>, previous: InsideLayout["slots"]) => {
   const slots: InsideLayout["slots"] = {};
-  for (const [section, keys] of arranged) keys.forEach((key, order) => (slots[key] = { section, order }));
+  for (const [section, keys] of arranged)
+    keys.forEach((key, order) => {
+      const { x, row, ...kept } = previous[key] ?? { section, order };
+      const here = previous[key]?.section === section;
+      slots[key] = { ...kept, section, order, ...(here && x !== undefined ? { x } : {}), ...(here && row !== undefined ? { row } : {}) };
+    });
   return slots;
 };
 
@@ -175,7 +195,7 @@ export const placeItem = (
   const target = next.get(sectionId) ?? [];
   target.splice(Math.max(0, Math.min(index, target.length)), 0, key);
   next.set(sectionId, target);
-  return { ...layout, slots: { ...layout.slots, ...pinAll(next) } };
+  return { ...layout, slots: { ...layout.slots, ...pinAll(next, layout.slots) } };
 };
 
 /** The notch a shelf moves to, or null when it's off the rails or another shelf sits there. */
@@ -231,7 +251,7 @@ export const removeSection = (
   if (!section || !isRemovable(section, layout)) return layout;
   const fallback = spec.tabs.find((candidate) => candidate.id === section.tab)?.fallback ?? UNSORTED;
   const landing = [...(arranged.get(fallback) ?? [])];
-  const slots = { ...layout.slots, ...pinAll(arranged) };
+  const slots = { ...layout.slots, ...pinAll(arranged, layout.slots) };
   for (const key of arranged.get(sectionId) ?? []) {
     landing.push(key);
     slots[key] = { section: fallback, order: landing.length - 1 };

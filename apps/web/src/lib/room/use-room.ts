@@ -10,6 +10,8 @@ import { placeLocations } from "./layout";
 import { useRoomStore } from "./room-store";
 import { BOARD_COLS, BOARD_ROWS } from "@/lib/board/board";
 import { useBoardStore } from "@/lib/board/board-store";
+import { useInsideStore } from "@/lib/inside/inside-store";
+import { sceneShelvesFor } from "@/lib/inside/plan";
 import { boardLookFor, planesFor } from "@/lib/board/look";
 
 const RUG_HEIGHT = 0.012;
@@ -50,6 +52,7 @@ export type Room = {
 export const useRoom = (pantry: Pantry | null): Room => {
   const layout = useRoomStore((state) => state.layout);
   const boardPieces = useBoardStore((state) => state.board.pieces);
+  const insideLayouts = useInsideStore((state) => state.layouts);
   return useMemo(() => {
     const locations = pantry?.locations ?? [];
     const placed = placeLocations(
@@ -74,6 +77,7 @@ export const useRoom = (pantry: Pantry | null): Room => {
           position: onFloor ? [x, 0, z] : spot.position,
           rotationY: onFloor ? rotationY(placement.rotation) : spot.rotationY,
           items: sceneItemsFor(location.items),
+          shelves: sceneShelvesFor(spot.kind, location, insideLayouts[location.id]),
           tag: {
             name: location.name,
             itemCount: location.counts.itemCount,
@@ -126,5 +130,5 @@ export const useRoom = (pantry: Pantry | null): Room => {
       floor: floorFor(layout.floor),
       context: { layout, storage, kinds },
     };
-  }, [pantry, layout, boardPieces]);
+  }, [pantry, layout, boardPieces, insideLayouts]);
 };

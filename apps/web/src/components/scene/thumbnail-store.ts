@@ -2,8 +2,10 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-// Catalog thumbnails rendered from the real 3D models, one at a time by ThumbnailStudio, kept for the session.
-const urls = new Map<string, string>();
+// Catalog and item thumbnails rendered from the real 3D models, one at a time by ThumbnailStudio, kept for the session.
+/** `widthRatio`: how wide the picture is next to the model's own shelf width (item pictures only). */
+export type Thumbnail = { url: string; widthRatio: number };
+const thumbnails = new Map<string, Thumbnail>();
 const queue: string[] = [];
 // How many tiles on screen want each picture; one nobody shows any more leaves the queue.
 const wanted = new Map<string, number>();
@@ -23,21 +25,21 @@ export const thumbnailStore = {
   /** The catalog id the studio should render next. */
   next: () => queue[0] ?? null,
   /** An empty url means the item has no 3D model; the 2D sketch stays. */
-  save: (itemId: string, url: string) => {
-    urls.set(itemId, url);
+  save: (itemId: string, url: string, widthRatio = 1) => {
+    thumbnails.set(itemId, { url, widthRatio });
     queue.splice(queue.indexOf(itemId), 1);
     notify();
   },
 };
 
-/** The rendered picture for a catalog item, or null until the studio has drawn it. */
-export const useModelThumbnail = (itemId: string) => {
+/** The rendered picture of a catalog piece or an item model, or null until the studio has drawn it. */
+const useThumbnail = (itemId: string) => {
   // Subscribing is what asks for the render, so no effect is needed to start it.
   const subscribeAndRequest = useCallback(
     (listener: () => void) => {
       const unsubscribe = subscribe(listener);
       wanted.set(itemId, (wanted.get(itemId) ?? 0) + 1);
-      if (!urls.has(itemId) && !queue.includes(itemId)) {
+      if (!thumbnails.has(itemId) && !queue.includes(itemId)) {
         queue.push(itemId);
         notify();
       }
@@ -58,7 +60,16 @@ export const useModelThumbnail = (itemId: string) => {
   );
   return useSyncExternalStore(
     subscribeAndRequest,
-    () => urls.get(itemId) || null,
+    () => thumbnails.get(itemId) ?? null,
     () => null,
   );
 };
+
+export const useModelThumbnail = (itemId: string) => useThumbnail(itemId)?.url || null;
+
+/** An item model's picture; null until drawn. */
+export const useItemThumbnail = (modelId: string) => {
+  const thumbnail = useThumbnail(modelId);
+  return thumbnail?.url ? thumbnail : null;
+};
+

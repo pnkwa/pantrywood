@@ -50,7 +50,8 @@ export const StorageModel = ({
   palette,
   items,
   doorOpen = false,
-}: Pick<SceneStorage, "kind" | "items"> & { palette?: SceneStorage["palette"]; doorOpen?: boolean }) => {
+  shelves,
+}: Pick<SceneStorage, "kind" | "items" | "shelves"> & { palette?: SceneStorage["palette"]; doorOpen?: boolean }) => {
   const look = palette ?? undefined;
   switch (kind) {
     case "fridge":
@@ -58,9 +59,9 @@ export const StorageModel = ({
     case "counter":
       return <Counter items={items} />;
     case "pantryShelf":
-      return <PantryShelf items={items} palette={look} />;
+      return <PantryShelf items={items} palette={look} shelves={shelves} />;
     case "suppliesCabinet":
-      return <SuppliesCabinet items={items} palette={look} />;
+      return <SuppliesCabinet items={items} palette={look} shelves={shelves} />;
     case "makerShelf":
       return <MakerShelf items={items} />;
     case "crates":
@@ -150,7 +151,7 @@ export const Storage = ({
         <boxGeometry args={[hitWidth, hitHeight, hitDepth]} />
       </mesh>
         <group ref={liftRef}>
-          <StorageModel kind={storage.kind} palette={storage.palette} items={storage.items} doorOpen={doorOpen} />
+          <StorageModel kind={storage.kind} palette={storage.palette} items={storage.items} shelves={storage.shelves} doorOpen={doorOpen} />
           <ToolbarAnchor box={HIT_BOXES[storage.kind]} highlight={doorOpen ? "none" : highlight} overlay={overlay} />
           <StorageTagAnchor
             locationId={storage.locationId}

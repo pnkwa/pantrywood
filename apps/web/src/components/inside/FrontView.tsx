@@ -11,7 +11,9 @@ import { PANEL_SPRING } from "@/lib/motion";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import type { StorageKind, StoragePalette } from "@/components/scene/types";
 import { boardColor, frameSize, PieceFrame } from "./PieceFrame";
-import { SectionItems } from "./SectionItems";
+import type { ShelfSpot } from "@/lib/inside/shelf-place";
+import type { PantryItem } from "@/lib/pantry/model";
+import { ShelfItems } from "./ShelfItems";
 
 const RAILS_TOP = 0.09;
 const RAILS_BOTTOM_WITH_CRISPERS = 0.27;
@@ -20,9 +22,21 @@ const RAILS_BOTTOM = 0.05;
 const percent = (fraction: number) => `${fraction * 100}%`;
 
 /** What the shelf itself looks like under the items. */
-const ShelfPlank = ({ type, board }: { type: SectionType; board: string }) => {
+const ShelfPlank = ({ type, board, brackets }: { type: SectionType; board: { board: string; lip: string }; brackets: boolean }) => {
   if (type === "board")
-    return <div className="h-3.5 rounded-[5px]" style={{ background: board, boxShadow: `0 3px 0 color-mix(in srgb, ${board} 75%, #4A3B2E)` }} />;
+    return (
+      <div className="relative">
+        {/* The lip along the front edge keeps things from sliding off, as on the boards in the room. */}
+        <div
+          className="h-3.5 rounded-[5px] border-t-[3px]"
+          style={{ background: board.board, borderColor: board.lip, boxShadow: `0 3px 0 color-mix(in srgb, ${board.board} 75%, #4A3B2E)` }}
+        />
+        {brackets &&
+          ["left-[12%]", "right-[12%]"].map((side) => (
+            <span key={side} aria-hidden className={`absolute top-full ${side} h-4 w-4 rounded-br-full border-r-[3px] border-b-[3px] border-[#C9A15A]`} />
+          ))}
+      </div>
+    );
   if (type === "glass") return <div className="h-2 rounded-full border border-white bg-white/50 shadow-[0_2px_4px_rgba(74,59,46,0.12)]" />;
   if (type === "drawer" || type === "doorBin") return <div className="h-1.5 rounded-full bg-[#DCD6CA]" />;
   return (
@@ -121,11 +135,18 @@ const ShelfToolbar = ({ inside, tab, section }: { inside: Inside; tab: InsideTab
   );
 };
 
-type FrontViewProps = {
+export type FrontViewProps = {
   inside: Inside;
   tab: InsideTab;
   editing: boolean;
-  keysFor: (sectionId: string) => readonly string[];
+  /** Where each item stands on a shelf, with a carried item's preview already applied. */
+  spotsFor: (sectionId: string) => readonly ShelfSpot[];
+  ghostKey: string | null;
+  /** What's being carried, to size its outline (waiting stock isn't on a shelf yet). */
+  ghostItem: PantryItem | undefined;
+  landed: { key: string; count: number } | null;
+  /** The shelf under the carried item has no room left. */
+  fullSectionId: string | null;
   targetSectionId: string | null;
   targetNotch: number | null;
   selectedSectionId: string | null;
@@ -141,7 +162,11 @@ export const FrontView = ({
   inside,
   tab,
   editing,
-  keysFor,
+  spotsFor,
+  ghostKey,
+  ghostItem,
+  landed,
+  fullSectionId,
   targetSectionId,
   targetNotch,
   selectedSectionId,
@@ -162,6 +187,8 @@ export const FrontView = ({
   const lineAt = (notch: number) => (notch + 1) / tab.notches;
   const selected = notched.find((section) => section.id === selectedSectionId);
   const selectedBand = bands.find((band) => band.id === selectedSectionId);
+  const ghostWidthOn = (sectionId: string) =>
+    ghostKey ? inside.widthsOn(sectionId, ghostItem && { key: ghostKey, item: ghostItem })(ghostKey) : 0;
 
   return (
     <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
@@ -195,18 +222,21 @@ export const FrontView = ({
                     className={`absolute flex flex-col justify-end ${section.type === "half" ? "right-[52%] left-[9%]" : "inset-x-[9%]"}`}
                     onClick={editing ? () => onSelectSection(section.id) : undefined}
                   >
-                    <SectionItems
+                    <ShelfItems
                       inside={inside}
                       sectionId={section.id}
-                      keys={keysFor(section.id)}
-                      look="standing"
+                      spots={spotsFor(section.id)}
+                      ghostKey={targetSectionId === section.id ? ghostKey : null}
+                      ghostWidth={ghostWidthOn(section.id)}
                       targeted={targetSectionId === section.id}
                       selectedItemKey={selectedItemKey}
+                      landed={landed}
+                      full={fullSectionId === section.id}
                       onPickItem={onPickItem}
-                      className="flex min-h-0 flex-1 items-end justify-center px-[5%] pt-[4%]"
+                      className="mx-[3%] min-h-0 flex-1"
                     />
                     <FrontLip type={section.type} />
-                    <ShelfPlank type={section.type} board={board} />
+                    <ShelfPlank type={section.type} board={board} brackets={kind === "makerShelf"} />
                     {isSelected && (
                       <div aria-hidden className="pointer-events-none absolute -inset-x-[3%] -bottom-2 h-[calc(100%+8px)] rounded-[12px] border-[2.5px] border-dashed border-[#C8901F] bg-honey/5" />
                     )}
@@ -219,16 +249,21 @@ export const FrontView = ({
               <div className="absolute inset-x-[4%] bottom-[3%] flex gap-[4%]" style={{ height: percent(railsBottom - 0.06) }}>
                 {crispers.map((section) => (
                   <div key={section.id} className="relative flex-1 rounded-[16px] border-2 border-[#DCD6CA] bg-white/55">
-                    <SectionItems
-                      inside={inside}
-                      sectionId={section.id}
-                      keys={keysFor(section.id)}
-                      look="standing"
-                      targeted={targetSectionId === section.id}
-                      selectedItemKey={selectedItemKey}
-                      onPickItem={onPickItem}
-                      className="flex h-full items-end justify-center px-[7%] pt-[8%] pb-[8%]"
-                    />
+                    <div className="absolute inset-x-[7%] top-[14%] bottom-[10%]">
+                      <ShelfItems
+                        inside={inside}
+                        sectionId={section.id}
+                        spots={spotsFor(section.id)}
+                        ghostKey={targetSectionId === section.id ? ghostKey : null}
+                      ghostWidth={ghostWidthOn(section.id)}
+                        targeted={targetSectionId === section.id}
+                        selectedItemKey={selectedItemKey}
+                        landed={landed}
+                        full={fullSectionId === section.id}
+                        onPickItem={onPickItem}
+                        className="h-full"
+                      />
+                    </div>
                     <span aria-hidden className="absolute bottom-[6%] left-1/2 h-1.5 w-[18%] -translate-x-1/2 rounded-full bg-[#DCD6CA]" />
                   </div>
                 ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { motion } from "motion/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { PantryItem } from "@/lib/pantry/model";
@@ -13,7 +14,7 @@ const MARKED = new Set(["soon", "expired", "low"]);
 
 const SETTLE = { duration: 200, easing: "ease-out" };
 
-const StatusBadge = ({ item }: { item: PantryItem }) => {
+export const StatusBadge = ({ item }: { item: PantryItem }) => {
   if (!MARKED.has(item.status)) return null;
   const style = STATUS_STYLES[item.status];
   const StatusIcon = style.icon;
@@ -92,21 +93,28 @@ export const InsideItem = ({
   );
 };
 
+/** Picked up: it lifts off the shelf with a little tilt and a softer, bigger shadow (motion skill: lift ~150 ms). */
 export const LiftedItem = ({
   item,
   landing,
 }: {
   item: PantryItem;
   landing: string;
-}) => (
-  <div className="pointer-events-none relative flex h-24 flex-col items-center">
-    <ItemPicture
-      item={item}
-      sticker
-      className="h-24 w-auto -rotate-6 drop-shadow-[0_12px_8px_rgba(74,59,46,0.3)]"
-    />
-    <span className="absolute top-1/2 left-full ml-2 rounded-[10px] bg-foreground px-2.5 py-1 text-xs font-medium whitespace-nowrap text-background">
-      {item.name} → {landing}
-    </span>
-  </div>
-);
+}) => {
+  const reducedMotion = useReducedMotion();
+  return (
+    <div className="pointer-events-none relative flex h-24 flex-col items-center">
+      <motion.span
+        initial={reducedMotion ? false : { scale: 1, rotate: 0, y: 0 }}
+        animate={reducedMotion ? undefined : { scale: 1.06, rotate: -6, y: -6 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+        className="flex h-24 origin-bottom drop-shadow-[0_16px_10px_rgba(74,59,46,0.32)]"
+      >
+        <ItemPicture item={item} sticker className="h-24 w-auto" />
+      </motion.span>
+      <span className="absolute top-1/2 left-full ml-2 rounded-[10px] bg-foreground px-2.5 py-1 text-xs font-medium whitespace-nowrap text-background">
+        {item.name} → {landing}
+      </span>
+    </div>
+  );
+};

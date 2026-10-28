@@ -1,5 +1,6 @@
 "use client";
 
+import { STORAGE_FRONTS } from "@/lib/storage/dimensions";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
@@ -10,19 +11,20 @@ import { Matte } from "../materials";
 import { BarHandle, Brass, KIT } from "../kit";
 import type { StoragePalette } from "../types";
 
-const WIDTH = 2.2;
-const HEIGHT = 4.5;
-const CENTER_Y = 2.35;
+// Shared with the inside view, so the piece keeps its proportions there.
+export const WIDTH = STORAGE_FRONTS.fridge.width;
+export const HEIGHT = STORAGE_FRONTS.fridge.height;
+export const CENTER_Y = 2.35;
 const CORNER_RADIUS = 0.3;
 const SMOOTHNESS = 5;
-const BACK_Z = -0.9;
+export const BACK_Z = -0.9;
 const FRONT_Z = 0.9;
-const SEAM_Z = 0.6;
+export const SEAM_Z = 0.6;
 const DOOR_DEPTH = FRONT_Z - SEAM_Z;
-const DEFAULT_PALETTE: StoragePalette = { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" };
+export const DEFAULT_PALETTE: StoragePalette = { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" };
 const SEAM_LINE_PIXELS = 1.5;
 const SEAM_CORNER_STEPS = 8;
-const HINGE_X = -WIDTH / 2;
+export const HINGE_X = -WIDTH / 2;
 const NOTE_LINE_HEIGHTS = [0.15, 0, -0.15];
 const SHELF_HEIGHTS = [1.25, 2.25];
 const DOOR_BIN_HEIGHTS = [1.4, 2.5, 3.9];

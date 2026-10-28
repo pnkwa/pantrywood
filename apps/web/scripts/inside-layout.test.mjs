@@ -6,6 +6,7 @@ import {
   addSection,
   arrange,
   defaultLayout,
+  fitToSpec,
   freeNotch,
   insideSpecFor,
   moveShelf,
@@ -123,4 +124,37 @@ test("each item keeps the same small tilt, within range", async () => {
   assert.equal(tiltFor("3-12"), tiltFor("3-12"));
   for (const key of ["1-1", "1-2", "7-40", "freezer-9"]) assert.ok(Math.abs(tiltFor(key)) <= 6);
   assert.notEqual(tiltFor("1-1"), tiltFor("1-2"));
+});
+
+test("a saved layout with a part the piece no longer has drops it, and its items go to the shelves", () => {
+  const cabinet = insideSpecFor("suppliesCabinet", false);
+  const old = {
+    sections: [...cabinet.sections, { id: "door-1", tab: "door", type: "doorBin", notch: 1 }],
+    slots: { "3-5": { section: "door-1", order: 0 } },
+  };
+  const fitted = fitToSpec(old, cabinet);
+  assert.ok(fitted.sections.every((section) => section.tab === "main"));
+  const arranged = arrange(cabinet, fitted, [{ key: "3-5", zone: "main" }]);
+  assert.ok(cabinet.sections.some((section) => arranged.get(section.id)?.includes("3-5")));
+  const current = defaultLayout(cabinet);
+  assert.equal(fitToSpec(current, cabinet), current);
+});
+
+test("placing one item keeps every other item's row, turn and layer, and its own turn travels with it", () => {
+  const layout = defaultLayout(fridge);
+  const placed = placeItem(layout, arrange(fridge, layout, [milk, eggs]), "1-1", "main-1", 0);
+  const arranged = arrange(fridge, placed, [milk, eggs]);
+  const styled = {
+    ...placed,
+    slots: {
+      ...placed.slots,
+      "1-1": { ...placed.slots["1-1"], x: 0.3, row: 1, turn: 90, layer: 2 },
+      "1-2": { ...placed.slots["1-2"], x: 0.6, row: 1, turn: 45 },
+    },
+  };
+  const moved = placeItem(styled, arranged, "1-2", "main-crisper-1", 0);
+  assert.deepEqual({ ...moved.slots["1-1"] }, { section: "main-1", order: 0, x: 0.3, row: 1, turn: 90, layer: 2 });
+  assert.equal(moved.slots["1-2"]?.turn, 45);
+  // Its spot and row were on the old shelf, so the new one decides them.
+  assert.equal(moved.slots["1-2"]?.row, undefined);
 });

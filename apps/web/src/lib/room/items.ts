@@ -49,6 +49,44 @@ const colorFor = (table: [RegExp, string][], text: string): string =>
 const lidColorFor = (productId: number): string =>
   LID_COLORS[productId % LID_COLORS.length] ?? DEFAULT_COLOR;
 
+// Earlier rows win: "egg tofu" is tofu, not an egg.
+const FRESH_SHAPES: [RegExp, ItemShape][] = [
+  [/egg tofu|เต้าหู้ไข่/, "eggTofu"],
+  [/tofu|เต้าหู้/, "tofu"],
+  [/butter|เนย/, "butter"],
+  [/shrimp|prawn|กุ้ง/, "shrimp"],
+  [/dumpling|gyoza|wonton|เกี๊ยว|ขนมจีบ/, "dumplings"],
+  [/edamame|ถั่วแระ/, "edamame"],
+  [/noodle|ramen|มาม่า|บะหมี่/, "noodles"],
+  [/\brice\b|ข้าวสาร|ข้าวเหนียว|ข้าวหอม/, "riceSack"],
+  [/\beggs?\b|ไข่/, "egg"],
+  [/apple|แอปเปิ้ล/, "apple"],
+  [/lime|lemon|มะนาว/, "lime"],
+  [/orange|tangerine|mandarin|ส้ม/, "orange"],
+  [/tomato|มะเขือเทศ/, "tomato"],
+  [/potato|มันฝรั่ง/, "potato"],
+  [/carrot|แครอท/, "carrot"],
+  [/cucumber|kyuri|แตงกวา/, "cucumber"],
+  [/banana|กล้วย/, "banana"],
+  [/mushroom|เห็ด/, "mushroom"],
+  [/bell pepper|capsicum|พริกหวาน/, "pepper"],
+  [/\bcorn\b|ข้าวโพด/, "corn"],
+  [/bread|loaf|toast|ขนมปัง/, "bread"],
+  [/basil|morning glory|bok choy|cabbage|lettuce|kale|spinach|greens|กะเพรา|โหระพา|ผักบุ้ง|ผัก/, "greens"],
+];
+
+// Juice in a carton or tomato sauce in a jar keeps its packaging; so do snacks named after food (shrimp crackers).
+const PACKAGED_UNITS = /^(carton|can|jar|cup|bottle)/;
+const SNACKS = /cracker|chip|crisp|snack|ข้าวเกรียบ/;
+
+const freshShapeFor = (item: PantryItem): ItemShape | undefined => {
+  const name = item.name.toLowerCase();
+  if (PACKAGED_UNITS.test(item.unitName.toLowerCase()) || SNACKS.test(name)) return undefined;
+  const shape = FRESH_SHAPES.find(([pattern]) => pattern.test(name))?.[1];
+  if (shape) return shape;
+  return /meat|fish|seafood/.test(item.groupName.toLowerCase()) ? "meat" : undefined;
+};
+
 const shapeFor = (item: PantryItem): ItemShape => {
   const name = item.name.toLowerCase();
   const unit = item.unitName.toLowerCase();
@@ -56,11 +94,16 @@ const shapeFor = (item: PantryItem): ItemShape => {
     if (/filament|spool/.test(name) || unit === "spool") return "spool";
     if (/tissue|towel|paper|toilet/.test(name) || unit === "roll") return "roll";
     if (/detergent|powder/.test(name)) return "box";
+    if (/toothpaste|ยาสีฟัน/.test(name) || unit === "tube") return "toothpaste";
     return "bottle";
   }
+  const fresh = freshShapeFor(item);
+  if (fresh) return fresh;
   if (unit === "carton") return "carton";
   if (unit === "can") return "can";
-  if (unit === "jar" || unit === "cup" || unit === "bottle") return "jar";
+  if (unit === "cup") return /noodle|ramen|มาม่า|บะหมี่/.test(name) ? "noodles" : "cup";
+  if (unit === "bottle") return "sauceBottle";
+  if (unit === "jar") return "jar";
   if (unit === "bag") return "bag";
   if (unit === "pack" || unit === "box") return "box";
   if (/produce|veg|fruit|herb/.test(item.groupName.toLowerCase())) return "bag";
@@ -75,27 +118,30 @@ const markerFor = (item: PantryItem): ItemMarker | null => {
 
 const MARKER_RANK: Record<ItemMarker, number> = { expired: 0, soon: 1, low: 2 };
 
+/** How an item looks in the room: its model, colors and how many copies stand side by side. */
+export const sceneItemFor = (item: PantryItem): SceneItem => {
+  const shape = shapeFor(item);
+  return {
+    key: item.key,
+    productId: item.productId,
+    shape,
+    color:
+      shape === "spool"
+        ? colorFor(FILAMENT_COLORS, item.name)
+        : colorFor(GROUP_COLORS, item.groupName),
+    accent: lidColorFor(item.productId),
+    copies: COUNTABLE_UNITS.test(item.unitName.toLowerCase())
+      ? Math.min(MAX_COPIES, Math.max(1, Math.round(item.amount)))
+      : 1,
+    marker: markerFor(item),
+  };
+};
+
 /** Urgent items first so they get the front spots on the shelf. */
 export const sceneItemsFor = (items: readonly PantryItem[]): SceneItem[] =>
   items
     .filter((item) => item.amount > 0)
-    .map((item): SceneItem => {
-      const shape = shapeFor(item);
-      return {
-        key: item.key,
-        productId: item.productId,
-        shape,
-        color:
-          shape === "spool"
-            ? colorFor(FILAMENT_COLORS, item.name)
-            : colorFor(GROUP_COLORS, item.groupName),
-        accent: lidColorFor(item.productId),
-        copies: COUNTABLE_UNITS.test(item.unitName.toLowerCase())
-          ? Math.min(MAX_COPIES, Math.max(1, Math.round(item.amount)))
-          : 1,
-        marker: markerFor(item),
-      };
-    })
+    .map(sceneItemFor)
     .sort(
       (first, second) =>
         (first.marker ? MARKER_RANK[first.marker] : 3) -

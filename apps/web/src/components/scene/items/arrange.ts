@@ -1,5 +1,5 @@
 import type { ItemMarker, ItemShape, SceneItem } from "../types";
-import { SHAPES } from "./shapes";
+import { COPY_GAP, groupWidth as widthOfGroup, ITEM_SIZES } from "./sizes";
 
 export type Surface = {
   y: number;
@@ -17,6 +17,8 @@ export type Placement = {
   accent: string;
   position: [number, number, number];
   rotationY: number;
+  /** 1 unless the item was resized inside. */
+  scale?: number;
 };
 
 export type MarkerPlacement = {
@@ -47,8 +49,8 @@ export const arrange = (
   let cursor = 0;
 
   for (const item of items) {
-    const { width, height } = SHAPES[item.shape];
-    const groupWidth = item.copies * width + (item.copies - 1) * GAP;
+    const { width, height } = ITEM_SIZES[item.shape];
+    const groupWidth = widthOfGroup(item.shape, item.copies);
 
     while (
       rowIndex < rows.length &&
@@ -70,7 +72,7 @@ export const arrange = (
         shape: item.shape,
         color: item.color,
         accent: item.accent,
-        position: [surface.x + cursor + width / 2 + copy * (width + GAP), y, z],
+        position: [surface.x + cursor + width / 2 + copy * (width + COPY_GAP), y, z],
         rotationY: (((placements.length * 37) % 7) - 3) * 0.06,
       });
     }

@@ -1,3 +1,4 @@
+import type { ShelfSurface } from "@/lib/inside/surfaces";
 export type StorageKind =
   | "fridge"
   | "counter"
@@ -16,7 +17,33 @@ export type ItemShape =
   | "box"
   | "roll"
   | "bottle"
-  | "spool";
+  | "spool"
+  | "egg"
+  | "apple"
+  | "orange"
+  | "lime"
+  | "tomato"
+  | "potato"
+  | "carrot"
+  | "cucumber"
+  | "banana"
+  | "mushroom"
+  | "greens"
+  | "pepper"
+  | "corn"
+  | "meat"
+  | "tofu"
+  | "bread"
+  | "sauceBottle"
+  | "cup"
+  | "noodles"
+  | "eggTofu"
+  | "butter"
+  | "shrimp"
+  | "dumplings"
+  | "edamame"
+  | "riceSack"
+  | "toothpaste";
 
 export type ItemMarker = "soon" | "expired" | "low";
 
@@ -43,6 +70,14 @@ export type StorageTag = {
 /** Light surface, mid trim, dark accent: the three colors a storage model is painted with. */
 export type StoragePalette = { body: string; trim: string; accent: string };
 
+/** Where items stand on a piece's real shelves, from its inside layout, so the room matches the inside view. */
+export type SceneShelves = {
+  /** Each shelf's top surface in the model's units (see `ShelfSurface`). */
+  surfaces: ShelfSurface[];
+  /** Each item's centre along its shelf (0–1) and the share of the shelf it takes. */
+  spots: { key: string; sectionId: string; x: number; width: number }[];
+};
+
 export type SceneStorage = {
   locationId: number;
   kind: StorageKind;
@@ -51,6 +86,8 @@ export type SceneStorage = {
   position: [x: number, y: number, z: number];
   rotationY: number;
   items: SceneItem[];
+  /** Set for pieces arranged on their real shelves; the rest fill their shelves front row first. */
+  shelves?: SceneShelves;
   tag: StorageTag;
 };
 

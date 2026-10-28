@@ -19,6 +19,12 @@ export const useItemPictures = () =>
     queryFn: async () => new Map((await itemPictures.list()).map((picture) => [picture.productId, picture.dataUrl])),
   });
 
+/** The item's profile picture: yours, else Grocy's product picture, else null (its group icon shows). */
+export const useProfilePicture = (productId: number, pictureFileName: string | null) => {
+  const pictures = useItemPictures();
+  return pictures.data?.get(productId) ?? grocyPictureUrl(pictureFileName);
+};
+
 /** Grocy names pictures by base64 in the URL path; null for a name that can't be encoded that way. */
 const encodePictureName = (fileName: string) => {
   try {

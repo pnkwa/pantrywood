@@ -19,6 +19,7 @@ import { ItemPanel } from "./ItemPanel";
 import { ItemSpot } from "@/components/inside/ItemSpot";
 import { storageKindFor } from "@/lib/room/layout";
 import { StoragePanel } from "./StoragePanel";
+import { useTraySlot } from "@/lib/inside/tray-slot";
 import { ItemListPanel } from "./ItemListPanel";
 import { ListBulletsIcon } from "@phosphor-icons/react";
 
@@ -156,6 +157,7 @@ export const InspectPanelContent = ({
   const view = useUiStore((state) => state.view);
   const insideLocationId = useUiStore((state) => state.insideLocationId);
   const showToast = useUiStore((state) => state.showToast);
+  const offerTraySlot = useTraySlot((state) => state.offer);
   const itemListOpen = useUiStore((state) => state.itemListOpen);
   const stockAction = useStockAction();
   const [navigation, setNavigation] = useState<{
@@ -204,6 +206,10 @@ export const InspectPanelContent = ({
           />
         ),
       };
+    }
+    // Inside the piece: the panel is the spot the inside view draws its item tray into.
+    if (view !== "room" && insideLocationId === location.id) {
+      return { key: `tray-${location.id}`, node: <div ref={(slot) => (slot ? offerTraySlot(slot) : undefined)} className="flex h-full min-h-0 flex-col" /> };
     }
     const lowItems = location.items.filter((candidate) => candidate.isRunningLow);
     return {

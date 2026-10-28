@@ -65,6 +65,10 @@
   --scene-sky-top: #fbf4e8;
   --scene-sky-mid: #f3e6d2;
   --scene-sky-edge: #efd8c4;
+
+  /* Sage gingham behind the inside views, like a cottage tablecloth */
+  --gingham-base: #f8f2e6;
+  --gingham-check: rgba(143, 166, 122, 0.2);
 }
 
 /* Dark — "Evening Cottage" */
@@ -88,6 +92,9 @@
   --scene-sky-top: #3a332a;
   --scene-sky-mid: #322c25;
   --scene-sky-edge: #2b261f;
+
+  --gingham-base: #2f2a23;
+  --gingham-check: rgba(157, 180, 135, 0.1);
 }
 
 @theme inline {
@@ -177,6 +184,15 @@
     outline: 3px solid var(--ring);
     outline-offset: 2px;
   }
+}
+
+/* Two see-through sage bands, across and down: where they cross the check is darker, as in woven gingham. */
+@utility bg-gingham {
+  background-color: var(--gingham-base);
+  background-image:
+    linear-gradient(90deg, var(--gingham-check) 50%, transparent 50%),
+    linear-gradient(var(--gingham-check) 50%, transparent 50%);
+  background-size: 48px 48px;
 }
 
 @utility tabular {

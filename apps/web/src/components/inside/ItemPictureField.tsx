@@ -7,7 +7,7 @@ import type { PantryItem } from "@/lib/pantry/model";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useItemPictures, useRemoveItemPicture, useSaveItemPicture } from "@/lib/inside/pictures";
 import { useUiStore } from "@/lib/store/ui-store";
-import { ItemPicture } from "./ItemPicture";
+import { ItemIconTile } from "@/components/pantry/ItemRow";
 
 const ACCEPTED = "image/png,image/jpeg,image/webp";
 
@@ -23,7 +23,10 @@ const Check = ({ checked, onChange, children }: { checked: boolean; onChange: (c
   </label>
 );
 
-/** DESIGN.md section 15 "Item picture": a PNG (up to 2 MB), optional background removal, optional Grocy sync. */
+/**
+ * The item's profile picture: a photo (up to 2 MB) shown on its tile in lists and its panel, optionally saved to
+ * Grocy too. On shelves an item is always its 3D model.
+ */
 export const ItemPictureField = ({ item }: { item: PantryItem }) => {
   const inputId = useId();
   const pictures = useItemPictures();
@@ -31,19 +34,18 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
   const removePicture = useRemoveItemPicture();
   const showToast = useUiStore((state) => state.showToast);
   const [open, setOpen] = useState(false);
-  const [removeBackground, setRemoveBackground] = useState(true);
   const [saveToGrocy, setSaveToGrocy] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const hasOwn = pictures.data?.has(item.productId) ?? false;
-  const source = hasOwn ? "Your picture" : item.pictureFileName ? "From Grocy" : "Default icon";
+  const source = hasOwn ? "Your photo" : item.pictureFileName ? "From Grocy" : "Group icon";
 
   const savePictureFile = async (file: File | undefined) => {
     if (!file) return;
     setSaving(true);
     try {
-      await savePicture(item.productId, file, { removeBackground, saveToGrocy });
-      showToast(saveToGrocy ? `New picture for ${item.name}, also saved in Grocy` : `New picture for ${item.name}`);
+      await savePicture(item.productId, file, { removeBackground: false, saveToGrocy });
+      showToast(saveToGrocy ? `New profile picture for ${item.name}, also saved in Grocy` : `New profile picture for ${item.name}`);
       setOpen(false);
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Couldn't save that picture", "error");
@@ -61,11 +63,9 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
-        <span className="flex size-12 shrink-0 items-end justify-center rounded-[12px] border-[1.5px] border-border bg-white p-1">
-          <ItemPicture item={item} className="h-full w-auto max-w-full" />
-        </span>
+        <ItemIconTile item={item} shared={false} />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="text-sm font-semibold">Item picture</span>
+          <span className="text-sm font-semibold">Profile picture</span>
           <span className="text-xs text-muted-foreground">{source}</span>
         </span>
         <button
@@ -99,10 +99,8 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
               }`}
             >
               <ImageIcon size={28} weight="duotone" aria-hidden className="text-muted-foreground" />
-              <span className="text-sm font-semibold">{saving ? "Saving…" : "Drop a PNG or tap to upload"}</span>
-              <span className="text-xs text-muted-foreground">
-                PNG keeps its transparency, so no white box · scaled to fit the shelf height · up to 2 MB
-              </span>
+              <span className="text-sm font-semibold">{saving ? "Saving…" : "Drop a photo or tap to upload"}</span>
+              <span className="text-xs text-muted-foreground">PNG, JPG or WebP · up to 2 MB · on shelves it stays its 3D model</span>
               <input
                 id={inputId}
                 type="file"
@@ -112,9 +110,6 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
                 className="absolute size-px opacity-0"
               />
             </label>
-            <Check checked={removeBackground} onChange={setRemoveBackground}>
-              Remove white background (photos and JPGs)
-            </Check>
             <Check checked={saveToGrocy} onChange={setSaveToGrocy}>
               Also save as the product picture in Grocy
             </Check>
@@ -124,7 +119,7 @@ export const ItemPictureField = ({ item }: { item: PantryItem }) => {
                 onClick={() => void removePicture(item.productId)}
                 className="h-11 self-start rounded-full px-3 text-sm font-semibold text-destructive transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
-                Go back to the {item.pictureFileName ? "Grocy picture" : "default icon"}
+                Go back to the {item.pictureFileName ? "Grocy picture" : "group icon"}
               </button>
             )}
           </motion.div>

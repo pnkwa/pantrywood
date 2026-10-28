@@ -23,7 +23,20 @@ export const InsideSectionSchema = z.object({
   notch: z.number().int().nullable(),
 });
 
-export const ItemSlotSchema = z.object({ section: z.string(), order: z.number() });
+export const ItemSlotSchema = z.object({
+  section: z.string(),
+  order: z.number(),
+  /** Where it stands along a front-view shelf: its centre, 0 = left end, 1 = right end. Absent on older layouts. */
+  x: z.number().min(0).max(1).optional(),
+  /** Which row of a deep shelf it stands in: 0 = front (also when unset), 1 = back. */
+  row: z.number().int().min(0).max(1).optional(),
+  /** How big it's drawn, set by you (1 = fits its shelf); it takes room on the shelf to match. */
+  size: z.number().min(0.5).max(1.6).optional(),
+  /** Which stands in front where things overlap on a shelf: higher is nearer (0 when unset). */
+  layer: z.number().int().optional(),
+  /** How far it is turned on its shelf, in degrees (0 = facing out). */
+  turn: z.number().min(0).max(360).optional(),
+});
 
 /** How one storage piece is arranged inside. Pantrywood's own data: Grocy only knows the location. */
 export const InsideLayoutSchema = z.object({

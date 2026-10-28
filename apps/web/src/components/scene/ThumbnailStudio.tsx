@@ -2,9 +2,12 @@
 
 import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { Box3, MathUtils, OrthographicCamera, Vector3, type Group } from "three";
+import { Box3, MathUtils, Mesh, OrthographicCamera, Vector3, type Group } from "three";
 import { catalogItem } from "@/data/catalog";
 import { Shape } from "./DecorPieces";
+import { itemModelFrom } from "./items/item-model";
+import { ItemModelMeshes } from "./items/ItemModelMeshes";
+import { groupWidth } from "./items/sizes";
 import { StorageModel } from "./Storage";
 import { Lights } from "./StorageRoomScene";
 import { thumbnailStore } from "./thumbnail-store";
@@ -20,7 +23,28 @@ const VIEW_OFFSET = new Vector3(
 // The canvas matches a tile picture (w-full × h-19), so tall and wide pieces both fill it.
 const MARGIN = 1.06;
 
+/** The outline on screen in view units, from the vertices: a bounding box's corners overshoot round things. */
+const viewBounds = (group: Group, camera: OrthographicCamera) => {
+  const bounds = { left: Infinity, right: -Infinity, bottom: Infinity, top: -Infinity };
+  const point = new Vector3();
+  group.updateMatrixWorld(true);
+  group.traverse((object) => {
+    if (!(object instanceof Mesh)) return;
+    const positions = object.geometry.getAttribute("position");
+    for (let index = 0; index < positions.count; index++) {
+      point.fromBufferAttribute(positions, index).applyMatrix4(object.matrixWorld).applyMatrix4(camera.matrixWorldInverse);
+      bounds.left = Math.min(bounds.left, point.x);
+      bounds.right = Math.max(bounds.right, point.x);
+      bounds.bottom = Math.min(bounds.bottom, point.y);
+      bounds.top = Math.max(bounds.top, point.y);
+    }
+  });
+  return bounds;
+};
+
 const ModelFor = ({ itemId }: { itemId: string }) => {
+  const model = itemModelFrom(itemId);
+  if (model) return <ItemModelMeshes model={model} />;
   const item = catalogItem(itemId);
   if (item?.category === "storage") return <StorageModel kind={item.model.kind} palette={item.model.palette} items={[]} />;
   if (item?.category === "decor" && item.model.shape !== "pegboard") {
@@ -52,6 +76,39 @@ const Snapshot = ({ itemId }: { itemId: string }) => {
     camera.position.copy(center).add(VIEW_OFFSET);
     camera.lookAt(center);
     camera.updateMatrixWorld();
+    const model = itemModelFrom(itemId);
+    if (model) {
+      // Cropped to the model with no room under it, so it stands on whatever line it's put on.
+      const outline = viewBounds(group, camera);
+      const pad = (outline.top - outline.bottom) * (MARGIN - 1);
+      const left = outline.left - pad;
+      const right = outline.right + pad;
+      const top = outline.top + pad;
+      const { bottom } = outline;
+      camera.zoom = Math.min(
+        size.width / (2 * Math.max(-left, right)),
+        size.height / (2 * Math.max(top, -bottom)),
+      );
+      camera.updateProjectionMatrix();
+      gl.render(scene, camera);
+      const pixels = gl.getPixelRatio() * camera.zoom;
+      const crop = document.createElement("canvas");
+      crop.width = Math.round((right - left) * pixels);
+      crop.height = Math.round((top - bottom) * pixels);
+      crop.getContext("2d")?.drawImage(
+        gl.domElement,
+        (size.width / 2) * gl.getPixelRatio() + left * pixels,
+        (size.height / 2) * gl.getPixelRatio() - top * pixels,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        crop.width,
+        crop.height,
+      );
+      thumbnailStore.save(itemId, crop.toDataURL("image/png"), (right - left) / groupWidth(model.shape, model.copies));
+      return;
+    }
     let halfWidth = 0;
     let halfHeight = 0;
     for (const x of [box.min.x, box.max.x]) {
@@ -77,8 +134,8 @@ const Snapshot = ({ itemId }: { itemId: string }) => {
 };
 
 /**
- * An offscreen canvas that turns catalog pieces into pictures of their real 3D models, so the
- * build tray shows the furniture as it will stand in the room. One WebGL context for all of them.
+ * An offscreen canvas that turns catalog pieces and pantry items into pictures of their real 3D models, so the
+ * build tray and the inside view show them as they stand in the room. One WebGL context for all of them.
  */
 export const ThumbnailStudio = () => {
   const itemId = useSyncExternalStore(thumbnailStore.subscribe, thumbnailStore.next, () => null);

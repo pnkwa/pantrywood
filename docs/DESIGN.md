@@ -171,7 +171,9 @@ and a round rug on the floor.
 - Orthographic camera, isometric angle (~35° down, 45° around)
 - Matte materials only (`roughness: 1`, no metal shine). Optional toon shading.
 - Lights: warm hemisphere light + one soft "morning sun" directional light with soft shadows
-- Items inside storage are tiny simple shapes: jar, can, carton, bag, box — colored by category.
+- Items inside storage are tiny clay-like models: packaging (jar, can, gable carton, bottle, bag, box, roll, spool) colored by category, and fresh food (egg, apple, orange, lime, tomato, potato, carrot, cucumber, bananas, mushroom, greens, bell pepper, corn, meat, tofu, bread) in its own natural colors, plus pantry staples with a look of their own (sauce bottle,
+  yogurt or ice-cream tub, instant noodle cup, egg-tofu tube, butter, shrimp, dumplings, edamame, rice sack,
+  toothpaste).
   Supplies get their own shapes: roll (tissue), bottle (shampoo, soap), spool (filament, tinted by its color)
 - **Instancing** for repeated items
 - Hover: cream outline + object lifts 2–4 units. Click: sage outline + panel opens
@@ -363,9 +365,11 @@ A life-sim style editor for the storage room. People can swap **storage furnitur
 - Drag an item to another slot, shelf, drawer or door bin; the target slot shows a dashed sage outline
 - The dragged item lifts higher (bigger shadow) and shows a dark tag: "Thai basil → Shelf 2 · slot 4"
 - Tap an item → details panel with status chips, Eat one, Move to…
-- **Item picture:** drop or upload a PNG (up to 2 MB). Optional "Remove white background" for photos/JPGs,
-  and "Also save as the product picture in Grocy" (Grocy supports product pictures, so it syncs)
-- Items without a picture fall back to a default **item icon**, picked from the Grocy product group and name:
+- In storage an item is always its **3D model** (the same one the room draws), never a photo
+- **Profile picture:** drop or upload a photo (PNG, JPG or WebP, up to 2 MB), with "Also save as the product
+  picture in Grocy" (it syncs). It shows on the item's tile in lists and in its panel; without one, the tile
+  shows the product group's icon
+- While a 3D model's picture is still being drawn, a default **item icon** shows, picked from the Grocy product group and name:
   - Bottles: water, soy sauce, fish sauce, cooking oil, milk bottle, juice
   - Seasoning: salt shaker, pepper grinder, chili flakes, sugar jar, squeeze sauce, spice tin
   - Boxes: cereal, pasta, tea, egg carton, tissue box, milk carton

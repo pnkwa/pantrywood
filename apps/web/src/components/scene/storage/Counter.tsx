@@ -1,5 +1,6 @@
 "use client";
 
+import { STORAGE_FRONTS } from "@/lib/storage/dimensions";
 import { RoundedBox } from "@react-three/drei";
 import { Matte } from "../materials";
 import type { SceneItem } from "../types";
@@ -7,7 +8,8 @@ import type { Surface } from "../items/arrange";
 import { BarHandle, KIT, PanelDoor, Soft } from "../kit";
 import { StoredItems } from "./StoredItems";
 
-const WIDTH = 2.4;
+// Shared with the inside view, so the piece keeps its proportions there.
+const WIDTH = STORAGE_FRONTS.counter.width;
 const DEPTH = 1.35;
 const BODY_HEIGHT = 1.65;
 const TOE_KICK_HEIGHT = 0.15;

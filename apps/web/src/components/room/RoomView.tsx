@@ -51,6 +51,7 @@ import { BoardView } from "@/components/board/BoardView";
 import { InsideView } from "@/components/inside/InsideView";
 import type { GrocyPlace, Pantry } from "@/lib/pantry/model";
 import { putAwayDestinations } from "@/components/pantry/ItemListPanel";
+import { itemRows } from "@/lib/pantry/put-away";
 import { useUiStore } from "@/lib/store/ui-store";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 
@@ -688,11 +689,12 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
         {insideVisible && openLocation && openKind && (
           <motion.div
             key={`inside-${openLocation.id}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="absolute inset-0 z-40 bg-[radial-gradient(120%_90%_at_50%_35%,var(--scene-sky-top)_0%,var(--scene-sky-edge)_100%)]"
+            // Grows into place as the camera arrives, so opening a piece reads as one zoom; a fade with reduced motion.
+            initial={{ opacity: 0, scale: reducedMotion ? 1 : 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: reducedMotion ? 1 : 0.92 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="absolute inset-0 z-40 bg-gingham"
           >
             <InsideView
               location={openLocation}
@@ -702,6 +704,7 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
               onPickItem={(productId, itemKey) => selectItem(openLocation.id, productId, itemKey)}
               onClose={closeInside}
               waiting={pantry?.waiting ?? []}
+              elsewhere={pantry ? itemRows([], pantry.locations.filter((location) => location.id !== openLocation.id)) : []}
               destinations={pantry ? destinationsFrom(pantry, openLocation.id) : []}
             />
           </motion.div>

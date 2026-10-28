@@ -69,6 +69,7 @@ const batchPlacements = (placements: readonly Placement[]): Batch[] => {
     const rotation = new Quaternion().setFromEuler(
       new Euler(0, placement.rotationY, 0),
     );
+    const scale = placement.scale ?? 1;
     SHAPES[placement.shape].parts.forEach((part, partIndex) => {
       const id = `${placement.shape}-${partIndex}`;
       const batch = batches.get(id) ?? {
@@ -85,9 +86,9 @@ const batchPlacements = (placements: readonly Placement[]): Batch[] => {
       batch.instances.push({
         productId: placement.productId,
         base: new Vector3(...placement.position),
-        offset: new Vector3(...part.offset).applyQuaternion(rotation),
+        offset: new Vector3(...part.offset).multiplyScalar(scale).applyQuaternion(rotation),
         rotation,
-        size: new Vector3(1, 1, 1),
+        size: new Vector3(scale, scale, scale),
         color: new Color(color),
       });
       batches.set(id, batch);

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "motion/react";
 import type { PantryItem } from "@/lib/pantry/model";
 import { formatAmount } from "@/lib/pantry/format";
 import { PANEL_SPRING } from "@/lib/motion";
+import { useProfilePicture } from "@/lib/inside/pictures";
 import { PRODUCT_ICONS, productIconKeyFor } from "./icons";
 import { useUiStore } from "@/lib/store/ui-store";
 import { fadeInDelay } from "./FadeIn";
@@ -13,7 +15,8 @@ import { FreezerTag, StatusChip } from "./StatusChip";
 const TILE_RADIUS = 12;
 
 /**
- * Shared between the item row and the item panel, so it flies from one to the other.
+ * The item's profile: your photo (or Grocy's) when it has one, else its group's icon. Shared between the item row
+ * and the item panel, so it flies from one to the other.
  * The radius is an inline style and the children have `layout`, so Motion keeps them
  * undistorted while the tile changes size.
  */
@@ -28,6 +31,9 @@ export const ItemIconTile = ({
 }) => {
   const ProductIcon = PRODUCT_ICONS[productIconKeyFor(item.groupName)];
   const large = size === "large";
+  const profileUrl = useProfilePicture(item.productId, item.pictureFileName);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const photo = profileUrl && profileUrl !== failedUrl ? profileUrl : null;
   return (
     <motion.span
       layoutId={shared ? `item-icon-${item.key}` : undefined}
@@ -48,9 +54,16 @@ export const ItemIconTile = ({
             : "-top-1 right-[7px] left-[7px] h-1.5"
         }`}
       />
-      <motion.span layout={shared} transition={PANEL_SPRING} className="flex">
-        <ProductIcon size={large ? 28 : 20} weight="duotone" aria-hidden />
-      </motion.span>
+      {photo ? (
+        <span style={{ borderRadius: TILE_RADIUS - 2 }} className="absolute inset-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element -- a local data URL or Grocy through the proxy */}
+          <img src={photo} alt="" draggable={false} onError={() => setFailedUrl(photo)} className="size-full object-cover" />
+        </span>
+      ) : (
+        <motion.span layout={shared} transition={PANEL_SPRING} className="flex">
+          <ProductIcon size={large ? 28 : 20} weight="duotone" aria-hidden />
+        </motion.span>
+      )}
     </motion.span>
   );
 };

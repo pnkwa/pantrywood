@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { useTraySlot } from "@/lib/inside/tray-slot";
+import { InsideTray } from "./InsideTray";
 import {
   DndContext,
   DragOverlay,
@@ -9,12 +13,13 @@ import {
   closestCenter,
   pointerWithin,
   useSensor,
-  useDraggable,
   useSensors,
   type Announcements,
   type CollisionDetection,
   type DragEndEvent,
+  type DragMoveEvent,
   type DragOverEvent,
+  type KeyboardCoordinateGetter,
   type DragStartEvent,
   type UniqueIdentifier,
 } from "@dnd-kit/core";
@@ -22,17 +27,18 @@ import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { ArrowLeftIcon, DotsSixVerticalIcon, PlusIcon, TrayIcon } from "@phosphor-icons/react";
 import type { StorageKind, StoragePalette } from "@/components/scene/types";
 import type { GrocyPlace, PantryItem, PantryLocation } from "@/lib/pantry/model";
-import { formatAmount } from "@/lib/pantry/format";
-import { PutAwayPicker, usePutAway } from "@/components/pantry/PutAwayPicker";
-import { dropDestination } from "@/lib/pantry/put-away";
-import { ItemIconTile } from "@/components/pantry/ItemRow";
+import { usePutAway } from "@/components/pantry/PutAwayPicker";
+import { dropDestination, type ItemRow } from "@/lib/pantry/put-away";
+import { sideOf } from "./ShelfItems";
 import { UNSORTED } from "@/lib/inside/layout";
-import { useInside, type Inside } from "@/lib/inside/use-inside";
+import { useInside } from "@/lib/inside/use-inside";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { PANEL_SPRING } from "@/lib/motion";
+import { pickScene, type ScenePick } from "@/lib/inside/scene-pick";
+import { Fridge3dView } from "./Fridge3dView";
 import { FrontView } from "./FrontView";
 import { LiftedItem } from "./InsideItem";
 import { RiceBinView } from "./RiceBinView";
-import { SectionItems } from "./SectionItems";
 import { TopDownView } from "./TopDownView";
 
 const ADD_LABELS: Record<string, string> = {
@@ -53,7 +59,7 @@ const pill = (active: boolean) =>
     active ? "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,0.12)]" : "font-medium text-muted-foreground hover:text-foreground"
   }`;
 
-type DragData = { type?: string; section?: string; notch?: number };
+type DragData = { type?: string; section?: string; notch?: number; key?: string };
 
 const dataOf = (data: { current?: Record<string, unknown> } | undefined): DragData => {
   const current = data?.current;
@@ -61,10 +67,27 @@ const dataOf = (data: { current?: Record<string, unknown> } | undefined): DragDa
     type: typeof current?.type === "string" ? current.type : undefined,
     section: typeof current?.section === "string" ? current.section : undefined,
     notch: typeof current?.notch === "number" ? current.notch : undefined,
+    key: typeof current?.key === "string" ? current.key : undefined,
   };
 };
 
 // Items land on items and sections, shelves on rail notches; the pointer decides first, then distance (keyboard).
+// Front views place items freely along a shelf, so the keys move them by small steps rather than slot to slot.
+const KEY_STEP_X = 24;
+const KEY_STEP_Y = 64;
+const freeKeyboardCoordinates: KeyboardCoordinateGetter = (event, { currentCoordinates }) => {
+  const steps: Record<string, [number, number]> = {
+    ArrowLeft: [-KEY_STEP_X, 0],
+    ArrowRight: [KEY_STEP_X, 0],
+    ArrowUp: [0, -KEY_STEP_Y],
+    ArrowDown: [0, KEY_STEP_Y],
+  };
+  const step = steps[event.code];
+  if (!step) return undefined;
+  event.preventDefault();
+  return { x: currentCoordinates.x + step[0], y: currentCoordinates.y + step[1] };
+};
+
 const collisionsFor: CollisionDetection = (args) => {
   const dragged = dataOf(args.active.data).type;
   const droppableContainers = args.droppableContainers.filter((container) => {
@@ -88,6 +111,8 @@ type InsideViewProps = {
   onClose: () => void;
   /** Stock waiting in "To put away", and where it can go (this piece first). */
   waiting: readonly PantryItem[];
+  /** Everything kept in other storage pieces, with where it is now: it can be brought in here too. */
+  elsewhere: readonly ItemRow<PantryItem>[];
   destinations: readonly GrocyPlace[];
 };
 
@@ -99,11 +124,14 @@ export const InsideView = ({
   onPickItem,
   onClose,
   waiting,
+  elsewhere,
   destinations,
 }: InsideViewProps) => {
   const inside = useInside(location, kind);
   const { spec } = inside;
   const reducedMotion = useReducedMotion();
+  // Phones have no side panel to hold the tray, so it opens as a drawer over the bottom of the view.
+  const [trayOpen, setTrayOpen] = useState(false);
   const [tabId, setTabId] = useState(spec.tabs[0]?.id ?? "main");
   const [editing, setEditing] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
@@ -114,12 +142,19 @@ export const InsideView = ({
   // A "To put away" card being dragged in from outside the piece, and the part it's over.
   const [waitingKey, setWaitingKey] = useState<string | null>(null);
   const [waitingTarget, setWaitingTarget] = useState<string | null>(null);
+  // Front views: the shelf and spot along it under the carried item, and the last item dropped (for its landing).
+  const [preview, setPreview] = useState<ScenePick | null>(null);
+  const [landed, setLanded] = useState<{ key: string; count: number } | null>(null);
   const { putIn } = usePutAway();
+  const front = spec.view === "front";
+  // The fridge is a live 3D scene; the other front views are drawn flat for now.
+  const FrontOrIso = kind === "fridge" ? Fridge3dView : FrontView;
   const tab = spec.tabs.find((candidate) => candidate.id === tabId) ?? spec.tabs[0];
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: front ? freeKeyboardCoordinates : sortableKeyboardCoordinates }),
   );
+  const land = (key: string) => setLanded((previous) => ({ key, count: (previous?.count ?? 0) + 1 }));
 
   const arranged = draft ?? inside.arranged;
   const keysFor = (sectionId: string) => arranged.get(sectionId) ?? [];
@@ -128,9 +163,23 @@ export const InsideView = ({
   const activeItem = activeItemKey ? inside.itemsByKey.get(activeItemKey) : undefined;
   const allowed = new Set(activeItem ? inside.destinationsFor(activeItem).map((destination) => destination.id) : []);
   allowed.add(UNSORTED);
-  const waitingItem = waiting.find((item) => item.key === waitingKey);
-  const targetSectionId = waitingKey ? waitingTarget : activeItemKey ? sectionInDraft(activeItemKey) : null;
+  // Things brought in from outside the piece: waiting stock, or stock kept somewhere else.
+  const incoming = [...waiting, ...elsewhere.map((row) => row.item)];
+  const waitingItem = incoming.find((item) => item.key === waitingKey);
+  const targetSectionId = front
+    ? (preview?.sectionId ?? null)
+    : waitingKey
+      ? waitingTarget
+      : activeItemKey
+        ? sectionInDraft(activeItemKey)
+        : null;
   const landing = (key: string) => {
+    if (front) {
+      if (!preview) return "";
+      return preview.sectionId === fullSectionId
+        ? `${inside.label(preview.sectionId)} is full`
+        : `${inside.label(preview.sectionId)}${preview.row ? " · back" : ""} · ${sideOf(preview.x)}`;
+    }
     const sectionId = sectionInDraft(key);
     if (!sectionId) return "";
     const slot = keysFor(sectionId).indexOf(key) + 1;
@@ -145,12 +194,19 @@ export const InsideView = ({
   };
 
   const reset = () => {
+    setPreview(null);
     setWaitingKey(null);
     setWaitingTarget(null);
     setDraft(null);
     setActiveItemKey(null);
     setActiveShelfId(null);
     setTargetNotch(null);
+  };
+
+  // A tile in the tray is dragged as `tray:<key>`; everything about the drop is about the item it stands for.
+  const itemKeyOf = (active: DragStartEvent["active"]) => {
+    const data = dataOf(active.data);
+    return data.type === "tray" && data.key ? data.key : String(active.id);
   };
 
   const handleDragStart = ({ active }: DragStartEvent) => {
@@ -164,11 +220,38 @@ export const InsideView = ({
       setSelectedSectionId(data.section);
       return;
     }
-    setActiveItemKey(String(active.id));
-    setDraft(new Map(inside.arranged));
+    setActiveItemKey(itemKeyOf(active));
+    if (!front) setDraft(new Map(inside.arranged));
+  };
+
+  // Where the carried thing is along the shelf under it: the pointer, or the item's centre when moved by keys.
+  // The shelf is read from the page under that point, so it's always the one you see under it.
+  const handleDragMove = ({ active, delta, activatorEvent }: DragMoveEvent) => {
+    if (!front || activeShelfId) return;
+    const initial = active.rect.current.initial;
+    const start =
+      activatorEvent instanceof MouseEvent
+        ? { x: activatorEvent.clientX, y: activatorEvent.clientY }
+        : initial
+          ? { x: initial.left + initial.width / 2, y: initial.top + initial.height / 2 }
+          : null;
+    if (!start) return;
+    const point = { x: start.x + delta.x, y: start.y + delta.y };
+    const shelf = document
+      .elementsFromPoint(point.x, point.y)
+      .map((element) => element.closest<HTMLElement>("[data-section-id]"))
+      .find((element) => element !== null);
+    const rect = shelf?.getBoundingClientRect();
+    // A drawn shelf under the pointer, else the 3D view's (the fridge), if it's open.
+    const pick =
+      shelf?.dataset.sectionId && rect
+        ? { sectionId: shelf.dataset.sectionId, x: Math.min(1, Math.max(0, (point.x - rect.left) / rect.width)) }
+        : pickScene(point.x, point.y);
+    setPreview(pick && (waitingKey !== null || allowed.has(pick.sectionId)) ? pick : null);
   };
 
   const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (front && !activeShelfId) return;
     if (waitingKey) {
       const sectionId = sectionUnder(over);
       setWaitingTarget(sectionId === UNSORTED ? null : sectionId);
@@ -178,7 +261,7 @@ export const InsideView = ({
       setTargetNotch(over ? (dataOf(over.data).notch ?? null) : null);
       return;
     }
-    const key = String(active.id);
+    const key = itemKeyOf(active);
     const from = sectionInDraft(key);
     const to = sectionUnder(over);
     if (!draft || !from || !to || from === to || !allowed.has(to) || !over) return;
@@ -191,36 +274,55 @@ export const InsideView = ({
     setDraft(next);
   };
 
-  // Saves the spot first (for the key it will have here), then moves the stock in Grocy, so it lands where it was dropped.
-  const dropWaiting = (item: PantryItem, sectionId: string, overId: string | undefined) => {
-    const tabId = inside.layout.sections.find((section) => section.id === sectionId)?.tab;
-    const zone = spec.tabs.find((candidate) => candidate.id === tabId)?.zone ?? "main";
+  // Waiting stock dropped on a shelf goes to this piece's Grocy location, or its freezer for a freezer shelf.
+  const destinationFor = (sectionId: string) => {
+    const sectionTab = inside.layout.sections.find((section) => section.id === sectionId)?.tab;
+    const zone = spec.tabs.find((candidate) => candidate.id === sectionTab)?.zone ?? "main";
     const destinationId = dropDestination({
       zone,
       locationId: location.id,
       locationIsFreezer: location.isFreezer,
       freezerId: destinations.find((place) => place.isFreezer)?.id ?? null,
     });
-    const destination = destinations.find((place) => place.id === destinationId);
+    return destinations.find((place) => place.id === destinationId);
+  };
+
+  // Saves the spot first (for the key it will have here), then moves the stock in Grocy, so it lands where it was dropped.
+  const dropWaiting = (item: PantryItem, sectionId: string, overId: string | undefined, x: number | null, row?: number) => {
+    const destination = destinationFor(sectionId);
     if (!destination) return;
-    const keys = keysFor(sectionId);
-    const overIndex = overId === undefined ? -1 : keys.indexOf(overId);
     const key = `${destination.id}-${item.productId}`;
-    inside.place(key, sectionId, overIndex === -1 ? keys.length : overIndex);
-    putIn(item, destination, () => onPickItem(item.productId, key));
+    if (x !== null) {
+      if (!inside.placeAt(key, sectionId, x, item, row)) return;
+    } else {
+      const keys = keysFor(sectionId);
+      const overIndex = overId === undefined ? -1 : keys.indexOf(overId);
+      inside.place(key, sectionId, overIndex === -1 ? keys.length : overIndex);
+    }
+    putIn(item, destination, () => {
+      land(key);
+      onPickItem(item.productId, key);
+    });
   };
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (waitingKey) {
-      const sectionId = sectionUnder(over);
-      if (waitingItem && sectionId && sectionId !== UNSORTED) dropWaiting(waitingItem, sectionId, over ? String(over.id) : undefined);
+      const sectionId = front ? (preview?.sectionId ?? null) : sectionUnder(over);
+      if (waitingItem && sectionId && sectionId !== UNSORTED)
+        dropWaiting(waitingItem, sectionId, over ? String(over.id) : undefined, front ? (preview?.x ?? null) : null, preview?.row);
       return reset();
     }
     if (activeShelfId) {
       if (targetNotch !== null) inside.moveShelf(activeShelfId, targetNotch);
       return reset();
     }
-    const key = String(active.id);
+    if (front) {
+      const key = itemKeyOf(active);
+      if (preview && inside.placeAt(key, preview.sectionId, preview.x, undefined, preview.row)) land(key);
+      else if (sectionUnder(over) === UNSORTED) inside.unplace(key);
+      return reset();
+    }
+    const key = itemKeyOf(active);
     const sectionId = sectionInDraft(key);
     if (over && sectionId) {
       const keys = keysFor(sectionId);
@@ -235,7 +337,7 @@ export const InsideView = ({
 
   const nameOf = (id: UniqueIdentifier) =>
     inside.itemsByKey.get(String(id))?.name ??
-    waiting.find((item) => `waiting:${item.key}` === String(id))?.name ??
+    incoming.find((item) => `waiting:${item.key}` === String(id))?.name ??
     inside.label(String(id).replace(/^shelf:/, ""));
   const announcements: Announcements = {
     onDragStart: ({ active }) => `Picked up ${nameOf(active.id)}.`,
@@ -249,9 +351,40 @@ export const InsideView = ({
   };
 
   const unsorted = keysFor(UNSORTED);
+  const traySlot = useTraySlot((state) => state.slot);
+  const here = destinations.find((place) => place.id === location.id);
+  // The carried item's key on the shelf it's over (waiting stock gets the key it will have there).
+  const ghostKey = preview
+    ? waitingItem
+      ? `${destinationFor(preview.sectionId)?.id ?? ""}-${waitingItem.productId}`
+      : activeItemKey
+    : null;
+  const fullSectionId =
+    preview && ghostKey && !inside.previewAt(ghostKey, preview.sectionId, preview.x, waitingItem, preview.row) ? preview.sectionId : null;
+  const loose = unsorted.flatMap((key) => inside.itemsByKey.get(key) ?? []);
+  const trayCount = waiting.length + loose.length;
+  /** The tray, in the side panel (its ✕ leaves the piece) or the phone drawer (its ✕ just shuts the drawer). */
+  const tray = (close: () => void) => (
+    <InsideTray
+      pieceName={location.name}
+      waiting={waiting}
+      elsewhere={elsewhere}
+      here={here}
+      loose={loose}
+      onPut={(item) => onPickItem(item.productId, `${location.id}-${item.productId}`)}
+      onPickItem={(item) => onPickItem(item.productId, item.key)}
+      onClose={close}
+    />
+  );
+  // Over the 3D fridge, the scene draws what's carried as its model, so the flat sticker steps aside.
+  // Over a full shelf there is no landing spot to draw it at, so the sticker (with its "is full" tag) stays.
+  const shownIn3d = kind === "fridge" && !editing && preview !== null && fullSectionId === null;
+  const spotsFor = (sectionId: string) =>
+    (preview?.sectionId === sectionId && ghostKey ? inside.previewAt(ghostKey, sectionId, preview.x, waitingItem, preview.row) : null) ??
+    inside.spotsOn(sectionId);
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 p-3 sm:p-4">
+    <div className="relative flex h-full min-h-0 flex-col gap-3 p-3 sm:p-4">
       <header className="flex flex-wrap items-center gap-3 max-lg:-order-2">
         <button
           type="button"
@@ -312,17 +445,22 @@ export const InsideView = ({
         sensors={sensors}
         collisionDetection={collisionsFor}
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={reset}
         accessibility={{ announcements }}
       >
         {tab && spec.view === "front" && (
-          <FrontView
+          <FrontOrIso
             inside={inside}
             tab={tab}
             editing={editing}
-            keysFor={keysFor}
+            spotsFor={spotsFor}
+            ghostKey={ghostKey}
+            ghostItem={waitingItem ?? activeItem}
+            landed={landed}
+            fullSectionId={fullSectionId}
             targetSectionId={targetSectionId}
             targetNotch={targetNotch}
             selectedSectionId={selectedSectionId}
@@ -346,25 +484,49 @@ export const InsideView = ({
         )}
         {spec.view === "riceBin" && <RiceBinView inside={inside} onPickItem={onPickItem} />}
 
-        {waiting.length > 0 && (
-          <ToPutAway
-            waiting={waiting}
-            destinations={destinations}
-            here={destinations.find((place) => place.id === location.id)}
-            // Put here: pick it out on the shelf, so you see where it landed.
-            onPut={(productId, destinationId) => {
-              if (destinationId === location.id) onPickItem(productId, `${location.id}-${productId}`);
-            }}
-          />
-        )}
-
-        {spec.view !== "riceBin" && (unsorted.length > 0 || targetSectionId === UNSORTED) && (
-          <Unsorted inside={inside} keys={unsorted} targeted={targetSectionId === UNSORTED} selectedItemKey={selectedItemKey} onPickItem={onPickItem} />
+        {traySlot ? (
+          createPortal(tray(onClose), traySlot)
+        ) : (
+          <>
+            {spec.view !== "riceBin" && !trayOpen && (
+              <button
+                type="button"
+                onClick={() => setTrayOpen(true)}
+                className="absolute bottom-4 left-4 z-20 flex h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-ring"
+              >
+                <TrayIcon size={18} weight="bold" aria-hidden />
+                Item tray{trayCount > 0 ? ` · ${trayCount}` : ""}
+              </button>
+            )}
+            <AnimatePresence>
+              {trayOpen && (
+                <motion.div
+                  key="tray"
+                  role="dialog"
+                  aria-label="Item tray"
+                  initial={reducedMotion ? { opacity: 0 } : { y: "100%" }}
+                  animate={reducedMotion ? { opacity: 1 } : { y: 0 }}
+                  exit={reducedMotion ? { opacity: 0 } : { y: "100%" }}
+                  transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
+                  // Half the view, so the shelves stay in sight above it while you drag; items dragged out of the 3D fridge drop here too.
+                  data-tray-drop
+                  className="absolute inset-x-0 bottom-0 z-30 h-[48%] rounded-t-[24px] border-t-[1.5px] border-border bg-card p-4 shadow-paper outline-2 -outline-offset-4 outline-transparent outline-dashed transition-[outline-color] duration-150 data-[drop-over]:outline-sage-deep"
+                >
+                  {tray(() => setTrayOpen(false))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
         )}
 
         <DragOverlay dropAnimation={reducedMotion ? null : undefined}>
-          {activeItem && <LiftedItem item={activeItem} landing={landing(activeItem.key)} />}
-          {waitingItem && <LiftedItem item={waitingItem} landing={waitingTarget ? inside.label(waitingTarget) : "a shelf"} />}
+          {activeItem && !shownIn3d && <LiftedItem item={activeItem} landing={landing(activeItem.key)} />}
+          {waitingItem && !shownIn3d && (
+            <LiftedItem
+              item={waitingItem}
+              landing={(front ? landing(waitingItem.key) : waitingTarget ? inside.label(waitingTarget) : "") || "a shelf"}
+            />
+          )}
           {activeShelfId && (
             <span className="flex h-11 w-9 items-center justify-center rounded-[12px] border-2 border-[#C8901F] bg-card text-muted-foreground shadow-[0_12px_20px_-8px_rgba(74,59,46,0.5)]">
               <DotsSixVerticalIcon size={18} weight="bold" aria-hidden />
@@ -373,91 +535,7 @@ export const InsideView = ({
         </DragOverlay>
       </DndContext>
 
-      <p className="text-[13px] text-muted-foreground max-sm:hidden">{HINTS[spec.view]}</p>
+      {(editing || !front) && <p className="text-[13px] text-muted-foreground max-sm:hidden">{HINTS[spec.view]}</p>}
     </div>
   );
 };
-
-const ToPutAway = ({
-  waiting,
-  destinations,
-  here,
-  onPut,
-}: {
-  waiting: readonly PantryItem[];
-  destinations: readonly GrocyPlace[];
-  here: GrocyPlace | undefined;
-  onPut: (productId: number, destinationId: number) => void;
-}) => (
-  // Phones show it above the piece: below, the bottom bar would hide it.
-  <section aria-label="To put away" className="flex flex-col gap-2 max-lg:-order-1 rounded-[18px] border-[1.5px] border-honey bg-status-soon/60 p-2.5 animate-in fade-in duration-200">
-    <span className="flex items-center gap-1.5 px-1 text-xs font-semibold text-status-soon-foreground">
-      <TrayIcon size={14} weight="bold" aria-hidden />
-      To put away · {waiting.length} {waiting.length === 1 ? "item" : "items"}
-      <span className="font-medium max-sm:hidden">· drag onto a shelf, or tap Put here</span>
-    </span>
-    <ul className="flex flex-wrap gap-2">
-      {waiting.map((item) => (
-        <WaitingCard key={item.key} item={item}>
-          <PutAwayPicker item={item} destinations={destinations} here={here} onPut={(destinationId) => onPut(item.productId, destinationId)} />
-        </WaitingCard>
-      ))}
-    </ul>
-  </section>
-);
-
-/** The picture and name are the drag handle; the buttons beside them do the same without dragging. */
-const WaitingCard = ({ item, children }: { item: PantryItem; children: ReactNode }) => {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `waiting:${item.key}`, data: { type: "waiting" } });
-  return (
-    <li
-      className={`flex min-w-0 flex-wrap items-center gap-2.5 rounded-[16px] border-[1.5px] border-border bg-card p-1.5 transition-opacity max-sm:w-full animate-in fade-in zoom-in-95 duration-200 motion-reduce:zoom-in-100 ${
-        isDragging ? "opacity-40" : ""
-      }`}
-    >
-      <span
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        aria-roledescription="draggable item"
-        aria-label={`Drag ${item.name} onto a shelf`}
-        className="flex min-w-32 flex-1 cursor-grab touch-none items-center gap-2.5 rounded-[12px] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring active:cursor-grabbing"
-      >
-        <ItemIconTile item={item} shared={false} />
-        <span className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate text-sm font-semibold">{item.name}</span>
-          <span className="tabular text-xs text-muted-foreground">{formatAmount(item)}</span>
-        </span>
-      </span>
-      {children}
-    </li>
-  );
-};
-
-const Unsorted = ({
-  inside,
-  keys,
-  targeted,
-  selectedItemKey,
-  onPickItem,
-}: {
-  inside: Inside;
-  keys: readonly string[];
-  targeted: boolean;
-  selectedItemKey: string | null;
-  onPickItem: (productId: number, itemKey: string) => void;
-}) => (
-  <section aria-label="Unsorted" className="flex flex-col gap-1 rounded-[18px] border-[1.5px] border-dashed border-border bg-card/70 p-2 animate-in fade-in duration-200">
-    <span className="px-1 text-xs font-semibold text-muted-foreground">Unsorted · drag onto a shelf</span>
-    <SectionItems
-      inside={inside}
-      sectionId={UNSORTED}
-      keys={keys}
-      look="lying"
-      targeted={targeted}
-      selectedItemKey={selectedItemKey}
-      onPickItem={onPickItem}
-      className="flex min-h-16 flex-wrap gap-2 p-1"
-    />
-  </section>
-);

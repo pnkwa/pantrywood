@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { StorageKind, StoragePalette } from "@/components/scene/types";
+import { frontRatio } from "@/lib/storage/dimensions";
 
 // Each piece's inside is framed like the piece itself, in its own proportions and the colors of its
 // furniture style in the room: a rounded fridge shell, a bookcase with posts rising past the top, a painted
@@ -21,8 +22,9 @@ const FRAMES: Record<StorageKind, Frame> = {
   riceBin: "bookcase",
 };
 
-/** Width over height of each piece's front, from its model in the room. */
+/** Width over height for pieces with no front in the room: a stretch of wall, or the top-down pieces. */
 const RATIOS: Record<Frame, number> = { fridge: 0.62, bookcase: 0.72, dresser: 1.12, cabinet: 1.45, wall: 1.55 };
+const BRASS = "#C9A15A";
 
 const DEFAULTS: Record<Frame, StoragePalette> = {
   fridge: { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" },
@@ -37,20 +39,36 @@ const shade = (color: string, amount = 22) => `color-mix(in srgb, ${color} ${100
 
 export const frameFor = (kind: StorageKind) => FRAMES[kind];
 
-/** The board color a shelf in this piece is made of. */
+/** The board color a shelf in this piece is made of, and the lip along its front edge (as in the room). */
 export const boardColor = (kind: StorageKind, palette: StoragePalette | null) => {
   const frame = FRAMES[kind];
-  if (frame === "wall") return OAK;
-  return (palette ?? DEFAULTS[frame]).body;
+  if (frame === "wall") return { board: OAK, lip: shade(OAK, 18) };
+  const { body, trim } = palette ?? DEFAULTS[frame];
+  return { board: body, lip: trim === body ? shade(body, 14) : trim };
 };
 
 /** Sizes the piece to fit its box at its own proportions (the parent is a size container). */
 export const frameSize = (kind: StorageKind): CSSProperties => {
-  const ratio = RATIOS[FRAMES[kind]];
+  // The piece's own proportions in the room, so the inside matches what you tapped.
+  const ratio = frontRatio(kind) ?? RATIOS[FRAMES[kind]];
   return { aspectRatio: `${ratio}`, width: `min(100cqw, ${ratio * 100}cqh)` };
 };
 
 type PieceFrameProps = { kind: StorageKind; palette: StoragePalette | null; children: ReactNode };
+
+/** The pantry shelf's brass rail with cup hooks, hung under its top board like in the room. */
+const CupHookRail = () => (
+  <div aria-hidden className="pointer-events-none absolute inset-x-[7%] top-[3%] h-[5%]">
+    <span className="absolute inset-x-0 top-0 h-[5px] rounded-full" style={{ background: BRASS, boxShadow: `0 1px 0 ${shade(BRASS, 30)}` }} />
+    {[0.15, 0.38, 0.62, 0.85].map((at) => (
+      <span
+        key={at}
+        style={{ left: `${at * 100}%`, borderColor: BRASS }}
+        className="absolute top-[3px] size-3.5 -translate-x-1/2 rounded-b-full border-[2.5px] border-t-0"
+      />
+    ))}
+  </div>
+);
 
 /** The frame around the cavity; `children` go in the cavity itself. */
 export const PieceFrame = ({ kind, palette, children }: PieceFrameProps) => {
@@ -112,6 +130,7 @@ export const PieceFrame = ({ kind, palette, children }: PieceFrameProps) => {
           <div className="absolute inset-x-[8%] top-[6%] h-[4%] rounded-[6px]" style={{ background: body, boxShadow: `0 4px 0 ${shade(body)}` }} />
           <div className="absolute inset-x-0 bottom-0 h-[4%] rounded-[8px]" style={{ background: shade(body, 10) }} />
           <div className="absolute inset-x-[8%] top-[10%] bottom-[4%]" style={{ background: accent, boxShadow: `inset 0 14px 22px -12px ${shade(accent, 50)}` }}>
+            {kind === "pantryShelf" && <CupHookRail />}
             <div className="relative h-full">{children}</div>
           </div>
         </div>

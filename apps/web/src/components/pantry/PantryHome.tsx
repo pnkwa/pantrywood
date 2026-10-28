@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
+import { TrayIcon } from "@phosphor-icons/react";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { OPEN_SCAN } from "@/lib/page-transitions";
@@ -95,6 +96,7 @@ export const PantryHome = () => {
     return () => window.removeEventListener("keydown", handleEscape);
   }, [clearSelection, closeInside]);
 
+  const inside = !decorating && view !== "room";
   const selectedName = itemListOpen
     ? "All items"
     : (pantry?.locations.find((location) => location.id === selection?.locationId)?.name ?? "Storage");
@@ -102,10 +104,23 @@ export const PantryHome = () => {
   return (
     <>
       <div className="mx-auto flex w-full max-w-[1392px] flex-1 flex-col gap-4 px-4 pt-4 pb-28 lg:gap-5 lg:px-6 lg:pt-5 lg:pb-8">
-        <TopBar pantry={pantry} onPickItem={selectItem} />
-        {/* Decorate is about the room, so the stock numbers step aside and the room takes their space. */}
+        {/* Inside a piece the page is all storage: the top bar steps aside and the view fills the window. */}
         <AnimatePresence initial={false} mode="popLayout">
-          {!decorating && (
+          {!inside && (
+            <motion.div
+              key="top-bar"
+              initial={{ opacity: 0, y: reducedMotion ? 0 : -12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: reducedMotion ? 0 : -12, transition: { duration: 0.15 } }}
+              transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
+            >
+              <TopBar pantry={pantry} onPickItem={selectItem} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {/* Decorating the room or arranging inside a piece: the stock numbers step aside and give it their space. */}
+        <AnimatePresence initial={false} mode="popLayout">
+          {!decorating && view === "room" && (
             <motion.div
               key="stats"
               initial={{ opacity: 0, y: reducedMotion ? 0 : -12 }}
@@ -121,7 +136,11 @@ export const PantryHome = () => {
           layout
           transition={reducedMotion ? { duration: 0 } : PANEL_SPRING}
           className={`flex flex-1 flex-col gap-5 lg:min-h-[480px] lg:flex-none lg:flex-row ${
-            decorating ? "lg:h-[min(828px,calc(100dvh-172px))]" : "lg:h-[min(720px,calc(100dvh-280px))]"
+            inside
+              ? "lg:h-[calc(100dvh-52px)]"
+              : decorating
+                ? "lg:h-[min(828px,calc(100dvh-172px))]"
+                : "lg:h-[min(720px,calc(100dvh-280px))]"
           }`}
         >
           {/* Decorate gives the room the full width; the layout animation glides it there with transforms. */}
@@ -149,8 +168,17 @@ export const PantryHome = () => {
             exit={{ opacity: 0, x: reducedMotion ? 0 : 24, transition: { duration: 0.15 } }}
             transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
             aria-label={boardOpen ? "Pegboard" : `${selectedName} details`}
-            className="relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
+            // Whatever it shows, an item dragged out of a 3D inside view can be dropped here to go back in the Item tray.
+            data-tray-drop
+            className="group/tray relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-2 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-sage-deep bg-card/90 text-sage-deep opacity-0 transition-opacity duration-150 ease-out group-data-[drop-over]/tray:opacity-100"
+            >
+              <TrayIcon size={32} weight="duotone" />
+              <span className="text-sm font-semibold">Drop to put it back in the Item tray</span>
+            </div>
             {boardOpen ? (
               <BoardPanel pantry={pantry} decorate={decorate} />
             ) : (
@@ -189,7 +217,8 @@ export const PantryHome = () => {
       </BottomSheet>
 
       {(decorating || boardOpen) && <BuyDialog />}
-      {decorating && <ThumbnailStudio />}
+      {/* Always on: catalog tiles and inside-view items both draw from it. */}
+      <ThumbnailStudio />
 
       <MobileNav
         current={view !== "room" && insideLocationId === fridge?.locationId ? "fridge" : "room"}
