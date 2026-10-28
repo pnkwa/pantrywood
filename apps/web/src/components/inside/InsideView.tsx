@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "motion/react";
-import { useTraySlot } from "@/lib/inside/tray-slot";
+import { useState, type ReactNode } from "react";
+import { motion } from "motion/react";
+import { PANEL_SPRING } from "@/lib/motion";
 import { InsideTray } from "./InsideTray";
 import {
   DndContext,
@@ -24,7 +23,7 @@ import {
   type UniqueIdentifier,
 } from "@dnd-kit/core";
 import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { ArrowLeftIcon, DotsSixVerticalIcon, PlusIcon, TrayIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
 import type { StorageKind, StoragePalette } from "@/components/scene/types";
 import type { GrocyPlace, PantryItem, PantryLocation } from "@/lib/pantry/model";
 import { usePutAway } from "@/components/pantry/PutAwayPicker";
@@ -33,10 +32,9 @@ import { sideOf } from "./ShelfItems";
 import { UNSORTED } from "@/lib/inside/layout";
 import { useInside } from "@/lib/inside/use-inside";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
-import { PANEL_SPRING } from "@/lib/motion";
 import { pickScene, type ScenePick } from "@/lib/inside/scene-pick";
 import { trayAt } from "@/lib/inside/tray-drop";
-import { Fridge3dView } from "./Fridge3dView";
+import { Inside3dView, opensIn3d } from "./Inside3dView";
 import { FrontView } from "./FrontView";
 import { LiftedItem } from "./InsideItem";
 import { RiceBinView } from "./RiceBinView";
@@ -56,9 +54,23 @@ const HINTS: Record<string, string> = {
 };
 
 const pill = (active: boolean) =>
-  `h-11 rounded-full px-3.5 text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-    active ? "bg-card font-semibold text-foreground shadow-[0_2px_6px_rgba(74,59,46,0.12)]" : "font-medium text-muted-foreground hover:text-foreground"
+  `relative h-11 rounded-full px-3.5 text-sm transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+    active ? "font-semibold text-foreground" : "font-medium text-muted-foreground hover:text-foreground"
   }`;
+
+/** A pill's label, with the indicator that slides under whichever option is on (one `layoutId` per switch). */
+const PillLabel = ({ active, indicator, reducedMotion, children }: { active: boolean; indicator: string; reducedMotion: boolean; children: ReactNode }) => (
+  <>
+    {active && (
+      <motion.span
+        layoutId={indicator}
+        transition={reducedMotion ? { duration: 0 } : PANEL_SPRING}
+        className="absolute inset-0 rounded-full bg-card shadow-[0_2px_6px_rgba(74,59,46,0.12)]"
+      />
+    )}
+    <span className="relative">{children}</span>
+  </>
+);
 
 type DragData = { type?: string; section?: string; notch?: number; key?: string };
 
@@ -136,8 +148,6 @@ export const InsideView = ({
   const inside = useInside(location, kind);
   const { spec } = inside;
   const reducedMotion = useReducedMotion();
-  // Phones have no side panel to hold the tray, so it opens as a drawer over the bottom of the view.
-  const [trayOpen, setTrayOpen] = useState(false);
   const [tabId, setTabId] = useState(spec.tabs[0]?.id ?? "main");
   const [editing, setEditing] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
@@ -154,7 +164,7 @@ export const InsideView = ({
   const { putIn } = usePutAway();
   const front = spec.view === "front";
   // The fridge is a live 3D scene; the other front views are drawn flat for now.
-  const FrontOrIso = kind === "fridge" ? Fridge3dView : FrontView;
+  const FrontOrIso = opensIn3d(kind) ? Inside3dView : FrontView;
   const tab = spec.tabs.find((candidate) => candidate.id === tabId) ?? spec.tabs[0];
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -361,7 +371,6 @@ export const InsideView = ({
   };
 
   const unsorted = keysFor(UNSORTED);
-  const traySlot = useTraySlot((state) => state.slot);
   const here = destinations.find((place) => place.id === location.id);
   // The carried item's key on the shelf it's over (waiting stock gets the key it will have there).
   const ghostKey = preview
@@ -372,31 +381,9 @@ export const InsideView = ({
   const fullSectionId =
     preview && ghostKey && !inside.previewAt(ghostKey, preview.sectionId, preview.x, waitingItem, preview.row) ? preview.sectionId : null;
   const loose = unsorted.flatMap((key) => inside.itemsByKey.get(key) ?? []);
-  const trayCount = waiting.length + loose.length;
-  /** The tray, in the side panel (its ✕ leaves the piece) or the phone drawer (its ✕ just shuts the drawer). */
-  const tray = (close: () => void) => (
-    <InsideTray
-      pieceName={location.name}
-      waiting={waiting}
-      elsewhere={elsewhere}
-      here={here}
-      loose={loose}
-      onPut={(item) => onPickItem(item.productId, `${location.id}-${item.productId}`)}
-      onPickItem={(item) => onPickItem(item.productId, item.key)}
-      onClose={close}
-      closeLabel={close === onClose ? "Close the piece and go back to the room" : "Close the Item tray"}
-    />
-  );
-  const [trayButton, setTrayButton] = useState<HTMLButtonElement | null>(null);
-  const closeTray = () => {
-    setTrayOpen(false);
-    trayButton?.focus();
-  };
-  // Moves focus into the drawer as it opens (stable, so it runs once per opening, not on every render).
-  const focusOnOpen = useCallback((node: HTMLDivElement | null) => node?.focus({ preventScroll: true }), []);
   // Over the 3D fridge, the scene draws what's carried as its model, so the flat sticker steps aside.
   // Over a full shelf there is no landing spot to draw it at, so the sticker (with its "is full" tag) stays.
-  const shownIn3d = kind === "fridge" && !editing && preview !== null && fullSectionId === null;
+  const shownIn3d = opensIn3d(kind) && !editing && preview !== null && fullSectionId === null;
   const spotsFor = (sectionId: string) =>
     (preview?.sectionId === sectionId && ghostKey ? inside.previewAt(ghostKey, sectionId, preview.x, waitingItem, preview.row) : null) ??
     inside.spotsOn(sectionId);
@@ -416,7 +403,8 @@ export const InsideView = ({
           <span className="truncate text-[13px] text-muted-foreground">Storage room / {location.name}</span>
           <h2 className="truncate text-xl sm:text-2xl">{spec.title}</h2>
         </div>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        {/* On their own row at the left, under the title, so the item inspector (floating at the right) never covers them. */}
+        <div className="flex basis-full flex-wrap items-center gap-2 sm:pl-14">
           {spec.tabs.length > 1 && (
             <div role="tablist" aria-label={`Part of the ${location.name}`} className="flex gap-1 rounded-full border-[1.5px] border-border bg-muted p-1">
               {spec.tabs.map((candidate) => (
@@ -431,7 +419,9 @@ export const InsideView = ({
                   }}
                   className={pill(candidate.id === tab?.id)}
                 >
-                  {candidate.label}
+                  <PillLabel active={candidate.id === tab?.id} indicator="inside-tab" reducedMotion={reducedMotion}>
+                    {candidate.label}
+                  </PillLabel>
                 </button>
               ))}
             </div>
@@ -439,10 +429,14 @@ export const InsideView = ({
           {spec.view !== "riceBin" && (
             <div role="group" aria-label="Edit mode" className="flex gap-1 rounded-full border-[1.5px] border-border bg-muted p-1">
               <button type="button" aria-pressed={!editing} onClick={() => setEditing(false)} className={pill(!editing)}>
-                Items
+                <PillLabel active={!editing} indicator="inside-mode" reducedMotion={reducedMotion}>
+                  Items
+                </PillLabel>
               </button>
               <button type="button" aria-pressed={editing} onClick={() => setEditing(true)} className={pill(editing)}>
-                Items + {spec.editWord}
+                <PillLabel active={editing} indicator="inside-mode" reducedMotion={reducedMotion}>
+                  Items + {spec.editWord}
+                </PillLabel>
               </button>
             </div>
           )}
@@ -502,53 +496,17 @@ export const InsideView = ({
         )}
         {spec.view === "riceBin" && <RiceBinView inside={inside} onPickItem={onPickItem} />}
 
-        {traySlot ? (
-          createPortal(tray(onClose), traySlot)
-        ) : (
-          <>
-            {spec.view !== "riceBin" && (
-              // Stays put under the open drawer, so focus has somewhere to come back to.
-              <button
-                ref={setTrayButton}
-                type="button"
-                aria-expanded={trayOpen}
-                aria-controls="item-tray-drawer"
-                onClick={() => setTrayOpen(true)}
-                className="absolute bottom-4 left-4 z-20 flex h-11 items-center gap-2 rounded-full border-[1.5px] border-border bg-card px-4 text-sm font-semibold shadow-paper transition-colors duration-150 ease-out hover:bg-muted focus-visible:outline-3 focus-visible:outline-ring"
-              >
-                <TrayIcon size={18} weight="bold" aria-hidden />
-                Item tray{trayCount > 0 ? ` · ${trayCount}` : ""}
-              </button>
-            )}
-            <AnimatePresence>
-              {trayOpen && (
-                <motion.div
-                  key="tray"
-                  id="item-tray-drawer"
-                  ref={focusOnOpen}
-                  tabIndex={-1}
-                  role="region"
-                  aria-label="Item tray"
-                  onKeyDown={(event) => {
-                    // Shuts only the drawer; without this, Escape reaches the page and leaves the whole piece.
-                    if (event.key !== "Escape") return;
-                    event.stopPropagation();
-                    closeTray();
-                  }}
-                  initial={reducedMotion ? { opacity: 0 } : { y: "100%" }}
-                  animate={reducedMotion ? { opacity: 1 } : { y: 0 }}
-                  // DESIGN.md section 10: exits a bit faster than enters.
-                  exit={reducedMotion ? { opacity: 0 } : { y: "100%", transition: { duration: 0.2, ease: "easeIn" } }}
-                  transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
-                  // Half the view, so the shelves stay in sight above it while you drag; items dragged out of the 3D fridge drop here too.
-                  data-tray-drop
-                  className="absolute inset-x-0 bottom-0 z-30 h-[48%] rounded-t-[24px] border-t-[1.5px] border-border bg-card p-4 shadow-paper outline-2 -outline-offset-4 outline-transparent outline-dashed transition-[outline-color] duration-150 data-[drop-over]:outline-sage-deep"
-                >
-                  {tray(closeTray)}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </>
+        {/* The inventory hotbar: everything that can go on these shelves, dragged straight from its slots. */}
+        {spec.view !== "riceBin" && (
+          <InsideTray
+            pieceName={location.name}
+            waiting={waiting}
+            elsewhere={elsewhere}
+            here={here}
+            loose={loose}
+            onPut={(item) => onPickItem(item.productId, `${location.id}-${item.productId}`)}
+            onPickItem={(item) => onPickItem(item.productId, item.key)}
+          />
         )}
 
         <DragOverlay dropAnimation={reducedMotion ? null : undefined}>

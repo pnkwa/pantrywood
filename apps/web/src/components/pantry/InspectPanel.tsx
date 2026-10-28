@@ -19,7 +19,7 @@ import { ItemPanel } from "./ItemPanel";
 import { ItemSpot } from "@/components/inside/ItemSpot";
 import { storageKindFor } from "@/lib/room/layout";
 import { StoragePanel } from "./StoragePanel";
-import { useTraySlot } from "@/lib/inside/tray-slot";
+import { useInsideNavigation } from "@/lib/inside/navigation";
 import { ItemListPanel } from "./ItemListPanel";
 import { ListBulletsIcon } from "@phosphor-icons/react";
 
@@ -153,11 +153,10 @@ export const InspectPanelContent = ({
   const selectStorage = useUiStore((state) => state.selectStorage);
   const selectItem = useUiStore((state) => state.selectItem);
   const clearSelection = useUiStore((state) => state.clearSelection);
-  const openInside = useUiStore((state) => state.openInside);
+  const { openInside, closeInside } = useInsideNavigation();
   const view = useUiStore((state) => state.view);
   const insideLocationId = useUiStore((state) => state.insideLocationId);
   const showToast = useUiStore((state) => state.showToast);
-  const offerTraySlot = useTraySlot((state) => state.offer);
   const itemListOpen = useUiStore((state) => state.itemListOpen);
   const stockAction = useStockAction();
   const [navigation, setNavigation] = useState<{
@@ -178,6 +177,8 @@ export const InspectPanelContent = ({
         )
       : undefined;
 
+  // Open inside the piece, the panel always shows something of it: an item's ✕ goes back to its list, the list's ✕ leaves.
+  const insideThis = view !== "room" && insideLocationId === location?.id;
   const content = (() => {
     if (!location && itemListOpen) return { key: "items", node: <ItemListPanel pantry={pantry} /> };
     if (!location) {
@@ -197,19 +198,15 @@ export const InspectPanelContent = ({
               .filter((place) => place.id !== item.locationId)
               .map((place) => ({ id: place.id, name: place.name }))}
             spot={
-              view !== "room" && insideLocationId === location.id ? (
+              insideThis ? (
                 <ItemSpot item={item} location={location} kind={kindFor(storages, location)} />
               ) : undefined
             }
             onBack={() => selectStorage(location.id)}
-            onClose={clearSelection}
+            onClose={insideThis ? () => selectStorage(location.id) : clearSelection}
           />
         ),
       };
-    }
-    // Inside the piece: the panel is the spot the inside view draws its item tray into.
-    if (view !== "room" && insideLocationId === location.id) {
-      return { key: `tray-${location.id}`, node: <div ref={(slot) => (slot ? offerTraySlot(slot) : undefined)} className="flex h-full min-h-0 flex-col" /> };
     }
     const lowItems = location.items.filter((candidate) => candidate.isRunningLow);
     return {
@@ -219,11 +216,11 @@ export const InspectPanelContent = ({
           location={location}
           storageKind={kindFor(storages, location)}
           busy={stockAction.isPending}
-          onClose={clearSelection}
+          onClose={insideThis ? closeInside : clearSelection}
           onPickItem={(productId, itemKey) =>
             selectItem(location.id, productId, itemKey)
           }
-          onOpenInside={view !== "room" && insideLocationId === location.id ? undefined : () => openInside(location.id)}
+          onOpenInside={insideThis ? undefined : () => openInside(location.id)}
           onAddLowToShoppingList={() =>
             stockAction.mutate(
               {

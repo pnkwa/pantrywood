@@ -4,24 +4,26 @@ import { STORAGE_FRONTS } from "@/lib/storage/dimensions";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Line } from "@react-three/drei";
-import type { Group } from "three";
+import { BufferGeometry, DoubleSide, Float32BufferAttribute, type Group } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { Matte } from "../materials";
 import { BarHandle, Brass, KIT } from "../kit";
+import { ginghamTexture } from "../textures";
+import { FridgeBasket } from "./FridgeBasket";
 import type { StoragePalette } from "../types";
 
 // Shared with the inside view, so the piece keeps its proportions there.
 export const WIDTH = STORAGE_FRONTS.fridge.width;
 export const HEIGHT = STORAGE_FRONTS.fridge.height;
 export const CENTER_Y = 2.35;
-const CORNER_RADIUS = 0.3;
+export const CORNER_RADIUS = 0.3;
 const SMOOTHNESS = 5;
 export const BACK_Z = -0.9;
 const FRONT_Z = 0.9;
 export const SEAM_Z = 0.6;
 const DOOR_DEPTH = FRONT_Z - SEAM_Z;
-export const DEFAULT_PALETTE: StoragePalette = { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" };
+export const DEFAULT_PALETTE: StoragePalette = { body: "#EFDCB6", trim: "#B8976A", accent: "#E2CA9C" };
 const SEAM_LINE_PIXELS = 1.5;
 const SEAM_CORNER_STEPS = 8;
 export const HINGE_X = -WIDTH / 2;
@@ -40,7 +42,7 @@ const SPRING_SUBSTEPS = 4;
  * One rounded fridge shell cut flat at the seam: the body keeps the back, the door keeps the
  * front. Only the outside edges are rounded, so the two meet flush at the same height.
  */
-const cutShell = (keep: "back" | "front") => {
+export const cutShell = (keep: "back" | "front") => {
   const geometry = new RoundedBoxGeometry(
     WIDTH,
     HEIGHT,
@@ -94,6 +96,100 @@ const seamOutline = (): [number, number, number][] => {
   const first = points[0];
   return first ? [...points, first] : points;
 };
+
+const CLOTH_LIFT = 0.012;
+const CLOTH_THICKNESS = 0.045;
+const CLOTH_CHECK = 0.3;
+const CLOTH_DROPS = { left: 0.85, right: 0.55 };
+const CLOTH_ARC_STEPS = 10;
+
+/** The cloth's cross-section `lift` out from the shell: across the top, round both corners and down each side. */
+const clothProfile = (lift: number): [number, number][] => {
+  const halfWidth = WIDTH / 2 + lift;
+  const top = CENTER_Y + HEIGHT / 2 + lift;
+  const radius = CORNER_RADIUS + lift;
+  const arc = (centerX: number, from: number, to: number) =>
+    Array.from({ length: CLOTH_ARC_STEPS + 1 }, (_, step): [number, number] => {
+      const angle = from + ((to - from) * step) / CLOTH_ARC_STEPS;
+      return [centerX + Math.cos(angle) * radius, top - radius + Math.sin(angle) * radius];
+    });
+  const hemY = CENTER_Y + HEIGHT / 2 - CORNER_RADIUS;
+  return [
+    [-halfWidth, hemY - CLOTH_DROPS.left],
+    ...arc(-WIDTH / 2 + CORNER_RADIUS, Math.PI, Math.PI / 2),
+    ...arc(WIDTH / 2 - CORNER_RADIUS, Math.PI / 2, 0),
+    [halfWidth, hemY - CLOTH_DROPS.right],
+  ];
+};
+
+/**
+ * A thick sky-gingham cloth over the body's top, curving round the rounded corners and hanging down each side (a little
+ * longer on the left, as if just thrown on). It stays behind the seam, so the door still swings free in the room.
+ */
+const clothGeometry = () => {
+  const layers = [clothProfile(CLOTH_LIFT + CLOTH_THICKNESS), clothProfile(CLOTH_LIFT)];
+  const [backZ, frontZ] = [BACK_Z + CORNER_RADIUS, SEAM_Z - 0.02];
+  const count = layers[0]?.length ?? 0;
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  layers.forEach((profile) => {
+    let along = 0;
+    profile.forEach(([x, y], index) => {
+      const previous = profile[index - 1];
+      if (previous) along += Math.hypot(x - previous[0], y - previous[1]);
+      positions.push(x, y, backZ, x, y, frontZ);
+      uvs.push(along / CLOTH_CHECK, backZ / CLOTH_CHECK, along / CLOTH_CHECK, frontZ / CLOTH_CHECK);
+    });
+  });
+  // The edges get their own copy of the vertices, so their normals don't bend the faces' shading at the rim.
+  const edgeStart = positions.length / 3;
+  positions.push(...positions);
+  uvs.push(...uvs);
+  // Vertex `layer * count * 2 + point * 2 + side`: layer 0 outside, 1 against the shell; side 0 back, 1 front.
+  const vertex = (layer: number, point: number, side: number) => layer * count * 2 + point * 2 + side;
+  const edge = (layer: number, point: number, side: number) => edgeStart + vertex(layer, point, side);
+  const quad = (a: number, b: number, c: number, d: number) => [a, b, c, b, d, c];
+  const indices: number[] = [];
+  for (let point = 0; point < count - 1; point++) {
+    for (const layer of [0, 1]) indices.push(...quad(vertex(layer, point, 0), vertex(layer, point, 1), vertex(layer, point + 1, 0), vertex(layer, point + 1, 1)));
+    for (const side of [0, 1]) indices.push(...quad(edge(0, point, side), edge(1, point, side), edge(0, point + 1, side), edge(1, point + 1, side)));
+  }
+  for (const point of [0, count - 1]) indices.push(...quad(edge(0, point, 0), edge(0, point, 1), edge(1, point, 0), edge(1, point, 1)));
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+};
+
+const FridgeCloth = () => {
+  const geometry = useMemo(() => clothGeometry(), []);
+  const texture = useMemo(() => ginghamTexture(1, 1), []);
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      texture.dispose();
+    },
+    [geometry, texture],
+  );
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial map={texture} roughness={1} side={DoubleSide} />
+    </mesh>
+  );
+};
+
+/** On the cloth, set back from the front so it stays clear of the door. */
+const BASKET_AT: [number, number, number] = [0.35, CENTER_Y + HEIGHT / 2 + CLOTH_LIFT + CLOTH_THICKNESS, -0.05];
+
+/** What sits on the fridge's top: the gingham cloth and a picnic basket on it. */
+export const FridgeTop = () => (
+  <>
+    <FridgeCloth />
+    <FridgeBasket position={BASKET_AT} turn={-0.25} />
+  </>
+);
 
 const useDoorSwing = (open: boolean) => {
   const hingeRef = useRef<Group>(null);
@@ -254,6 +350,7 @@ export const Fridge = ({
       >
         <Matte color={palette.body} />
       </mesh>
+      <FridgeTop />
       <Interior seam={palette.accent} />
       <group ref={hingeRef} position={[HINGE_X, 0, SEAM_Z]}>
         <group position={[-HINGE_X, 0, 0]}>

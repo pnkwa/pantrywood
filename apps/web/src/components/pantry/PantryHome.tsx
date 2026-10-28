@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
+import { TrayIcon } from "@phosphor-icons/react";
 import { PANEL_SPRING } from "@/lib/motion";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { OPEN_SCAN } from "@/lib/page-transitions";
@@ -22,6 +23,7 @@ import { useRoom } from "@/lib/room/use-room";
 import { useHardwareScanner } from "@/lib/scan/hardware-scanner";
 import { useScanStore } from "@/lib/store/scan-store";
 import { useUiStore } from "@/lib/store/ui-store";
+import { useInsideNavigation } from "@/lib/inside/navigation";
 import { BottomSheet } from "./BottomSheet";
 import { InspectPanelContent } from "./InspectPanel";
 import { MobileNav } from "./MobileNav";
@@ -61,8 +63,7 @@ export const PantryHome = () => {
   const selectItem = useUiStore((state) => state.selectItem);
   const clearSelection = useUiStore((state) => state.clearSelection);
   const insideLocationId = useUiStore((state) => state.insideLocationId);
-  const openInside = useUiStore((state) => state.openInside);
-  const closeInside = useUiStore((state) => state.closeInside);
+  const { openInside, closeInside } = useInsideNavigation();
 
   const fridge = storages.find((storage) => storage.kind === "fridge");
   // On phones the inside view already shows the piece; the sheet comes back when an item is tapped.
@@ -89,6 +90,8 @@ export const PantryHome = () => {
         else ui.setDecorating(false);
       } else if (ui.decorPiece) ui.selectDecorPiece(null);
       else if (ui.view === "room") clearSelection();
+      // Inside a piece, Escape first puts the item inspector away, then leaves the piece.
+      else if (ui.selection?.type === "item") ui.selectStorage(ui.selection.locationId);
       else closeInside();
     };
     window.addEventListener("keydown", handleEscape);
@@ -159,6 +162,7 @@ export const PantryHome = () => {
           />
           </motion.div>
           <AnimatePresence initial={false}>
+          {/* Inside a piece it shows the picked item, or with nothing picked the list of what's in the piece. */}
           {!decorating && (
           <motion.aside
             key="panel"
@@ -167,8 +171,17 @@ export const PantryHome = () => {
             exit={{ opacity: 0, x: reducedMotion ? 0 : 24, transition: { duration: 0.15 } }}
             transition={reducedMotion ? { duration: 0.15 } : PANEL_SPRING}
             aria-label={boardOpen ? "Pegboard" : `${selectedName} details`}
-            className="relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
+            // Whatever it shows, an item dragged out of a 3D inside view can be dropped here to go back in the Item tray.
+            data-tray-drop
+            className="group/tray relative hidden min-h-0 w-[380px] shrink-0 flex-col overflow-hidden rounded-xl border-[1.5px] border-border bg-card p-5 shadow-paper lg:flex"
           >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-2 z-30 flex flex-col items-center justify-center gap-2 rounded-[16px] border-2 border-dashed border-sage-deep bg-card/90 text-sage-deep opacity-0 transition-opacity duration-150 ease-out group-data-[drop-over]/tray:opacity-100"
+            >
+              <TrayIcon size={32} weight="duotone" />
+              <span className="text-sm font-semibold">Drop to put it back in the Item tray</span>
+            </div>
             {boardOpen ? (
               <BoardPanel pantry={pantry} decorate={decorate} />
             ) : (

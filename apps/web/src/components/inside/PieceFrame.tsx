@@ -27,7 +27,7 @@ const RATIOS: Record<Frame, number> = { fridge: 0.62, bookcase: 0.72, dresser: 1
 const BRASS = "#C9A15A";
 
 const DEFAULTS: Record<Frame, StoragePalette> = {
-  fridge: { body: "#F3EADB", trim: "#C9B79A", accent: "#D9CCB0" },
+  fridge: { body: "#EFDCB6", trim: "#B8976A", accent: "#E2CA9C" },
   bookcase: { body: "#C9915F", trim: "#C9915F", accent: "#8A5A38" },
   dresser: { body: "#E9C46E", trim: "#E9C46E", accent: "#C9A27A" },
   cabinet: { body: MINT, trim: "#F1D88E", accent: "#9DBBA5" },

@@ -171,7 +171,7 @@ const accessory = (
 
 export const CATALOG: readonly CatalogItem[] = [
   // Storage furniture. The first of each kind keeps the room's current colors.
-  storage("retro-fridge-cream", "Retro round-top fridge", "retro", "fridge", 120, ["#F3EADB", "#C9B79A", "#D9CCB0"]),
+  storage("retro-fridge-cream", "Retro round-top fridge", "retro", "fridge", 120, ["#EFDCB6", "#B8976A", "#E2CA9C"]),
   storage("retro-fridge-mint", "Retro fridge · mint", "retro", "fridge", 120, ["#C9DDBE", "#9DB98C", "#B2C9A5"]),
   storage("retro-fridge-butter", "Retro fridge · butter", "retro", "fridge", 120, ["#F2D98F", "#C9A54E", "#E3C46E"]),
   storage("slim-white-fridge", "Slim white fridge", "nordic", "fridge", 90, ["#F7F7F4", "#C9C9C2", "#DCDCD6"]),

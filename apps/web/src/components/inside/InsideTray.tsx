@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { ArrowDownIcon, CheckCircleIcon, MapPinIcon, TrayIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowDownIcon, CheckCircleIcon, MapPinIcon } from "@phosphor-icons/react";
 import { UNSORTED } from "@/lib/inside/layout";
 import type { ItemRow } from "@/lib/pantry/put-away";
 import { usePutAway } from "@/components/pantry/PutAwayPicker";
@@ -11,58 +11,79 @@ import type { GrocyPlace, PantryItem } from "@/lib/pantry/model";
 import { StatusBadge } from "./InsideItem";
 import { ItemPicture } from "./ItemPicture";
 
-type TileProps = {
+// The room's chunky wood caps (DESIGN.md section 7): the bar reads as part of the diorama, not a web panel.
+const WOOD = "#B88A5F";
+const WOOD_SIDE = "#8C6440";
+
+/** How much is in a slot, short enough for its corner badge (the full amount is in its label). */
+const countOf = (item: PantryItem) => (Number.isInteger(item.amount) ? String(item.amount) : item.amount.toFixed(1));
+
+type SlotProps = {
   item: PantryItem;
-  /** dnd-kit id: `waiting:<key>` for stock to put away, `tray:<key>` for something already in this piece. */
+  /** dnd-kit id: `waiting:<key>` for stock brought in from outside the piece, `tray:<key>` for this piece's own. */
   dragId: string;
-  waiting: boolean;
-  /** The button alternative to dragging. */
-  action?: ReactNode;
+  /** Waiting to be put away: a honey slot, like a new item in a game inventory. */
+  fresh: boolean;
+  /** Where it is now, for things kept in other storage. */
+  place?: string;
+  /** The button alternative to dragging: an icon, what it does, and the handler. */
+  action: { icon: ReactNode; label: string; onClick: () => void; disabled?: boolean } | null;
 };
 
-/** One thing in the tray, like an inventory slot: drag its picture onto a shelf. */
-const Tile = ({ item, dragId, waiting, action }: TileProps) => {
+/** One inventory slot: drag its picture onto a shelf, or use its corner button. */
+const Slot = ({ item, dragId, fresh, place, action }: SlotProps) => {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: dragId,
     // Brought in from outside the piece (waiting, or kept elsewhere) is moved in Grocy when it lands.
     data: { type: dragId.startsWith("waiting:") ? "waiting" : "tray", key: item.key },
   });
+  const label = `${item.name}, ${formatAmount(item)}${place ? `, in the ${place}` : ""}`;
   return (
-    <li
-      className={`group flex min-w-0 flex-col items-center gap-1.5 rounded-[18px] border-[1.5px] p-2 pb-2.5 transition-[opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 hover:shadow-paper motion-reduce:hover:translate-y-0 ${
-        waiting ? "border-honey bg-status-soon/50" : "border-border bg-[#FFFDF8] dark:bg-card"
-      } ${isDragging ? "opacity-35" : ""}`}
-    >
+    <li className={`relative shrink-0 transition-opacity duration-150 ${isDragging ? "opacity-35" : ""}`}>
       <span
         ref={setNodeRef}
         {...attributes}
         {...listeners}
         aria-roledescription="draggable item"
-        aria-label={`Drag ${item.name} onto a shelf`}
-        className="relative flex h-20 w-full cursor-grab touch-none items-end justify-center rounded-[14px] bg-[radial-gradient(ellipse_at_50%_88%,rgba(74,59,46,0.12)_0_28%,transparent_30%)] focus-visible:outline-3 focus-visible:outline-ring active:cursor-grabbing"
+        aria-label={`Drag ${label} onto a shelf`}
+        title={label}
+        className={`group relative flex size-[84px] cursor-grab touch-none items-end justify-center rounded-[18px] p-2 pb-2.5 shadow-[inset_0_3px_0_rgba(74,59,46,0.14)] transition-transform duration-150 ease-out hover:-translate-y-0.5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring active:cursor-grabbing motion-reduce:hover:translate-y-0 ${
+          fresh ? "bg-status-soon ring-2 ring-honey" : "bg-[#FFF8EC] dark:bg-card"
+        }`}
       >
-        <span className="relative flex h-[88%] items-end transition-transform duration-150 ease-out group-hover:-rotate-3 motion-reduce:group-hover:rotate-0">
+        <span className="relative flex h-full items-end transition-transform duration-150 ease-out group-hover:-rotate-3 motion-reduce:group-hover:rotate-0">
           <ItemPicture item={item} sticker className="h-full w-auto max-w-full" />
           <StatusBadge item={item} />
         </span>
+        <span aria-hidden className="tabular absolute top-1 left-1.5 rounded-full bg-[#4A3B2E]/80 px-1.5 text-[11px] leading-[18px] font-semibold text-[#FFF8EC]">
+          {countOf(item)}
+        </span>
       </span>
-      <span className="w-full truncate text-center text-[13px] leading-tight font-semibold">{item.name}</span>
-      <span className="tabular -mt-1 text-xs text-muted-foreground">{formatAmount(item)}</span>
-      {action}
+      {action && (
+        // A 44 px target around a smaller round button, overlapping the slot's corner like a game action key.
+        <button
+          type="button"
+          disabled={action.disabled}
+          onClick={action.onClick}
+          aria-label={`${action.label}: ${item.name}`}
+          title={action.label}
+          className="absolute -right-2.5 -bottom-2.5 flex size-11 items-center justify-center rounded-full focus-visible:outline-3 focus-visible:outline-ring disabled:opacity-60"
+        >
+          <span className="flex size-8 items-center justify-center rounded-full border-2 border-[#FFF8EC] bg-sage-deep text-primary-foreground shadow-paper transition-transform duration-150 ease-out hover:scale-110 motion-reduce:hover:scale-100">
+            {action.icon}
+          </span>
+        </button>
+      )}
     </li>
   );
 };
 
-const smallButton =
-  "flex h-11 w-full items-center justify-center gap-1 rounded-full text-xs font-semibold transition-colors duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-60";
-
-const Group = ({ title, icon, count, children }: { title: string; icon?: ReactNode; count: number; children: ReactNode }) => (
-  <section aria-label={title} className="flex flex-col gap-2">
-    <h3 className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-      {icon}
+const Group = ({ title, count, children }: { title: string; count: number; children: ReactNode }) => (
+  <section aria-label={`${title}, ${count}`} className="flex shrink-0 flex-col gap-1.5">
+    <h3 className="w-fit rounded-full bg-[#FFF8EC] px-2.5 py-0.5 text-[11px] font-semibold text-[#4A3B2E]">
       {title} · {count}
     </h3>
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">{children}</ul>
+    <ul className="flex gap-3 pr-2.5 pb-2.5">{children}</ul>
   </section>
 );
 
@@ -77,108 +98,60 @@ type InsideTrayProps = {
   elsewhere: readonly ItemRow<PantryItem>[];
   onPut: (item: PantryItem) => void;
   onPickItem: (item: PantryItem) => void;
-  onClose: () => void;
-  /** What ✕ does: leaves the piece from the side panel, only shuts the drawer on phones. */
-  closeLabel: string;
 };
 
-/** The side panel while a piece is open: an inventory of things to drag onto its shelves. */
-export const InsideTray = ({ pieceName, waiting, here, loose, elsewhere, onPut, onPickItem, onClose, closeLabel }: InsideTrayProps) => {
+/**
+ * The open piece's inventory hotbar, like a cozy decorating game: everything that can go on its shelves, in slots
+ * you drag from. Dropping an item from a shelf back on it takes it off its shelf.
+ */
+export const InsideTray = ({ pieceName, waiting, here, loose, elsewhere, onPut, onPickItem }: InsideTrayProps) => {
   const { putIn, busy } = usePutAway();
-  // The whole tray takes things back off their shelves: "Not on a shelf", still kept in this piece.
   const { setNodeRef, isOver } = useDroppable({ id: UNSORTED, data: { type: "section" } });
-  const toPlace = waiting.length + loose.length;
+  const moveHere = (item: PantryItem, label: string) =>
+    here ? { icon: <ArrowDownIcon size={15} weight="bold" aria-hidden />, label, disabled: busy, onClick: () => putIn(item, here, () => onPut(item)) } : null;
   return (
     <div
       ref={setNodeRef}
-      className={`flex h-full min-h-0 flex-col gap-3 rounded-[18px] outline-2 outline-offset-4 transition-[outline-color] duration-150 ease-out ${
+      role="region"
+      aria-label="Item tray"
+      // Items dragged out of the 3D view drop here too (see `trayAt`).
+      data-tray-drop
+      style={{ background: WOOD, boxShadow: `0 5px 0 ${WOOD_SIDE}, 0 14px 24px -12px rgba(74,59,46,0.45)` }}
+      className={`relative shrink-0 rounded-[22px] px-3 pt-2.5 outline-3 outline-offset-3 transition-[outline-color] duration-150 ease-out data-[drop-over]:outline-dashed data-[drop-over]:outline-sage-deep ${
         isOver ? "outline-dashed outline-sage-deep" : "outline-transparent"
       }`}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-1">
-          <h2 className="text-[22px]">Item tray</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {toPlace > 0 ? `Drag things onto the ${pieceName}'s shelves, or back here` : "Nothing left to place"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={closeLabel}
-          className="flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          <XIcon size={18} weight="bold" aria-hidden />
-        </button>
-      </div>
-      <div className="flex min-h-0 flex-col gap-4 overflow-y-auto pb-1">
+      <div className="flex gap-5 overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
         {waiting.length > 0 && (
-          <Group title="To put away" count={waiting.length} icon={<TrayIcon size={14} weight="bold" aria-hidden className="text-status-soon-foreground" />}>
+          <Group title="To put away" count={waiting.length}>
             {waiting.map((item) => (
-              <Tile
-                key={item.key}
-                item={item}
-                dragId={`waiting:${item.key}`}
-                waiting
-                action={
-                  here && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => putIn(item, here, () => onPut(item))}
-                      aria-label={`Put ${item.name} in the ${pieceName}`}
-                      className={`${smallButton} bg-sage-deep text-primary-foreground hover:bg-sage-deep/85`}
-                    >
-                      <ArrowDownIcon size={13} weight="bold" aria-hidden />
-                      Put here
-                    </button>
-                  )
-                }
-              />
+              <Slot key={item.key} item={item} dragId={`waiting:${item.key}`} fresh action={moveHere(item, `Put in the ${pieceName}`)} />
             ))}
           </Group>
         )}
         {loose.length > 0 && (
           <Group title="Not on a shelf" count={loose.length}>
             {loose.map((item) => (
-              <Tile
+              <Slot
                 key={item.key}
                 item={item}
                 dragId={`tray:${item.key}`}
-                waiting={false}
-                action={
-                  <button type="button" onClick={() => onPickItem(item)} className={`${smallButton} border-[1.5px] border-border bg-card hover:bg-muted/40`}>
-                    Choose a spot
-                  </button>
-                }
+                fresh={false}
+                action={{ icon: <MapPinIcon size={15} weight="bold" aria-hidden />, label: "Choose a spot", onClick: () => onPickItem(item) }}
               />
             ))}
           </Group>
         )}
-        {toPlace === 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-[18px] border-[1.5px] border-dashed border-border px-4 py-8 text-center">
-            <CheckCircleIcon size={32} weight="duotone" aria-hidden className="text-status-fresh-foreground" />
-            <p className="font-semibold">All put away</p>
-            <p className="text-sm text-muted-foreground">
-              New things you scan or read from a receipt show up here. Drag things on the shelves to move them.
-            </p>
-          </div>
+        {waiting.length + loose.length === 0 && (
+          <p className="flex shrink-0 items-center gap-2 self-center rounded-full bg-[#FFF8EC] px-3.5 py-2 text-sm font-semibold text-[#4A3B2E]">
+            <CheckCircleIcon size={18} weight="duotone" aria-hidden className="text-status-fresh-foreground" />
+            All put away
+          </p>
         )}
         {elsewhere.length > 0 && (
-          <Group title="In other storage · drag to move here" count={elsewhere.length}>
+          <Group title="In other storage" count={elsewhere.length}>
             {elsewhere.map(({ item, place }) => (
-              <Tile
-                key={item.key}
-                item={item}
-                dragId={`waiting:${item.key}`}
-                waiting={false}
-                action={
-                  <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-status-fresh px-2 py-0.5 text-[11px] font-semibold text-status-fresh-foreground">
-                    <MapPinIcon size={11} weight="bold" aria-hidden className="shrink-0" />
-                    <span className="truncate">{place}</span>
-                  </span>
-                }
-              />
+              <Slot key={item.key} item={item} dragId={`waiting:${item.key}`} fresh={false} place={place ?? undefined} action={moveHere(item, `Move to the ${pieceName}`)} />
             ))}
           </Group>
         )}

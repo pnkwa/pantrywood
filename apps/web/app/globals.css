@@ -189,10 +189,15 @@
 /* Two see-through sage bands, across and down: where they cross the check is darker, as in woven gingham. */
 @utility bg-gingham {
   background-color: var(--gingham-base);
+  /* A plain pool in the middle so the open piece isn't fighting the check. */
   background-image:
+    radial-gradient(ellipse 45% 50% at 50% 52%, var(--gingham-base) 35%, transparent 100%),
     linear-gradient(90deg, var(--gingham-check) 50%, transparent 50%),
     linear-gradient(var(--gingham-check) 50%, transparent 50%);
-  background-size: 48px 48px;
+  background-size:
+    100% 100%,
+    48px 48px,
+    48px 48px;
 }
 
 @utility tabular {
