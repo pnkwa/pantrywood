@@ -3,7 +3,7 @@ import type { WallSide } from "@pantrywood/shared";
 import type { FloorSurface, SceneDecor, SceneStorage, StorageKind, WallSurface } from "@/components/scene/types";
 import { catalogItem, STARTER_FLOOR, STARTER_WALLPAPER } from "@/data/catalog";
 import type { Pantry } from "@/lib/pantry/model";
-import { decorKey, isOnFloor, rotationY, storagePlacements, storageSize, wallOf, type RoomContext } from "./decorate";
+import { decorKey, isOnFloor, rotationY, storagePlacements, storageSize, storageWallOf, WALL_PIECE_DEPTH, WALL_PIECE_DROP, wallOf, type RoomContext } from "./decorate";
 import { rectFor, wallCenterY, worldCenter } from "./grid";
 import { sceneItemsFor } from "./items";
 import { placeLocations } from "./layout";
@@ -27,6 +27,19 @@ export const wallPose = (
   wall === "left"
     ? { position: [ON_WALL, height, along], rotationY: Math.PI / 2 }
     : { position: [along, height, ON_WALL], rotationY: 0 };
+
+/** Where a wall-hung storage piece's model goes: its origin dropped below its cells' middle and stood out from the wall. */
+export const wallStoragePose = (
+  kind: StorageKind,
+  wall: WallSide,
+  along: number,
+  middleY: number,
+): Pick<SceneStorage, "position" | "rotationY"> => {
+  const pose = wallPose(wall, along, middleY - (WALL_PIECE_DROP[kind] ?? 0));
+  const out = (WALL_PIECE_DEPTH[kind] ?? 0) - 0.05;
+  const [x, y, z] = pose.position;
+  return { position: wall === "left" ? [x + out, y, z] : [x, y, z + out], rotationY: pose.rotationY };
+};
 
 const wallFor = (itemId: string): WallSurface => {
   const item = catalogItem(itemId) ?? catalogItem(STARTER_WALLPAPER);
@@ -68,14 +81,19 @@ export const useRoom = (pantry: Pantry | null): Room => {
       if (!location || !placement) return [];
       const item = catalogItem(placement.itemId);
       const onFloor = isOnFloor(spot.kind);
-      const [x, z] = worldCenter(rectFor(placement.cell, storageSize(placement, spot.kind), placement.rotation));
+      const rect = rectFor(placement.cell, storageSize(placement, spot.kind), placement.rotation);
+      const [x, z] = worldCenter(rect);
+      const pose = onFloor
+        ? { position: [x, 0, z] satisfies [number, number, number], rotationY: rotationY(placement.rotation) }
+        : wallStoragePose(spot.kind, storageWallOf(placement), x, wallCenterY(rect));
       return [
         {
           locationId: spot.locationId,
           kind: spot.kind,
+          sink: spot.sink,
+          plain: placement.plain ?? false,
           palette: item?.category === "storage" ? item.model.palette : null,
-          position: onFloor ? [x, 0, z] : spot.position,
-          rotationY: onFloor ? rotationY(placement.rotation) : spot.rotationY,
+          ...pose,
           items: sceneItemsFor(location.items),
           shelves: sceneShelvesFor(spot.kind, location, insideLayouts[location.id]),
           tag: {

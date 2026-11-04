@@ -10,7 +10,6 @@ import {
   BarcodeIcon,
   CheckSquareIcon,
   ImageIcon,
-  LeafIcon,
   MinusIcon,
   NoteIcon,
   PlusIcon,
@@ -443,14 +442,13 @@ const AddAndDecorate = ({ decorate }: { decorate: ReturnType<typeof useDecorate>
         <div role="group" aria-label="Board color" className="flex gap-2">
           {BOARDS.map((board) => {
             const look = boardLookFor(board.id);
-            const owned = layout.owned.includes(board.id);
             return (
               <button
                 key={board.id}
                 type="button"
                 aria-pressed={board.id === currentBoard}
-                aria-label={`${board.name}${owned ? "" : `, ${board.price} leaves`}`}
-                title={owned ? board.name : `${board.name} · ${board.price} leaves`}
+                aria-label={board.name}
+                title={board.name}
                 onClick={() => board.id !== currentBoard && decorate.chooseItem(board, null)}
                 className={`size-11 rounded-[12px] transition-[border-color] duration-150 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                   board.id === currentBoard ? "border-[2.5px] border-sage-deep" : "border-[1.5px] border-border"
@@ -467,7 +465,6 @@ const AddAndDecorate = ({ decorate }: { decorate: ReturnType<typeof useDecorate>
         <ul className="flex flex-col gap-1.5">
           {ACCESSORIES.map((item) => {
             const onBoard = pieces.some((piece) => piece.kind === "accessory" && piece.itemId === item.id);
-            const owned = layout.owned.includes(item.id);
             return (
               <li key={item.id}>
                 <button
@@ -476,14 +473,8 @@ const AddAndDecorate = ({ decorate }: { decorate: ReturnType<typeof useDecorate>
                   className="flex min-h-11 w-full items-center justify-between gap-2 rounded-[12px] border-[1.5px] border-border bg-card px-3 text-left text-sm transition-colors duration-150 ease-out hover:bg-muted/40 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <span className="font-medium">{item.name}</span>
-                  <span className={`tabular inline-flex items-center gap-1 text-xs font-semibold ${onBoard || owned ? "text-status-fresh-foreground" : "text-muted-foreground"}`}>
-                    {onBoard ? "On board" : owned ? "Owned · hang it" : (
-                      <>
-                        <LeafIcon size={12} weight="duotone" aria-hidden />
-                        {item.price}
-                        <span className="sr-only">leaves</span>
-                      </>
-                    )}
+                  <span className={`text-xs font-semibold ${onBoard ? "text-status-fresh-foreground" : "text-muted-foreground"}`}>
+                    {onBoard ? "On board" : "Hang it"}
                   </span>
                 </button>
               </li>

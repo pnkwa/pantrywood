@@ -1,5 +1,6 @@
 import {
   CanvasTexture,
+  ClampToEdgeWrapping,
   NearestFilter,
   RepeatWrapping,
   SRGBColorSpace,
@@ -77,6 +78,24 @@ export const ginghamTexture = (repeatX: number, repeatY: number, check = "rgba(1
     [repeatX, repeatY],
   );
   texture.magFilter = NearestFilter;
+  return texture;
+};
+
+/** A soft round light patch: warm white in the middle fading to nothing, for glow on the floor and walls. */
+export const glowPatchTexture = (): Texture => {
+  const texture = canvasTexture(
+    64,
+    (context, size) => {
+      const gradient = context.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+      gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+      gradient.addColorStop(0.45, "rgba(255, 255, 255, 0.45)");
+      gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, size, size);
+    },
+    [1, 1],
+  );
+  texture.wrapS = texture.wrapT = ClampToEdgeWrapping;
   return texture;
 };
 

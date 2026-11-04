@@ -27,8 +27,6 @@ import {
   useRememberedMatches,
 } from "@/lib/receipt/store";
 import { useBoardStore } from "@/lib/board/board-store";
-import { LEAVES_PER_RECEIPT } from "@/lib/room/leaves";
-import { useRoomStore } from "@/lib/room/room-store";
 import { useUiStore } from "@/lib/store/ui-store";
 import { AnimatedNumber } from "@/components/pantry/AnimatedNumber";
 import { ReceiptScanHeader } from "./ReceiptScanHeader";
@@ -102,7 +100,6 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
   const stockAction = useStockAction();
   const refreshReceipts = useRefreshReceipts();
   const showToast = useUiStore((state) => state.showToast);
-  const earnLeaves = useRoomStore((state) => state.earn);
 
   const [choices, setChoices] = useState<LineChoice[] | null>(null);
   // The names as shown: one reading per repeated line, your earlier fixes, and anything you edit here.
@@ -362,8 +359,6 @@ export const ReceiptReview = ({ photo, photoUrl, scan, onRetake }: ReceiptReview
     await keepMemory(nowAdded);
     await refreshReceipts();
     showToast(`Added ${nowAdded.size} ${nowAdded.size === 1 ? "item" : "items"} to stock`);
-    earnLeaves(LEAVES_PER_RECEIPT);
-    showToast(`+${LEAVES_PER_RECEIPT} leaves for scanning a receipt`);
     router.push("/receipts", { transitionTypes: NAV_FORWARD });
   };
 

@@ -4,7 +4,6 @@ import { LocationSchema, StockLogEntrySchema, THAI_NAME_USERFIELD } from "@pantr
 import { grocyDelete, grocyFetch, grocyPost, grocyPostFor, grocyPut } from "./client";
 import { isPutAwayName, PUT_AWAY_NAME } from "@/lib/pantry/put-away";
 import { useBoardStore } from "@/lib/board/board-store";
-import { rewardLeaves } from "@/lib/room/leaf-rewards";
 import { grocyKeys } from "./queries";
 
 const SHOPPING_LIST_ID = 1;
@@ -124,7 +123,6 @@ export const useStockAction = () => {
   return useMutation({
     mutationFn: async (action: StockAction) => {
       const result = await runStockAction(action);
-      rewardLeaves(action, result);
       // shortcut: undoing a restock doesn't untick the notes it ticked; track it per transaction if that matters.
       if (action.type === "add") useBoardStore.getState().restocked(action.productId);
       return result.transactionId;

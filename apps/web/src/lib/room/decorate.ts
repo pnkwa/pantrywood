@@ -7,7 +7,6 @@ import {
   storageFootprint,
   type CatalogItem,
   type DecorCatalogItem,
-  type RoomTheme,
   type StorageCatalogItem,
 } from "@/data/catalog";
 import {
@@ -17,13 +16,13 @@ import {
   insideWall,
   rectFor,
   ROOM_CELLS,
+  wallCellNear,
   rotatedSize,
   WALL_ROWS,
   type GridCell,
   type Rect,
   type Size,
 } from "./grid";
-import { ownAll } from "./inventory";
 import type { PlacedLocation } from "./layout";
 
 // Decorate rules over the saved room layout. Storage pieces are bound to Grocy locations;
@@ -37,8 +36,16 @@ export const decorKey = (placementId: string): PieceKey => `decor:${placementId}
 
 type Layer = "floor" | "rug" | "wall";
 
-/** The wall-hung maker shelf isn't on the floor grid, so it can't be moved or rotated. */
-export const isOnFloor = (kind: StorageKind) => kind !== "makerShelf";
+/** The wall shelf and wall cabinet hang on a wall's grid instead of standing on the floor's. */
+export const isOnFloor = (kind: StorageKind) => kind !== "makerShelf" && kind !== "wallCabinet";
+
+/** How far a wall-hung piece's model origin sits below the middle of its wall cells (the cabinet's origin is its bottom). */
+export const WALL_PIECE_DROP: Partial<Record<StorageKind, number>> = { wallCabinet: 0.9 };
+
+/** How far a wall-hung piece's model origin stands out from the wall (half its depth). */
+export const WALL_PIECE_DEPTH: Partial<Record<StorageKind, number>> = { makerShelf: 0.38, wallCabinet: 0.28 };
+
+export const storageWallOf = (placement: StoragePlacement): WallSide => placement.wall ?? "right";
 
 const QUARTER_TURN = Math.PI / 2;
 
@@ -50,6 +57,12 @@ const toRotation = (turns: number): Rotation => {
 };
 
 const defaultPlacement = (location: PlacedLocation): StoragePlacement => {
+  if (!isOnFloor(location.kind)) {
+    // Its slot is a point on the back wall; the wall grid counts columns along x and rows down from the top.
+    const size = storageFootprint(location.kind);
+    const middleY = location.position[1] + (WALL_PIECE_DROP[location.kind] ?? 0);
+    return { locationId: location.locationId, itemId: STARTER_STORAGE[location.kind] ?? null, cell: wallCellNear(location.position[0], middleY, size), rotation: 0 };
+  }
   const rotation = toRotation(location.rotationY / QUARTER_TURN);
   const size = rotatedSize(storageFootprint(location.kind), rotation);
   return {
@@ -118,12 +131,13 @@ const piecesOf = (layout: RoomLayout, storage: readonly StoragePlacement[], kind
   const pieces: Piece[] = [];
   for (const placement of storage) {
     const kind = kinds.get(placement.locationId);
-    if (!kind || !isOnFloor(kind) || placement.stored) continue;
+    if (!kind || placement.stored) continue;
+    const onWall = !isOnFloor(kind);
     pieces.push({
       key: storageKey(placement.locationId),
-      layer: "floor",
+      layer: onWall ? "wall" : "floor",
       rect: rectFor(placement.cell, storageSize(placement, kind), placement.rotation),
-      wall: null,
+      wall: onWall ? storageWallOf(placement) : null,
     });
   }
   for (const placement of layout.decor) {
@@ -178,7 +192,9 @@ export const movePiece = (room: RoomContext, key: PieceKey, cell: GridCell, wall
   if (!canPlace(target, obstaclesFor(room, key, piece.layer, targetWall))) return null;
   if (targetWall && !insideWall(target)) return null;
   return key.startsWith("storage:")
-    ? withStorage(room, (placement) => (storageKey(placement.locationId) === key ? { ...placement, cell } : placement))
+    ? withStorage(room, (placement) =>
+        storageKey(placement.locationId) === key ? { ...placement, cell, ...(targetWall ? { wall: targetWall } : {}) } : placement,
+      )
     : withDecor(room, (placement) =>
         decorKey(placement.id) === key ? { ...placement, cell, ...(targetWall ? { wall: targetWall } : {}) } : placement,
       );
@@ -218,6 +234,16 @@ export const swapChoices = (catalog: readonly CatalogItem[], kind: StorageKind):
 
 export const swapStyle = (room: RoomContext, locationId: number, itemId: string): RoomLayout =>
   withStorage(room, (placement) => (placement.locationId === locationId ? { ...placement, itemId } : placement));
+
+/** Pieces with props to dress them up (cloth, basket, runner, radio), which can also be kept plain. */
+export const hasProps = (kind: StorageKind) => kind === "fridge" || kind === "suppliesCabinet" || kind === "wallCabinet";
+
+/** Dresses a storage piece up with its props, or keeps it plain. */
+export const setPlain = (room: RoomContext, locationId: number, plain: boolean): RoomLayout =>
+  withStorage(room, (placement) =>
+    // Left out when dressed, so saved rooms only carry it for the pieces kept plain.
+    placement.locationId === locationId ? { ...placement, plain: plain || undefined } : placement,
+  );
 
 /** Puts a cosmetic piece back in the owned box. Storage furniture stays: it holds a Grocy location. */
 export const putAway = (layout: RoomLayout, placementId: string): RoomLayout => ({
@@ -305,27 +331,9 @@ export const whereIs = (room: RoomContext, placement: DecorPlacement | undefined
   return wallOf(placement) === "left" ? "leftWall" : "rightWall";
 };
 
-/** Decor can be bought again for another copy; everything else is owned once. */
-export const buy = (layout: RoomLayout, item: CatalogItem): RoomLayout | null =>
-  (item.category !== "decor" && layout.owned.includes(item.id)) || layout.leaves < item.price
-    ? null
-    : { ...layout, leaves: layout.leaves - item.price, owned: [...layout.owned, item.id] };
-
-/** Wallpaper, floor and the matching furniture styles in one go; theme pieces come free with it. */
-export const applyTheme = (room: RoomContext, theme: RoomTheme): RoomLayout => {
-  const themed = withStorage(room, (placement) => {
-    const kind = room.kinds.get(placement.locationId);
-    const themeItem = kind ? theme.storage[kind] : undefined;
-    return themeItem ? { ...placement, itemId: themeItem } : placement;
-  });
-  const themeItems = [theme.wallpaper, theme.floor, ...Object.values(theme.storage)];
-  return {
-    ...themed,
-    wallpaper: theme.wallpaper,
-    floor: theme.floor,
-    owned: ownAll(room.layout.owned, themeItems),
-  };
-};
+/** Takes an item into the box for free: decor gets another copy each time; everything else is kept once. */
+export const own = (layout: RoomLayout, item: CatalogItem): RoomLayout =>
+  item.category !== "decor" && layout.owned.includes(item.id) ? layout : { ...layout, owned: [...layout.owned, item.id] };
 
 /** "In room" when a placed piece, the wallpaper or the floor uses this catalog item. */
 export const isInRoom = (room: RoomContext, itemId: string) =>
@@ -341,12 +349,13 @@ export const pieceInfo = (room: RoomContext, key: string) => {
     const placement = room.storage.find((candidate) => candidate.locationId === locationId);
     const kind = room.kinds.get(locationId);
     if (!placement || !kind) return undefined;
+    const onWall = !isOnFloor(kind);
     return {
       cell: placement.cell,
       size: rotatedSize(storageSize(placement, kind), placement.rotation),
       itemId: placement.itemId,
-      layer: "floor" satisfies Layer,
-      wall: null,
+      layer: (onWall ? "wall" : "floor") satisfies Layer,
+      wall: onWall ? storageWallOf(placement) : null,
     };
   }
   const placement = room.layout.decor.find((candidate) => decorKey(candidate.id) === key);

@@ -6,17 +6,16 @@ import {
   catalogItem,
   STARTER_DECOR,
   STARTER_FLOOR,
-  STARTER_LEAVES,
   STARTER_PEGBOARD,
   STARTER_STORAGE,
   STARTER_WALLPAPER,
 } from "@/data/catalog";
 import { localStorageRepository } from "@/lib/repository/local-storage";
+import { resetArrangement, retireItems } from "./retired-items";
 
 const UNDO_STEPS = 30;
 
 const STARTER_LAYOUT: RoomLayout = {
-  leaves: STARTER_LEAVES,
   owned: [
     ...Object.values(STARTER_STORAGE),
     STARTER_WALLPAPER,
@@ -66,8 +65,8 @@ const MIGRATIONS: ((layout: RoomLayout) => RoomLayout)[] = [
     ),
     owned: [...new Set(layout.owned.flatMap((id) => (id === "sleepy-cat-rug" ? ["butter-oval-rug", "napping-cat"] : [id])))],
   }),
-  // Rooms saved before the mock 1000 leaves get topped up to it.
-  (layout) => ({ ...layout, leaves: Math.max(layout.leaves, STARTER_LEAVES) }),
+  // Was: topping up leaves, which are gone. Kept as a no-op so later step numbers hold.
+  (layout) => layout,
   // The pegboard arrived: it hangs on the left wall and its oat board is owned.
   (layout) => {
     const pegboard = STARTER_LAYOUT.decor.find((placement) => placement.itemId === "pegboard");
@@ -78,6 +77,43 @@ const MIGRATIONS: ((layout: RoomLayout) => RoomLayout)[] = [
       owned: [...new Set([...layout.owned, "pegboard", STARTER_PEGBOARD])],
     };
   },
+  // The catalog kept one retro piece per kind: retired ones become the kept piece.
+  retireItems,
+  // The room became a little retro kitchen: rice and snack pieces are pantry shelves now, and every piece starts in
+  // the new default arrangement.
+  (layout) => resetArrangement(retireItems(layout), STARTER_DECOR),
+  // Rearranged like a cozy kitchen diorama with an island in the middle.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // A second counter with the sink, and the pantry shelf moved to the left wall.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // Narrower counters, so the two stand side by side.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // Both counters moved along, clear of the fridge.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // The sink counter became a storage piece: its decor copy goes.
+  (layout) => resetArrangement(retireItems(layout), STARTER_DECOR),
+  // So did the wall shelf.
+  (layout) => resetArrangement(retireItems(layout), STARTER_DECOR),
+  // A wall cabinet over the counter; the window moved along to make room.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // The wall shelf and wall cabinet can move now, on the wall grid: their old saved spots were floor cells.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // A round table with two chairs in the middle; the supplies cabinet moved to the left wall.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // The chairs became part of the table set.
+  (layout) => resetArrangement(retireItems(layout), STARTER_DECOR),
+  // A rectangular table with stools, which takes fewer cells.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // Back to the round table, now with oak chairs either side.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // Redecorated around one focal point: the table set; frames and veggie basket left in the box.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // The table moved to the middle of the floor, the lamp behind it, and the pantry shelf to the front of the left wall.
+  (layout) => resetArrangement(layout, STARTER_DECOR),
+  // Was: placing the little hedgehog, which has since gone. Kept as a no-op so later step numbers hold.
+  (layout) => layout,
+  // The hedgehog left the room: its placement and copy go, nothing else moves.
+  retireItems,
 ];
 
 const SavedStateSchema = z.object({ layout: RoomLayoutSchema });
@@ -103,8 +139,6 @@ type RoomState = {
   layout: RoomLayout;
   history: RoomLayout[];
   change: (next: RoomLayout) => void;
-  /** Adds (or, when negative, takes back) earned leaves. Not a Decorate step, so Undo never touches it. */
-  earn: (leaves: number) => void;
   undo: () => void;
 };
 
@@ -115,12 +149,6 @@ export const useRoomStore = create<RoomState>()(
       history: [],
       change: (next) =>
         set((state) => ({ layout: next, history: [...state.history, state.layout].slice(-UNDO_STEPS) })),
-      earn: (leaves) =>
-        set((state) => {
-          const withEarned = (layout: RoomLayout) => ({ ...layout, leaves: Math.max(0, layout.leaves + leaves) });
-          // The undo steps get the leaves too, so undoing a purchase never loses what was earned since.
-          return { layout: withEarned(state.layout), history: state.history.map(withEarned) };
-        }),
       undo: () =>
         set((state) => {
           const previous = state.history.at(-1);

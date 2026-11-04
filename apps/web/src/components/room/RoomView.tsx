@@ -31,6 +31,8 @@ import {
   PushPinIcon,
   TrayIcon,
   ListBulletsIcon,
+  LightbulbIcon,
+  MoonIcon,
 } from "@phosphor-icons/react";
 import type { CameraApi, CameraFocus, PanDirection } from "@/components/scene/CameraRig";
 import { createSceneOverlay, registerIn } from "@/components/scene/overlay";
@@ -45,7 +47,7 @@ import { pieceInfo } from "@/lib/room/decorate";
 import { tagRank } from "@/lib/room/declutter";
 import { storageKindFor } from "@/lib/room/layout";
 import { cellNear, wallCellNear, wallCenterY, worldCenter, type GridCell } from "@/lib/room/grid";
-import { wallPose, type Room } from "@/lib/room/use-room";
+import { wallPose, wallStoragePose, type Room } from "@/lib/room/use-room";
 import type { WallSide } from "@pantrywood/shared";
 import type { useDecorate } from "@/lib/room/use-decorate";
 import { BoardView } from "@/components/board/BoardView";
@@ -177,6 +179,8 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
   const cameraRef = useRef<CameraApi>(null);
   const [overlay] = useState(createSceneOverlay);
   const selection = useUiStore((state) => state.selection);
+  const lightsOn = useUiStore((state) => state.lightsOn);
+  const toggleLights = useUiStore((state) => state.toggleLights);
   const hoveredLocationId = useUiStore((state) => state.hoveredLocationId);
   const view = useUiStore((state) => state.view);
   const insideLocationId = useUiStore((state) => state.insideLocationId);
@@ -297,7 +301,9 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       : pickedFootprint;
   const sceneStorages = storages.map(
     (storage): SceneStorage =>
-      activeCarry?.key === `storage:${storage.locationId}` ? { ...storage, position: [carryX, 0, carryZ] } : storage,
+      activeCarry?.key === `storage:${storage.locationId}`
+        ? { ...storage, ...(carryWall ? wallStoragePose(storage.kind, carryWall, carryX, carryZ) : { position: [carryX, 0, carryZ] }) }
+        : storage,
   );
   const sceneDecor = room.decor.map(
     (decor): SceneDecor =>
@@ -390,7 +396,6 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       isStorage={decorating && decorPiece.startsWith("storage:")}
       swapOptions={decorating ? decorate.swapOptions(decorPiece) : []}
       currentItemId={piece.itemId}
-      owned={room.context.layout.owned}
       canMove={decorate.canMove(decorPiece)}
       onWall={piece.wall !== null}
       moving={moving}
@@ -400,6 +405,8 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
       onToggleMove={() => setMoving(!moving)}
       onNudge={([deltaX, deltaZ]) => decorate.moveTo(decorPiece, [piece.cell[0] + deltaX, piece.cell[1] + deltaZ])}
       onPutAway={() => requestPutAway(decorPiece)}
+      dressed={decorating ? decorate.dressed(decorPiece) : null}
+      onToggleDressed={() => decorate.toggleDressed(decorPiece)}
       anchorRef={registerIn(overlay.anchors, "toolbar")}
     />
   );
@@ -429,6 +436,8 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
           <div className="absolute inset-0">
             <StorageRoomScene
               storages={sceneStorages}
+              lightsOn={lightsOn}
+              onToggleLights={toggleLights}
               cameraRef={cameraRef}
               overlay={overlay}
               label={description}
@@ -645,6 +654,21 @@ export const RoomView = ({ pantry, storages, loading, error, onSelectStorage, ro
           })}
         </ul>
       </ConfirmDialog>
+
+      {!listView && (
+        <button
+          type="button"
+          aria-pressed={lightsOn}
+          aria-label={lightsOn ? "Switch the lights off" : "Switch the lights on"}
+          title={lightsOn ? "Lights off" : "Lights on"}
+          onClick={toggleLights}
+          className={`absolute top-20 right-5 z-30 flex size-11 items-center justify-center rounded-full border-[1.5px] border-border shadow-paper transition-colors duration-200 ease-out focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            lightsOn ? "bg-card text-status-soon-foreground hover:bg-muted" : "bg-[#2E3550] text-[#DCE6FF] hover:bg-[#3A4364]"
+          } ${decorating ? "invisible opacity-0" : ""}`}
+        >
+          {lightsOn ? <LightbulbIcon size={20} weight="duotone" aria-hidden /> : <MoonIcon size={20} weight="duotone" aria-hidden />}
+        </button>
+      )}
 
       <Link
         href="/scan"

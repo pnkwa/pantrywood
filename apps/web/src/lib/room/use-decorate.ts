@@ -1,15 +1,15 @@
 import type { RoomLayout, WallSide } from "@pantrywood/shared";
-import type { AccessoryCatalogItem, CatalogItem, RoomTheme, StorageCatalogItem } from "@/data/catalog";
+import type { AccessoryCatalogItem, CatalogItem, StorageCatalogItem } from "@/data/catalog";
 import { useCreateLocation } from "@/lib/grocy/actions";
 import { useBoardStore } from "@/lib/board/board-store";
 import { CATALOG, catalogItem } from "@/data/catalog";
 import { useUiStore } from "@/lib/store/ui-store";
 import {
-  applyTheme,
-  buy,
+  hasProps,
+  own,
+  setPlain,
   clearRoom,
   decorKey,
-  isOnFloor,
   movePiece,
   placeDecor,
   placeNewStorage,
@@ -54,7 +54,7 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
   const showToast = useUiStore((state) => state.showToast);
   const selectDecorPiece = useUiStore((state) => state.selectDecorPiece);
   const setMoving = useUiStore((state) => state.setMoving);
-  const askToBuy = useUiStore((state) => state.askToBuy);
+  const askToAddStorage = useUiStore((state) => state.askToAddStorage);
   const createLocation = useCreateLocation();
   const { layout } = room;
 
@@ -64,19 +64,11 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
     return next !== null;
   };
 
-  /** Uses an item: straight away when it's owned, otherwise once the Buy dialog is confirmed. */
+  /** Uses an item, taking it into the box first (free) when there's no copy in hand. */
   const withOwned = (item: CatalogItem, apply: (owned: RoomLayout) => void) => {
     // Decor needs a copy still in the box; anything else just needs owning once.
     const inHand = item.category === "decor" ? freeCount(layout, item.id) > 0 : layout.owned.includes(item.id);
-    if (inHand) return apply(layout);
-    if (layout.leaves < item.price) {
-      showToast(`${item.name} needs ${item.price - layout.leaves} more leaves`, "error");
-      return;
-    }
-    askToBuy(item, () => {
-      const bought = buy(layout, item);
-      if (bought) apply(bought);
-    });
+    apply(inHand ? layout : own(layout, item));
   };
 
   const pieceKind = (key: string) => {
@@ -94,7 +86,7 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
     },
     canMove: (key: string) => {
       const kind = pieceKind(key);
-      return key.startsWith("decor:") || (kind !== undefined && isOnFloor(kind));
+      return key.startsWith("decor:") || kind !== undefined;
     },
     swap: (key: string, itemId: string) => {
       const locationId = locationOf(key);
@@ -103,6 +95,19 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
       withOwned(item, (owned) => change(swapStyle({ ...room, layout: owned }, locationId, itemId)));
     },
     rotate: (key: string) => isPieceKey(key) && commit(rotatePiece(room, key), "No room to turn it there"),
+    /** Whether a storage piece shows its props; null for pieces that have none. */
+    dressed: (key: string) => {
+      const locationId = locationOf(key);
+      const kind = pieceKind(key);
+      if (locationId === null || !kind || !hasProps(kind)) return null;
+      return !room.storage.find((placement) => placement.locationId === locationId)?.plain;
+    },
+    toggleDressed: (key: string) => {
+      const locationId = locationOf(key);
+      if (locationId === null) return;
+      const plain = room.storage.find((placement) => placement.locationId === locationId)?.plain ?? false;
+      change(setPlain(room, locationId, !plain));
+    },
     fits: (key: string, cell: GridCell, wall?: WallSide) => isPieceKey(key) && movePiece(room, key, cell, wall) !== null,
     moveTo: (key: string, cell: GridCell, wall?: WallSide) =>
       isPieceKey(key) && commit(movePiece(room, key, cell, wall), "Something is already in that spot"),
@@ -175,16 +180,12 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
         showToast("No free spot for another piece. Move or put something away first", "error");
         return;
       }
-      const owned = layout.owned.includes(item.id);
-      if (!owned && layout.leaves < item.price) {
-        showToast(`${item.name} needs ${item.price - layout.leaves} more leaves`, "error");
-        return;
-      }
       const name = newStorageName(kind, locationNames);
-      askToBuy(
+      askToAddStorage(
         item,
+        name,
         async () => {
-          // Grocy first: leaves are only spent once the location exists.
+          // Grocy first: the room only changes once the location exists.
           let locationId: number;
           try {
             locationId = await createLocation.mutateAsync(name);
@@ -193,22 +194,16 @@ export const useDecorate = (room: RoomContext, locationNames: readonly string[])
             return;
           }
           const latest = useRoomStore.getState().layout;
-          const paid = owned ? latest : buy(latest, item);
-          if (!paid) return;
-          const placed = placeNewStorage({ ...room, layout: paid }, locationId, item);
-          change(placed ?? paid);
+          const owned = own(latest, item);
+          const placed = placeNewStorage({ ...room, layout: owned }, locationId, item);
+          change(placed ?? owned);
           if (placed) {
             selectDecorPiece(storageKey(locationId));
             setMoving(true);
           }
           showToast(placed ? `${name} is in hand. Set it down where you like` : `${name} is in your inventory`);
         },
-        name,
       );
-    },
-    applyTheme: (theme: RoomTheme) => {
-      change(applyTheme(room, theme));
-      showToast(`${theme.name} applied`);
     },
   };
 };

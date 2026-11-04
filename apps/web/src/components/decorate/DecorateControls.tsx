@@ -16,6 +16,7 @@ import {
   CheckIcon,
   type Icon,
   PaletteIcon,
+  SparkleIcon,
 } from "@phosphor-icons/react";
 import type { CatalogItem } from "@/data/catalog";
 import type { GridCell } from "@/lib/room/grid";
@@ -95,7 +96,6 @@ type PieceToolbarProps = {
   isStorage: boolean;
   swapOptions: CatalogItem[];
   currentItemId: string | null;
-  owned: readonly string[];
   canMove: boolean;
   /** Wall pieces move up and down instead of back and forward. */
   onWall: boolean;
@@ -106,6 +106,9 @@ type PieceToolbarProps = {
   onToggleMove: () => void;
   onNudge: (delta: GridCell) => void;
   onPutAway: () => void;
+  /** Whether the piece shows its props, or null when it has none to show. */
+  dressed: boolean | null;
+  onToggleDressed: () => void;
   /** The scene writes this element's position each frame so the toolbar follows the piece. */
   anchorRef: (element: HTMLDivElement | null) => void;
 };
@@ -115,7 +118,6 @@ export const PieceToolbar = ({
   isStorage,
   swapOptions,
   currentItemId,
-  owned,
   canMove,
   onWall,
   moving,
@@ -125,6 +127,8 @@ export const PieceToolbar = ({
   onToggleMove,
   onNudge,
   onPutAway,
+  dressed,
+  onToggleDressed,
   anchorRef,
 }: PieceToolbarProps) => {
   const [swapOpen, setSwapOpen] = useState(false);
@@ -197,7 +201,7 @@ export const PieceToolbar = ({
                               <CatalogThumb item={option} />
                               <span className="line-clamp-2 px-1 text-xs leading-tight font-semibold">{option.name}</span>
                               <span className="px-1 text-[11px] font-semibold text-muted-foreground">
-                                {current ? "In room" : owned.includes(option.id) ? "Owned" : `${option.price} leaves`}
+                                {current ? "In room" : "Tap to use"}
                               </span>
                             </button>
                           </li>
@@ -212,6 +216,9 @@ export const PieceToolbar = ({
               <ToolButton label="Move to the other wall" icon={ArrowsLeftRightIcon} onClick={onSwitchWall} />
             ) : (
               <ToolButton label="Rotate" icon={ArrowClockwiseIcon} onClick={onRotate} disabled={!canMove} />
+            )}
+            {dressed !== null && (
+              <ToolButton label={dressed ? "Keep plain" : "Dress up"} icon={SparkleIcon} onClick={onToggleDressed} />
             )}
             <ToolButton label="Move" icon={ArrowsOutCardinalIcon} onClick={onToggleMove} disabled={!canMove} />
             <ToolButton label="Put away" icon={ArchiveIcon} onClick={onPutAway} />

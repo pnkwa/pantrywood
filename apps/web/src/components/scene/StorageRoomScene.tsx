@@ -1,12 +1,15 @@
 "use client";
 
 import { useRef, useState, type PointerEvent, type Ref } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
+import type { AmbientLight, DirectionalLight, HemisphereLight } from "three";
+import { daylightAt } from "@/lib/room/daylight";
 import type { WallSide } from "@pantrywood/shared";
 import { ContactShadows } from "@react-three/drei";
 import { CameraRig, type CameraApi, type CameraFocus } from "./CameraRig";
 import { CLICK_DRAG_TOLERANCE, highlightFor } from "./interaction";
 import type { SceneOverlay } from "./overlay";
+import { DaylightClock, shownDaylight } from "./daylight-clock";
 import { DecorPieces } from "./DecorPieces";
 import { FloorGrid, type Footprint } from "./FloorGrid";
 import { Room } from "./Room";
@@ -15,30 +18,52 @@ import { Storage } from "./Storage";
 import { TagDeclutter } from "./TagDeclutter";
 import type { FloorSurface, SceneDecor, SceneStorage, WallSurface } from "./types";
 
-export const Lights = ({ shadowMapSize }: { shadowMapSize: number }) => (
-  <>
-    <hemisphereLight args={["#FFF3DE", "#D9BC93", 2.3]} />
-    <ambientLight intensity={0.35} color="#FFF8EC" />
-    <directionalLight
-      position={[9, 14, 6]}
-      intensity={1.5}
-      color="#FFE6C2"
-      castShadow
-      shadow-mapSize={[shadowMapSize, shadowMapSize]}
-      shadow-camera-left={-10}
-      shadow-camera-right={10}
-      shadow-camera-top={10}
-      shadow-camera-bottom={-10}
-      shadow-camera-near={1}
-      shadow-camera-far={40}
-      shadow-bias={-0.0004}
-      shadow-normalBias={0.03}
-    />
-  </>
-);
+const NOON = daylightAt(720);
+
+/** Warm hemisphere and fill plus one soft sun. In the room they follow the time of day; thumbnails keep noon. */
+export const Lights = ({ shadowMapSize, followsClock = false }: { shadowMapSize: number; followsClock?: boolean }) => {
+  const light = followsClock ? shownDaylight : NOON;
+  const sky = useRef<HemisphereLight>(null);
+  const fill = useRef<AmbientLight>(null);
+  const sun = useRef<DirectionalLight>(null);
+  useFrame(() => {
+    if (!followsClock) return;
+    if (sky.current) sky.current.intensity = light.skyIntensity;
+    if (fill.current) fill.current.intensity = light.ambientIntensity;
+    if (sun.current) {
+      sun.current.intensity = light.sunIntensity;
+      sun.current.color.set(light.sunColor);
+    }
+  });
+  return (
+    <>
+      {followsClock && <DaylightClock />}
+      <hemisphereLight ref={sky} args={["#FFF3DE", "#D9BC93", light.skyIntensity]} />
+      <ambientLight ref={fill} intensity={light.ambientIntensity} color="#FFF8EC" />
+      <directionalLight
+        ref={sun}
+        position={[9, 14, 6]}
+        intensity={light.sunIntensity}
+        color={light.sunColor}
+        castShadow
+        shadow-mapSize={[shadowMapSize, shadowMapSize]}
+        shadow-camera-left={-10}
+        shadow-camera-right={10}
+        shadow-camera-top={10}
+        shadow-camera-bottom={-10}
+        shadow-camera-near={1}
+        shadow-camera-far={40}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.03}
+      />
+    </>
+  );
+};
 
 type StorageRoomSceneProps = {
   storages: readonly SceneStorage[];
+  lightsOn: boolean;
+  onToggleLights: () => void;
   cameraRef?: Ref<CameraApi>;
   overlay: SceneOverlay;
   label: string;
@@ -80,6 +105,8 @@ type StorageRoomSceneProps = {
 /** Renders on demand rather than every frame, to stay light on phones. */
 export const StorageRoomScene = ({
   storages,
+  lightsOn,
+  onToggleLights,
   cameraRef,
   overlay,
   label,
@@ -155,9 +182,9 @@ export const StorageRoomScene = ({
         panLocked={carrying}
         bottomInset={bottomInset}
       />
-      <Lights shadowMapSize={onTouchDevice ? 1024 : 2048} />
+      <Lights shadowMapSize={onTouchDevice ? 1024 : 2048} followsClock />
       <ShadowFreezer />
-      <Room wall={wall} floor={floor} />
+      <Room wall={wall} floor={floor} lightsOn={lightsOn} onToggleLights={onToggleLights} />
       {storages.map((storage) => (
         <Storage
           key={storage.locationId}

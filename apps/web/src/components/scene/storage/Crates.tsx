@@ -10,7 +10,7 @@ import type { StoragePalette } from "../types";
 const WIDTH = 1.4;
 const HEIGHT = 1.1;
 const DEPTH = 1.3;
-const DEFAULT_PALETTE: StoragePalette = { body: "#C49770", trim: "#C9A27A", accent: "#A47551" };
+const DEFAULT_PALETTE: StoragePalette = { body: "#F3C3CC", trim: "#F7D5DB", accent: "#E2A2AF" };
 const SLAT_HEIGHTS = [0.2, 0.55, 0.9];
 
 const SURFACES: Surface[] = [

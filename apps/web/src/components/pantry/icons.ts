@@ -3,6 +3,7 @@ import {
   BasketIcon,
   BroomIcon,
   CarrotIcon,
+  CoffeeIcon,
   CookieIcon,
   CookingPotIcon,
   DoorIcon,
@@ -33,6 +34,8 @@ export const STORAGE_ICONS: Record<StorageKind, Icon> = {
   riceBin: GrainsIcon,
   suppliesCabinet: ArchiveIcon,
   makerShelf: PrinterIcon,
+  wallCabinet: ArchiveIcon,
+  table: CoffeeIcon,
   basket: BasketIcon,
 };
 

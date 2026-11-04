@@ -4,15 +4,20 @@ import { RoundedBox } from "@react-three/drei";
 import type { ColorRepresentation } from "three";
 import { Matte } from "./materials";
 
-// The miniature-dollhouse art kit (docs/concept.png and the reference sets): every part has soft
-// rounded edges, wood is light oak, paint is pastel, and knobs and handles are small brass pieces.
+// The miniature retro-kitchen art kit: every part has soft rounded edges, the main colours are warm brown wood and
+// sky blue on near-white, with butter yellow, tomato red and leaf green as small accents.
 
 export const KIT = {
-  oak: "#D9B98C",
-  oakDeep: "#B88E62",
-  cream: "#F6EEDF",
-  ceramic: "#FBF7EF",
-  butter: "#F1D88E",
+  oak: "#C9935F",
+  oakDeep: "#9A6A44",
+  cream: "#FFFDF8",
+  ceramic: "#FFFFFF",
+  butter: "#F4D36B",
+  sky: "#9FCDE6",
+  skyDeep: "#78B1D2",
+  skyPale: "#C9E4F2",
+  tomato: "#E0574A",
+  leaf: "#7DB36A",
   mint: "#BFD9C4",
   blush: "#EFC2B8",
   brass: "#C9A15A",
@@ -49,16 +54,16 @@ export const Soft = ({ size, position, rotation, color, radius, shadows = true }
 /** The only part with a little sheen. Mostly non-metal: the room has no environment map, so real metal would render dark. */
 export const Brass = () => <meshStandardMaterial color={KIT.brass} roughness={0.4} metalness={0.15} emissive={KIT.brass} emissiveIntensity={0.12} />;
 
-/** A round brass knob on a short neck, pointing out of the surface along +z. */
-export const Knob = ({ position, size = 0.07 }: { position: Vec3; size?: number }) => (
+/** A round knob on a short neck, pointing out of the surface along +z: brass, or painted when given a `color`. */
+export const Knob = ({ position, size = 0.07, color }: { position: Vec3; size?: number; color?: ColorRepresentation }) => (
   <group position={position}>
     <mesh position={[0, 0, size * 0.5]} rotation={[Math.PI / 2, 0, 0]}>
       <cylinderGeometry args={[size * 0.35, size * 0.45, size, 10]} />
-      <Brass />
+      {color ? <Matte color={color} /> : <Brass />}
     </mesh>
     <mesh position={[0, 0, size * 1.2]} castShadow>
       <sphereGeometry args={[size, 16, 12]} />
-      <Brass />
+      {color ? <Matte color={color} /> : <Brass />}
     </mesh>
   </group>
 );
@@ -100,6 +105,7 @@ export const PanelDoor = ({
   color,
   inset,
   knobAt,
+  knobColor,
 }: {
   position: Vec3;
   width: number;
@@ -108,11 +114,12 @@ export const PanelDoor = ({
   inset: ColorRepresentation;
   /** Knob position on the door face, from its center. */
   knobAt: [x: number, y: number];
+  knobColor?: ColorRepresentation;
 }) => (
   <group position={position}>
     <Soft size={[width, height, 0.08]} color={color} radius={0.035} />
     <Soft size={[width - 0.2, height - 0.2, 0.05]} position={[0, 0, 0.03]} color={inset} radius={0.03} shadows={false} />
-    <Knob position={[knobAt[0], knobAt[1], 0.05]} size={0.055} />
+    <Knob position={[knobAt[0], knobAt[1], 0.05]} size={0.055} color={knobColor} />
   </group>
 );
 

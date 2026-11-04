@@ -8,7 +8,7 @@ export const STORAGE_FRONTS = {
   fridge: { width: 2.2, height: 4.5 },
   pantryShelf: { width: 3, height: 5.08 },
   suppliesCabinet: { width: 2.6, height: 2.6 },
-  counter: { width: 2.4, height: 1.96 },
+  counter: { width: 2, height: 1.96 },
 };
 
 const fronts: Partial<Record<StorageKind, Front>> = STORAGE_FRONTS;

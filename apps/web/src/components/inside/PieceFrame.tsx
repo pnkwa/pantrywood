@@ -17,6 +17,8 @@ const FRAMES: Record<StorageKind, Frame> = {
   suppliesCabinet: "dresser",
   counter: "cabinet",
   makerShelf: "wall",
+  wallCabinet: "dresser",
+  table: "cabinet",
   crates: "bookcase",
   basket: "bookcase",
   riceBin: "bookcase",
@@ -27,9 +29,9 @@ const RATIOS: Record<Frame, number> = { fridge: 0.62, bookcase: 0.72, dresser: 1
 const BRASS = "#C9A15A";
 
 const DEFAULTS: Record<Frame, StoragePalette> = {
-  fridge: { body: "#EFDCB6", trim: "#B8976A", accent: "#E2CA9C" },
-  bookcase: { body: "#C9915F", trim: "#C9915F", accent: "#8A5A38" },
-  dresser: { body: "#E9C46E", trim: "#E9C46E", accent: "#C9A27A" },
+  fridge: { body: "#F8F4EA", trim: "#CFC6B4", accent: "#E6DFD0" },
+  bookcase: { body: "#C9935F", trim: "#C9935F", accent: "#C9935F" },
+  dresser: { body: "#9FCDE6", trim: "#78B1D2", accent: "#FFFDF8" },
   cabinet: { body: MINT, trim: "#F1D88E", accent: "#9DBBA5" },
   wall: { body: OAK, trim: OAK, accent: "#B88E62" },
 };

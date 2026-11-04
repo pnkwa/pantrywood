@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { RoundedBox } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import type { Texture } from "three";
+import { LeafGarland, Toadstools, type Garland } from "./Greenery";
 import { Matte } from "./materials";
 import { floorTexture, wallpaperTexture, wallTileTexture } from "./textures";
 import type { FloorSurface, WallSurface } from "./types";
@@ -12,6 +13,14 @@ const WALL_HEIGHT = 5.8;
 const WALL_THICKNESS = 0.3;
 const WAINSCOT_HEIGHT = 1.9;
 const ROOM_SIZE = 10;
+const CAP_TOP = WALL_HEIGHT + 0.55;
+const CAP_FRONT = -WALL_THICKNESS / 2 + 0.425;
+// A garland heaped over the corner where the walls meet, thinning out along each cap. The left wall is turned a
+// quarter, so in its own space the corner is at +x; the back wall's corner is at -x.
+const GARLANDS: Record<"right" | "left", readonly Garland[]> = {
+  right: [{ from: -5.2, to: -0.8, drapes: 3 }],
+  left: [{ from: 5.2, to: 1.6, drapes: 2 }],
+};
 
 /** Textures live on the GPU, so a swapped wallpaper or floor frees the old one. */
 const useDisposable = (texture: Texture | null) => {
@@ -76,11 +85,58 @@ const Wall = ({ side, surface }: { side: "right" | "left"; surface: WallSurface 
       >
         <Matte color="#B88A5F" />
       </RoundedBox>
+      <LeafGarland garlands={GARLANDS[side]} capTop={CAP_TOP} capFront={CAP_FRONT} seed={isRight ? 11 : 23} />
+      {!isRight && <Toadstools position={[-3.3, CAP_TOP, -WALL_THICKNESS / 2]} />}
     </group>
   );
 };
 
-export const Room = ({ wall, floor }: { wall: WallSurface; floor: FloorSurface }) => {
+/** A retro light switch: a rounded cream plate with a brass toggle, up for on and down for off. Click it to flip. */
+const LightSwitch = ({ on, onToggle }: { on: boolean; onToggle: () => void }) => (
+  <group
+    // On the left wall between the supplies cabinet and the pantry shelf, under the clock.
+    position={[-0.5, 2.7, 0.03]}
+    onClick={(event) => {
+      event.stopPropagation();
+      onToggle();
+    }}
+    onPointerOver={(event) => {
+      event.stopPropagation();
+      document.body.style.cursor = "pointer";
+    }}
+    onPointerOut={() => {
+      document.body.style.cursor = "";
+    }}
+  >
+    <RoundedBox args={[0.3, 0.44, 0.05]} radius={0.04} smoothness={3} castShadow>
+      <Matte color="#FBF3DF" />
+    </RoundedBox>
+    <mesh position={[0, 0, 0.03]}>
+      <circleGeometry args={[0.06, 16]} />
+      <Matte color="#E6D9BE" />
+    </mesh>
+    <mesh position={[0, on ? 0.04 : -0.04, 0.07]} rotation={[on ? -0.6 : 0.6, 0, 0]} castShadow>
+      <capsuleGeometry args={[0.022, 0.1, 4, 8]} />
+      <meshStandardMaterial color="#C9A15A" roughness={0.4} metalness={0.15} />
+    </mesh>
+    {/* A bigger invisible target than the little plate, so it's easy to hit. */}
+    <mesh visible={false}>
+      <planeGeometry args={[0.6, 0.7]} />
+    </mesh>
+  </group>
+);
+
+export const Room = ({
+  wall,
+  floor,
+  lightsOn,
+  onToggleLights,
+}: {
+  wall: WallSurface;
+  floor: FloorSurface;
+  lightsOn: boolean;
+  onToggleLights: () => void;
+}) => {
   const floorMap = useDisposable(useMemo(() => floorTexture(floor), [floor]));
   // On-demand rendering: a new wallpaper or floor must redraw the room.
   const invalidate = useThree((state) => state.invalidate);
@@ -116,6 +172,10 @@ export const Room = ({ wall, floor }: { wall: WallSurface; floor: FloorSurface }
       </mesh>
       <Wall side="right" surface={wall} />
       <Wall side="left" surface={wall} />
+      {/* The left wall is turned a quarter: in its own space x runs back toward the corner. */}
+      <group position={[-5, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <LightSwitch on={lightsOn} onToggle={onToggleLights} />
+      </group>
     </group>
   );
 };

@@ -26,9 +26,9 @@ const SURFACES: Surface[] = BOARD_HEIGHTS.map((boardY) => ({
   rows: 2,
 }));
 
-const DEFAULT_PALETTE: StoragePalette = { body: "#A47551", trim: "#A47551", accent: "#6E4E33" };
+const DEFAULT_PALETTE: StoragePalette = { body: "#C9935F", trim: "#C9935F", accent: "#C9935F" };
 
-/** An open framed shelf: rounded posts to the floor, a lip on each board and a crown on top. */
+/** An open framed shelf all in one warm wood: rounded posts to the floor, a lip on each board and a crown on top. */
 export const PantryShelf = ({
   items,
   palette = DEFAULT_PALETTE,

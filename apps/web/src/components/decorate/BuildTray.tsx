@@ -12,27 +12,21 @@ import {
   type Icon,
   JarIcon,
   LampIcon,
-  LeafIcon,
   PaintRollerIcon,
-  PaletteIcon,
   PlusIcon,
   PushPinIcon,
   SquaresFourIcon,
   StorefrontIcon,
 } from "@phosphor-icons/react";
-import { AnimatedNumber } from "@/components/pantry/AnimatedNumber";
 import { STORAGE_ICONS } from "@/components/pantry/icons";
 import type { SceneStorage } from "@/components/scene/types";
 import {
   CATALOG,
   catalogItem,
-  ROOM_THEMES,
   STARTER_PEGBOARD,
   type CatalogCategory,
   type CatalogItem,
-  type CatalogStyle,
   type DecorCatalogItem,
-  type RoomTheme,
 } from "@/data/catalog";
 import { useBoardStore } from "@/lib/board/board-store";
 import { PANEL_SPRING } from "@/lib/motion";
@@ -43,16 +37,7 @@ import { useUiStore } from "@/lib/store/ui-store";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { CatalogThumb } from "./CatalogThumb";
 
-export const STYLE_CHIPS: Record<CatalogStyle, { label: string; className: string }> = {
-  nordic: { label: "Nordic", className: "bg-[#E1ECEE] text-[#2F4E55]" },
-  natural: { label: "Natural", className: "bg-[#F1E7D4] text-[#5E4A38]" },
-  japandi: { label: "Japandi", className: "bg-[#E3EAD9] text-[#3F5236]" },
-  retro: { label: "Retro", className: "bg-[#F4E0D7] text-[#8A4430]" },
-};
-
-const STYLES: CatalogStyle[] = ["nordic", "natural", "japandi", "retro"];
-
-type Category = CatalogCategory | "themes";
+type Category = CatalogCategory;
 
 type Mode = "shop" | "inventory";
 
@@ -64,7 +49,6 @@ const MODES: { value: Mode; label: string; icon: Icon }[] = [
 const CATEGORIES: { value: Category; label: string; icon: Icon }[] = [
   { value: "decor", label: "Decor", icon: LampIcon },
   { value: "storage", label: "Storage", icon: ArchiveIcon },
-  { value: "themes", label: "Themes", icon: PaletteIcon },
   { value: "wallpaper", label: "Wallpaper", icon: PaintRollerIcon },
   { value: "floor", label: "Floor", icon: SquaresFourIcon },
   { value: "pegboard", label: "Pegboard", icon: PushPinIcon },
@@ -74,7 +58,6 @@ const CATEGORIES: { value: Category; label: string; icon: Icon }[] = [
 const HINTS: Partial<Record<Category, string>> = {
   decor: "Tap to place a copy from your box, or buy another. Then set it down where you like.",
   storage: "Tap one to add another storage spot, a new Grocy location. To restyle a piece, pick it in the room.",
-  themes: "Wallpaper, floor and matching furniture in one tap. Undo brings the old room back.",
 };
 
 const chip = (active: boolean) =>
@@ -140,26 +123,7 @@ const Tile = ({
   );
 };
 
-const Price = ({ price, affordable }: { price: number; affordable: boolean }) => (
-  <span className={`tabular inline-flex items-center gap-0.5 ${affordable ? "text-foreground" : "text-muted-foreground line-through"}`}>
-    <LeafIcon size={12} weight="duotone" aria-hidden />
-    {price}
-    <span className="sr-only">leaves{affordable ? "" : ", not enough yet"}</span>
-  </span>
-);
-
 const Owned = ({ children }: { children: ReactNode }) => <span className="text-status-fresh-foreground">{children}</span>;
-
-const ThemeThumb = ({ theme }: { theme: RoomTheme }) => {
-  const wall = catalogItem(theme.wallpaper);
-  const floor = catalogItem(theme.floor);
-  return (
-    <span aria-hidden className="flex h-19 w-full flex-col overflow-hidden rounded-[14px] border-[1.5px] border-border">
-      <span className="flex-1" style={{ background: wall?.category === "wallpaper" ? wall.material.base : undefined }} />
-      <span className="h-6" style={{ background: floor?.category === "floor" ? floor.material.line : undefined }} />
-    </span>
-  );
-};
 
 type BuildTrayProps = {
   room: RoomContext;
@@ -183,7 +147,6 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
   const pickedStorage = selectedPieceKey?.startsWith("storage:") ? selectedPieceKey : null;
   const [mode, setMode] = useState<Mode>("shop");
   const [category, setCategory] = useState<Category>(pickedStorage ? "storage" : "decor");
-  const [style, setStyle] = useState<CatalogStyle | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [edges, setEdges] = useState({ atStart: true, atEnd: true });
   const stripRef = useRef<HTMLUListElement | null>(null);
@@ -216,7 +179,6 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
     if (pickedStorage) {
       setMode("shop");
       setCategory("storage");
-      setStyle(null);
       setCollapsed(false);
     }
   }
@@ -227,26 +189,20 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
     ? room.storage.find((placement) => storageKey(placement.locationId) === pickedStorage)?.itemId
     : null;
   const showingSwaps = category === "storage" && pickedStorage !== null;
-  const affordable = (item: CatalogItem) => layout.leaves >= item.price;
 
   const shopItems = (showingSwaps ? decorate.swapOptions(pickedStorage) : CATALOG).filter(
-    (item) => item.category === category && (style === null || item.style === style),
+    (item) => item.category === category,
   );
 
   const shopTile = (item: CatalogItem, index: number) => {
     const owned = layout.owned.includes(item.id);
-    let footer: ReactNode = <Price price={item.price} affordable={affordable(item)} />;
+    let footer: ReactNode = null;
     let current = false;
     let count: number | undefined;
     if (item.category === "decor") {
       count = freeCount(layout, item.id);
       const placed = placedCount(layout, item.id);
-      footer = (
-        <>
-          <Price price={item.price} affordable={affordable(item)} />
-          {placed > 0 && <Owned>{placed} in room</Owned>}
-        </>
-      );
+      footer = placed > 0 ? <Owned>{placed} in room</Owned> : null;
     } else if (item.category === "pegboard") {
       const onBoard =
         item.kind === "board"
@@ -254,15 +210,9 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
           : boardPieces.some((piece) => piece.kind === "accessory" && piece.itemId === item.id);
       current = onBoard;
       if (onBoard) footer = <Owned>{item.kind === "board" ? "On the wall" : "On the board"}</Owned>;
-      else if (owned) footer = <Owned>Owned</Owned>;
     } else if (item.category === "storage" && !showingSwaps) {
       const inRoom = room.storage.filter((placement) => placement.itemId === item.id && !placement.stored).length;
-      footer = (
-        <>
-          {owned ? <Owned>Owned</Owned> : <Price price={item.price} affordable={affordable(item)} />}
-          {inRoom > 0 ? <Owned>{inRoom} in room</Owned> : <PlusIcon size={14} weight="bold" aria-hidden />}
-        </>
-      );
+      footer = inRoom > 0 ? <Owned>{inRoom} in room</Owned> : <PlusIcon size={14} weight="bold" aria-hidden />;
     } else if (isInRoom(room, item.id)) {
       current = item.id === currentStorageItem || item.category !== "storage";
       footer = <Owned>In room</Owned>;
@@ -346,18 +296,7 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
   const tiles =
     mode === "inventory"
       ? inventoryTiles
-      : category === "themes"
-        ? ROOM_THEMES.map((theme, index) => (
-            <Tile
-              key={theme.id}
-              index={index}
-              thumb={<ThemeThumb theme={theme} />}
-              name={theme.name}
-              footer={<span className="font-medium text-muted-foreground">{theme.description}</span>}
-              onClick={() => decorate.applyTheme(theme)}
-            />
-          ))
-        : shopItems.map(shopTile);
+      : shopItems.map(shopTile);
 
   const hint =
     mode === "inventory"
@@ -427,11 +366,6 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
           </div>
         )}
 
-        <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-status-fresh px-3 py-1.5 text-sm font-semibold text-status-fresh-foreground">
-          <LeafIcon size={16} weight="duotone" aria-hidden />
-          <AnimatedNumber value={layout.leaves} className="tabular" />
-          <span className="sr-only">leaves</span>
-        </span>
         <button
           type="button"
           aria-expanded={!collapsed}
@@ -454,28 +388,6 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
             className="flex min-h-0 flex-col gap-2"
           >
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {mode === "shop" && category !== "themes" && (
-                <div role="group" aria-label="Filter by style" className="flex gap-1.5 overflow-x-auto">
-                  {[null, ...STYLES].map((option) => {
-                    const selected = option === style;
-                    return (
-                      <button
-                        key={option ?? "all"}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => setStyle(option)}
-                        className={`h-8 shrink-0 rounded-full border-[1.5px] px-3 text-xs font-semibold transition-colors duration-150 ease-out pointer-coarse:h-11 ${
-                          selected
-                            ? "border-foreground bg-foreground text-background"
-                            : `border-transparent ${option ? STYLE_CHIPS[option].className : "bg-muted"} hover:border-border`
-                        }`}
-                      >
-                        {option ? STYLE_CHIPS[option].label : "All styles"}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
               {showingSwaps && (
                 <button
                   type="button"
@@ -491,7 +403,7 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
 
             <div className="relative">
             <ul
-              key={`${mode}-${category}-${style}-${pickedStorage}`}
+              key={`${mode}-${category}-${pickedStorage}`}
               ref={(strip) => {
                 stripRef.current = strip;
                 if (strip) readEdges(strip);
@@ -503,7 +415,7 @@ export const BuildTray = ({ room, decorate, selectedPieceKey, storages, storedAw
                 tiles
               ) : (
                 <li className="w-full rounded-[18px] border-2 border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-                  {mode === "inventory" ? "Your box is empty. Buy decor in the Shop." : "Nothing in this style yet."}
+                  {mode === "inventory" ? "Your box is empty. Buy decor in the Shop." : "Nothing here yet."}
                 </li>
               )}
             </ul>

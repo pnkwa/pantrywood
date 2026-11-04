@@ -5,6 +5,9 @@ const Cell = z.tuple([z.number().int(), z.number().int()]);
 /** Quarter turns clockwise, seen from above. */
 const Rotation = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]);
 
+/** The room's two walls, named as Room.tsx names them: right runs along x, left along z. */
+const WallSide = z.enum(["left", "right"]);
+
 export const StoragePlacementSchema = z.object({
   locationId: z.number(),
   /** Catalog item that dresses this Grocy location; null keeps the built-in look. */
@@ -13,10 +16,12 @@ export const StoragePlacementSchema = z.object({
   rotation: Rotation,
   /** Put away: not drawn in the room, though the Grocy location and its stock are untouched. */
   stored: z.boolean().optional(),
+  /** Wall-hung pieces (wall shelf, wall cabinet) only: which wall. Absent means the back (right) wall. */
+  wall: WallSide.optional(),
+  /** Kept plain: without its cute props (the fridge's cloth and basket, a runner, a radio). Absent means dressed up. */
+  plain: z.boolean().optional(),
 });
 
-/** The room's two walls, named as Room.tsx names them: right runs along x, left along z. */
-const WallSide = z.enum(["left", "right"]);
 
 export const DecorPlacementSchema = z.object({
   id: z.string(),
@@ -29,7 +34,6 @@ export const DecorPlacementSchema = z.object({
 
 /** The decorated storage room. Pantrywood's own data: never stored in Grocy. */
 export const RoomLayoutSchema = z.object({
-  leaves: z.number(),
   owned: z.array(z.string()),
   wallpaper: z.string(),
   /** The pegboard's catalog item, which sets its color. Absent means the starter oat board. */

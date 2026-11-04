@@ -7,6 +7,8 @@ export type StorageKind =
   | "riceBin"
   | "suppliesCabinet"
   | "makerShelf"
+  | "wallCabinet"
+  | "table"
   | "basket";
 
 export type ItemShape =
@@ -81,6 +83,10 @@ export type SceneShelves = {
 export type SceneStorage = {
   locationId: number;
   kind: StorageKind;
+  /** A counter with the sink in its top. */
+  sink?: boolean;
+  /** Without its props (cloth, basket, runner, radio). */
+  plain?: boolean;
   /** null: the model's own colors. */
   palette: StoragePalette | null;
   position: [x: number, y: number, z: number];

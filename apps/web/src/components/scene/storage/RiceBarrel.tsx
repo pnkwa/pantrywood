@@ -9,7 +9,7 @@ const HEIGHT = 1.5;
 const HOOP_HEIGHTS = [0.3, 1.2];
 const STAVE_COUNT = 12;
 
-const DEFAULT_PALETTE: StoragePalette = { body: "#B88A5F", trim: "#8C6A4A", accent: "#5E4430" };
+const DEFAULT_PALETTE: StoragePalette = { body: "#E36A5D", trim: "#F7EFE1", accent: "#B9473C" };
 
 /** A barrel's bulge: narrow at the ends, widest in the middle. */
 const BARREL_PROFILE = Array.from({ length: 13 }, (_, step) => {

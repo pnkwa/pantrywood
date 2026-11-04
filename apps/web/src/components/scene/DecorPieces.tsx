@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import { useThree, type ThreeEvent } from "@react-three/fiber";
+import { useEffect, useRef, type ReactNode } from "react";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { DoubleSide, type PointLight } from "three";
 import { RoundedBox } from "@react-three/drei";
 import { GinghamWindow, OvalRug, Pegboard, PictureFrames, VeggieBasket } from "./Decor";
 import { ToyCat } from "./ToyCat";
 import { CLICK_DRAG_TOLERANCE, type Highlight } from "./interaction";
+import { GlowPatch, shownDaylight, useGlow } from "./daylight-clock";
+import { Brass, KIT } from "./kit";
 import { Matte } from "./materials";
 import type { SceneOverlay } from "./overlay";
 import { ToolbarAnchor } from "./ToolbarAnchor";
@@ -26,7 +29,7 @@ const boxFor = (shape: DecorShape, [width, depth]: [number, number]): [number, n
     case "lantern":
       return [0.8, 1.9, 0.8, 0.95];
     case "mushroomLamp":
-      return [0.85, 1.0, 0.85, 0.5];
+      return [1, 2.3, 1, 1.15];
     case "wallClock":
       return [0.9, 0.9, 0.2, 0];
     case "catBed":
@@ -46,6 +49,62 @@ const boxFor = (shape: DecorShape, [width, depth]: [number, number]): [number, n
     case "pegboard":
       return [3.2, 2.4, 0.15, 0];
   }
+};
+
+const LAMP_SHADE_Y = 1.95;
+const LAMP_LEG_TILT = 0.32;
+
+/**
+ * A retro tripod floor lamp: three splayed wooden legs, a slim brass pole and a flared butter-yellow drum shade with a
+ * cream rim. The shade and bulb glow warm, brightest in the evening, with a soft pool of light at its feet.
+ */
+const MushroomLamp = ({ main, second }: { main: string; second: string }) => {
+  const shade = useGlow(0.25, 0.9);
+  const bulbGlow = useGlow(0.6, 1.6);
+  const bulb = useRef<PointLight>(null);
+  useFrame(() => {
+    if (bulb.current) bulb.current.intensity = shownDaylight.glow * 2.8;
+  });
+  return (
+    <group>
+      {[0, (Math.PI * 2) / 3, (Math.PI * 4) / 3].map((angle) => (
+        <group key={angle} rotation={[0, angle, 0]}>
+          <mesh position={[0, 0.48, 0.15]} rotation={[-LAMP_LEG_TILT, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.025, 0.035, 1.0, 8]} />
+            <Matte color={KIT.oak} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, 1.38, 0]} castShadow>
+        <cylinderGeometry args={[0.02, 0.02, 0.95, 8]} />
+        <Brass />
+      </mesh>
+      <mesh position={[0, 0.95, 0]}>
+        <sphereGeometry args={[0.05, 12, 8]} />
+        <Brass />
+      </mesh>
+      <mesh position={[0, LAMP_SHADE_Y - 0.08, 0]}>
+        <sphereGeometry args={[0.09, 14, 10]} />
+        <meshStandardMaterial ref={bulbGlow} color="#FFF4D6" emissive="#FFE3A8" emissiveIntensity={0.6} roughness={1} />
+      </mesh>
+      <mesh position={[0, LAMP_SHADE_Y, 0]} castShadow>
+        <cylinderGeometry args={[0.26, 0.4, 0.42, 28, 1, true]} />
+        <meshStandardMaterial ref={shade} color={main} emissive={main} emissiveIntensity={0.25} roughness={1} side={DoubleSide} />
+      </mesh>
+      {[LAMP_SHADE_Y + 0.21, LAMP_SHADE_Y - 0.21].map((rimY, index) => (
+        <mesh key={rimY} position={[0, rimY, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[index === 0 ? 0.26 : 0.4, 0.022, 8, 28]} />
+          <Matte color={second} />
+        </mesh>
+      ))}
+      <mesh position={[0.18, LAMP_SHADE_Y - 0.35, 0.1]}>
+        <cylinderGeometry args={[0.006, 0.006, 0.3, 4]} />
+        <Brass />
+      </mesh>
+      <pointLight ref={bulb} position={[0, LAMP_SHADE_Y - 0.15, 0]} color="#FFD9A0" intensity={shownDaylight.glow * 2.8} distance={3.5} decay={2} />
+      <GlowPatch size={[2.2, 2.2]} position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+    </group>
+  );
 };
 
 /** The decor model alone; the catalog's 3D thumbnails render it too. */
@@ -114,24 +173,7 @@ export const Shape = ({ decor, still }: { decor: SceneDecor; still: boolean }) =
         </group>
       );
     case "mushroomLamp":
-      return (
-        <group>
-          <mesh position={[0, 0.3, 0]} castShadow>
-            <cylinderGeometry args={[0.1, 0.14, 0.6, 16]} />
-            <Matte color={second} />
-          </mesh>
-          <mesh position={[0, 0.58, 0]} castShadow>
-            <sphereGeometry args={[0.4, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color={main} emissive={main} emissiveIntensity={0.2} roughness={1} />
-          </mesh>
-          {[0, 2.1, 4.2].map((angle) => (
-            <mesh key={angle} position={[Math.cos(angle) * 0.22, 0.86, Math.sin(angle) * 0.22]}>
-              <sphereGeometry args={[0.06, 10, 8]} />
-              <Matte color={second} />
-            </mesh>
-          ))}
-        </group>
-      );
+      return <MushroomLamp main={main} second={second} />;
     case "wallClock":
       return (
         <group rotation={[Math.PI / 2, 0, 0]}>

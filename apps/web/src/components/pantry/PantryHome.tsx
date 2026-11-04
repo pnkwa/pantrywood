@@ -11,7 +11,7 @@ import { OPEN_SCAN } from "@/lib/page-transitions";
 import { RoomView } from "@/components/room/RoomView";
 import { usePantry } from "@/lib/pantry/use-pantry";
 import { BoardPanel } from "@/components/board/BoardPanel";
-import { BuyDialog } from "@/components/decorate/BuyDialog";
+import { AddStorageDialog } from "@/components/decorate/AddStorageDialog";
 
 // Three.js stays out of the first page load; the studio is only needed once Decorate opens.
 const ThumbnailStudio = dynamic(
@@ -219,7 +219,7 @@ export const PantryHome = () => {
         )}
       </BottomSheet>
 
-      {(decorating || boardOpen) && <BuyDialog />}
+      {decorating && <AddStorageDialog />}
       {/* Always on: catalog tiles and inside-view items both draw from it. */}
       <ThumbnailStudio />
 

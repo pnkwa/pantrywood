@@ -12,6 +12,8 @@ import { Counter } from "./storage/Counter";
 import { Crates } from "./storage/Crates";
 import { Fridge } from "./storage/Fridge";
 import { MakerShelf } from "./storage/MakerShelf";
+import { WallCabinet } from "./storage/WallCabinet";
+import { TableSet } from "./storage/TableSet";
 import { PantryShelf } from "./storage/PantryShelf";
 import { RiceBarrel } from "./storage/RiceBarrel";
 import { SuppliesCabinet } from "./storage/SuppliesCabinet";
@@ -23,6 +25,8 @@ const TAG_HEIGHT: Record<StorageKind, number> = {
   pantryShelf: 5.3,
   suppliesCabinet: 2.95,
   makerShelf: 0.6,
+  wallCabinet: 2.0,
+  table: 2.0,
   crates: 3.2,
   riceBin: 2.0,
   basket: 1.0,
@@ -30,11 +34,14 @@ const TAG_HEIGHT: Record<StorageKind, number> = {
 
 /** width, height, depth, center height: a fixed hit area that doesn't lift with the piece. */
 const HIT_BOXES: Record<StorageKind, [number, number, number, number]> = {
-  fridge: [2.2, 4.6, 1.8, 2.3],
-  counter: [2.5, 2.3, 1.55, 1.15],
+  // Tall enough for the cloth and basket on top, so they open the fridge too.
+  fridge: [2.3, 5.5, 1.9, 2.75],
+  counter: [2.1, 2.3, 1.55, 1.15],
   pantryShelf: [3.2, 5.05, 1.25, 2.52],
   suppliesCabinet: [2.7, 2.65, 1.35, 1.32],
-  makerShelf: [3, 0.6, 0.8, 0.25],
+  makerShelf: [2, 0.6, 0.8, 0.25],
+  wallCabinet: [1.9, 1.55, 0.7, 0.75],
+  table: [3.8, 1.6, 2.0, 0.8],
   crates: [1.45, 3.0, 1.35, 1.5],
   riceBin: [2.0, 1.75, 2.0, 0.87],
   basket: [1.25, 0.9, 1.25, 0.45],
@@ -51,19 +58,27 @@ export const StorageModel = ({
   items,
   doorOpen = false,
   shelves,
-}: Pick<SceneStorage, "kind" | "items" | "shelves"> & { palette?: SceneStorage["palette"]; doorOpen?: boolean }) => {
+  sink = false,
+  plain = false,
+}: Pick<SceneStorage, "kind" | "items" | "shelves" | "sink" | "plain"> & { palette?: SceneStorage["palette"]; doorOpen?: boolean }) => {
   const look = palette ?? undefined;
   switch (kind) {
     case "fridge":
-      return <Fridge doorOpen={doorOpen} palette={look} />;
+      return <Fridge doorOpen={doorOpen} palette={look} plain={plain} />;
     case "counter":
-      return <Counter items={items} />;
+      // Its stock lives inside, behind the doors: open it to see what it holds.
+      return <Counter sink={sink} />;
     case "pantryShelf":
       return <PantryShelf items={items} palette={look} shelves={shelves} />;
     case "suppliesCabinet":
-      return <SuppliesCabinet items={items} palette={look} shelves={shelves} />;
+      return <SuppliesCabinet items={items} palette={look} shelves={shelves} plain={plain} />;
     case "makerShelf":
       return <MakerShelf items={items} />;
+    case "wallCabinet":
+      return <WallCabinet items={items} palette={look} plain={plain} />;
+    case "table":
+      // Like the counter, its stock isn't drawn on it: it's laid for tea instead.
+      return <TableSet />;
     case "crates":
       return <Crates items={items} palette={look} />;
     case "riceBin":
@@ -151,7 +166,7 @@ export const Storage = ({
         <boxGeometry args={[hitWidth, hitHeight, hitDepth]} />
       </mesh>
         <group ref={liftRef}>
-          <StorageModel kind={storage.kind} palette={storage.palette} items={storage.items} shelves={storage.shelves} doorOpen={doorOpen} />
+          <StorageModel kind={storage.kind} palette={storage.palette} items={storage.items} shelves={storage.shelves} sink={storage.sink} plain={storage.plain} doorOpen={doorOpen} />
           <ToolbarAnchor box={HIT_BOXES[storage.kind]} highlight={doorOpen ? "none" : highlight} overlay={overlay} />
           <StorageTagAnchor
             locationId={storage.locationId}

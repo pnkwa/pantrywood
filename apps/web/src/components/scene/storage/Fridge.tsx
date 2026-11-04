@@ -23,7 +23,7 @@ export const BACK_Z = -0.9;
 const FRONT_Z = 0.9;
 export const SEAM_Z = 0.6;
 const DOOR_DEPTH = FRONT_Z - SEAM_Z;
-export const DEFAULT_PALETTE: StoragePalette = { body: "#EFDCB6", trim: "#B8976A", accent: "#E2CA9C" };
+export const DEFAULT_PALETTE: StoragePalette = { body: "#F8F4EA", trim: "#CFC6B4", accent: "#E6DFD0" };
 const SEAM_LINE_PIXELS = 1.5;
 const SEAM_CORNER_STEPS = 8;
 export const HINGE_X = -WIDTH / 2;
@@ -316,9 +316,12 @@ const DoorInside = () => (
 export const Fridge = ({
   doorOpen,
   palette = DEFAULT_PALETTE,
+  plain = false,
 }: {
   doorOpen: boolean;
   palette?: StoragePalette;
+  /** Without the cloth and basket on top. */
+  plain?: boolean;
 }) => {
   const hingeRef = useDoorSwing(doorOpen);
   const bodyGeometry = useMemo(() => cutShell("back"), []);
@@ -350,7 +353,7 @@ export const Fridge = ({
       >
         <Matte color={palette.body} />
       </mesh>
-      <FridgeTop />
+      {!plain && <FridgeTop />}
       <Interior seam={palette.accent} />
       <group ref={hingeRef} position={[HINGE_X, 0, SEAM_Z]}>
         <group position={[-HINGE_X, 0, 0]}>

@@ -16,9 +16,3 @@ export const placedCount = (inventory: Inventory, itemId: string) =>
 /** Copies in the box, ready to place. */
 export const freeCount = (inventory: Inventory, itemId: string) =>
   Math.max(0, ownedCount(inventory, itemId) - placedCount(inventory, itemId));
-
-/** Adds the ids not owned yet (once each), keeping every copy already owned. */
-export const ownAll = (owned: readonly string[], itemIds: readonly string[]) => [
-  ...owned,
-  ...itemIds.filter((id, index) => !owned.includes(id) && itemIds.indexOf(id) === index),
-];

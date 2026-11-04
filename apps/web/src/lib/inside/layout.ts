@@ -88,6 +88,9 @@ export const insideSpecFor = (kind: StorageKind, isFreezer: boolean): InsideSpec
     case "makerShelf":
       // One floating board on brass brackets in the room; more can be added on the wall.
       return front("The maker shelf", [tab("main", "Boards", 6)], shelves("main", "board", [4]));
+    case "wallCabinet":
+      // Two glass doors over one middle shelf.
+      return front("Inside the wall cabinet", [tab("main", "Shelves", 4)], shelves("main", "board", [2]));
     case "counter":
       return front("Inside the counter", [tab("main", "Cabinet", 4)], shelves("main", "board", [1, 3]));
     case "crates":
@@ -97,6 +100,14 @@ export const insideSpecFor = (kind: StorageKind, isFreezer: boolean): InsideSpec
         editWord: "dividers",
         tabs: [tab("top", "Top crate", 0, []), tab("bottom", "Bottom crate", 0, [])],
         sections: [...parts("top", "compartment", 3), ...parts("bottom", "compartment", 2)],
+      };
+    case "table":
+      return {
+        view: "topDown",
+        title: "On the table",
+        editWord: "spots",
+        tabs: [{ ...tab("main", "Table", 0, []), fallback: "main-loose-1" }],
+        sections: parts("main", "loose", 1),
       };
     case "basket":
       return {

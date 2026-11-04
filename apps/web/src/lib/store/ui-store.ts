@@ -50,12 +50,14 @@ type UiState = {
   openBoard: () => void;
   closeBoard: () => void;
   selectBoardPiece: (id: string | null) => void;
-  /** A catalog item waiting for the Buy dialog; `confirm` spends the leaves and uses it. */
-  /** `addingAs`: buying a storage piece as a new Grocy location with this name. */
-  purchase: { item: CatalogItem; confirm: () => void; addingAs?: string } | null;
-  askToBuy: (item: CatalogItem, confirm: () => void, addingAs?: string) => void;
-  closePurchase: () => void;
+  /** A storage piece waiting to be added as a new Grocy location called `name`; `confirm` adds it. */
+  addingStorage: { item: CatalogItem; name: string; confirm: () => void } | null;
+  askToAddStorage: (item: CatalogItem, name: string, confirm: () => void) => void;
+  closeAddingStorage: () => void;
   /** The list of every item with where it is, waiting ones first. Shown where the storage panel goes. */
+  /** The room's light switch: off, the lamps go out and at night the room goes dark and moonlit. */
+  lightsOn: boolean;
+  toggleLights: () => void;
   itemListOpen: boolean;
   openItemList: () => void;
   selectStorage: (locationId: number) => void;
@@ -107,9 +109,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
   selectBoardPiece: (id) => set({ boardPiece: id }),
   selectDecorPiece: (key) => set({ decorPiece: key, moving: false }),
   setMoving: (moving) => set({ moving }),
-  purchase: null,
-  askToBuy: (item, confirm, addingAs) => set({ purchase: { item, confirm, addingAs } }),
-  closePurchase: () => set({ purchase: null }),
+  addingStorage: null,
+  askToAddStorage: (item, name, confirm) => set({ addingStorage: { item, name, confirm } }),
+  closeAddingStorage: () => set({ addingStorage: null }),
+  lightsOn: true,
+  toggleLights: () => set((state) => ({ lightsOn: !state.lightsOn })),
   itemListOpen: false,
   openItemList: () => set({ itemListOpen: true, selection: null }),
   selectStorage: (locationId) =>
